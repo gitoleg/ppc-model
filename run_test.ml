@@ -16,6 +16,7 @@ let () =
       path (Error.to_string_hum er)
 
 let bytes = [
+
   "\x89\x3c\x00\x14", "lbz";
   "\x89\x20\x00\x14", "lbz";
   "\x83\xeb\xff\xfc", "lwz";
@@ -24,10 +25,25 @@ let bytes = [
   "\x85\x3f\xff\xfc", "lwzu";
   "\x8d\x3c\x00\x14", "lbzu";
   "\x7d\x3d\x50\xee", "lbzux";
+
   "\x38\x21\x00\x10", "addi";
   "\x3b\xde\xfd\x28", "addi";
   "\x3f\xde\x00\x02", "addis";
   "\x3d\x6b\xf0\x00", "addis";
+  "\x7d\x62\x5a\x14", "add";
+  "\x7d\x62\x5a\x15", "add.";
+  "\x30\x21\x00\x10", "addic";
+  "\x33\xde\xfd\x28", "addic";
+  "\x34\x21\x00\x10", "addic.";
+  "\x37\xde\xfd\x28", "addic.";
+  "\x7d\x62\x58\x14", "addc";
+  "\x7d\x62\x58\x15", "addc.";
+  "\x7c\x21\x81\x14", "adde";
+  "\x7c\x21\x81\x15", "adde.";
+  "\x7c\x22\x01\xd4", "addme";
+  "\x7c\x22\x01\xd5", "addme.";
+  "\x7c\x22\x01\x94", "addze";
+  "\x7c\x22\x01\x95", "addze.";
 ]
 
 let create_dis arch =
@@ -58,11 +74,15 @@ let get_insn arch bytes =
   | _ ->  printf "disasm failed\n"; exit 1
 
 let check arch name = function
-  | Ok bil -> printf "%s %s ok\n" (Arch.to_string arch) name
+  | Ok bil ->
+    printf "%s %s ok\n" (Arch.to_string arch) name;
+    0
   | Error er ->
     printf "test for %s %s failed: %s\n"
       (Arch.to_string arch) name
-      (Error.to_string_hum er)
+      (Error.to_string_hum er);
+    1
+
 
 let check_bil arch (bytes, name) =
   let mem, insn = get_insn arch bytes in
@@ -83,10 +103,10 @@ module Check_bil = struct
   let run arch =
     let bytes = "\x3f\xde\x00\x02" in
     let r = Var.Set.find_exn
-        Registers.gpr ~f:(fun v -> Var.name v = "R30") in
+        Hardware.gpr ~f:(fun v -> Var.name v = "R30") in
     let mem,insn = get_insn arch bytes in
     let bil = Or_error.ok_exn @@ to_bil arch mem insn in
-    let bil = DSL.[
+    let bil = Bil.[
         r := int (Word.of_int ~width:64 1);
       ] @ bil in
     let c = Stmt.eval bil (new Bili.context) in
@@ -94,5 +114,7 @@ module Check_bil = struct
 end
 
 let () =
-  List.iter ~f:(fun b -> check_bil `ppc64 b) bytes;
-  List.iter ~f:(fun b -> check_bil `ppc b) bytes;
+  let x =
+    List.fold ~init:0 ~f:(fun x b -> x + check_bil `ppc64 b) bytes in
+  let y = List.fold ~init:x ~f:(fun x b -> x + check_bil `ppc b) bytes in
+  exit y

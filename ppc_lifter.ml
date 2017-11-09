@@ -16,8 +16,8 @@ let lift mode mem insn =
   let insn = Insn.of_basic insn in
   let opcode = opcode_of_sexp @@ Sexp.of_string @@ Insn.name insn in
   match opcode with
-  | #Ppc_load.t as op -> Ok (Ppc_load.lift mode endian mem op (Insn.ops insn))
-  | #Ppc_add.t as op -> Ok (Ppc_add.lift mode endian mem op (Insn.ops insn))
+  | #Ppc_load.t as op -> Ok (bil_of_dsl @@ Ppc_load.lift mode endian mem op (Insn.ops insn))
+  | #Ppc_add.t as op -> Ok (bil_of_dsl @@ Ppc_add.lift mode endian mem op (Insn.ops insn))
 
 module T32 = struct
   module CPU = PowerPC_32_cpu

@@ -26,18 +26,19 @@ let flag name = Var.create name (Type.imm 1)
 *)
 (** TODO: think about flag names, e.g. may be it's better to name OV,
     but not OF and so on  *)
-module Registers = struct
-  let gpr_width = 64
-  let fpr_width = 64
-  let vr_width = 128
+module Hardware = struct
 
-  let gpr = make_regs (Type.imm gpr_width) "R"
+  let gpr_bitwidth = 64
+  let fpr_bitwidth = 64
+  let vr_bitwidth = 128
+
+  let gpr = make_regs (Type.imm gpr_bitwidth) "R"
 
   (** floating point registers *)
-  let fpr = make_regs (Type.imm fpr_width) "F"
+  let fpr = make_regs (Type.imm fpr_bitwidth) "F"
 
   (** vector registers *)
-  let vr = make_regs (Type.imm vr_width) "VR"
+  let vr = make_regs (Type.imm vr_bitwidth) "VR"
 
   (** fixed point exception register  *)
   let xer = Var.create "XER" (Type.imm 64)
@@ -56,13 +57,13 @@ module Registers = struct
 
   (** fixed precision flags  *)
   let so = flag "SO" (** stands for summary overflow *)
-  let cf = flag "CF"
-  let oF = flag "OF"
+  let ca = flag "CA"
+  let ov = flag "OV"
   let zf = flag "ZF" (** the result is zero      *)
   let nf = flag "NF" (** the result is negative  *)
   let pf = flag "PF" (** the result is positive  *)
-  let cf32 = flag "CF32" (** carry of low-order 32 bit result *)
-  let of32 = flag "OF32" (** overflow of low-order 32 bit result *)
+  let ca32 = flag "CA32" (** carry of low-order 32 bit result *)
+  let ov32 = flag "OV32" (** overflow of low-order 32 bit result *)
 
   (** FPRF floating point result flags  *)
   let float_c = flag "C"          (** Result Class Descriptor        *)
@@ -72,19 +73,19 @@ module Registers = struct
   let float_unordered = flag "FU" (** Floating-Point Unordered or NaN *)
 
   let flags = Var.Set.of_list [
-      so; cf; oF; zf; nf; pf;
+      so; ca; ov; zf; nf; pf;
       float_c; float_less; float_equal;
       float_greater; float_unordered
     ]
 end
 
 module PPC32 = struct
-  include Registers
+  include Hardware
   let mem = Var.create "mem" (Type.mem `r32 `r8)
 end
 
 module PPC64 = struct
-  include Registers
+  include Hardware
   let mem = Var.create "mem" (Type.mem `r64 `r8)
 end
 
@@ -93,8 +94,8 @@ module type PPC_cpu = sig
   val mem : var
   val flags : Var.Set.t
   val zf : var
-  val cf : var
-  val oF : var
+  val ca : var
+  val ov : var
   val nf : var
 end
 
@@ -102,13 +103,14 @@ module Make_cpu(P : PPC_cpu) : CPU = struct
   include P
 
   let sp = Var.Set.find_exn gpr ~f:(fun v -> Var.name v = "R1")
-  let vf = oF
+  let vf = ov
+  let cf = ca
 
   let is = Var.same
   let is_reg r = Set.mem gpr (Var.base r)
   let is_flag r = Set.mem flags (Var.base r)
   let is_zf = is zf
-  let is_cf = is cf
+  let is_cf = is ca
   let is_vf = is vf
   let is_nf = is nf
   let is_mem = is mem

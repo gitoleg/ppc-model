@@ -2,11 +2,11 @@ open Core_kernel.Std
 open Bap.Std
 open Op
 
-open Ppc_model
+open Ppc_model.Hardware
 open Ppc_rtl
 
-(** TODO: check all instructions - there are could br invalid outcomes
-    according to a documentation. so we need to reflect it somehow *)
+(** TODO: check all instructions - there are could be invalid outcomes
+    according to the documentation. so we need to reflect it somehow *)
 
 (** Fixed-point Load Byte/Halfword/Word and Zero
     Pages 48-54 of IBM Power ISATM Version 3.0 B
@@ -19,27 +19,25 @@ module Lz = struct
 
   let lz32 endian size rt imm ra =
     let rt = find_gpr rt in
-    let width = Registers.gpr_width in
     let ra = match find_gpr_opt ra with
-      | None -> DSL.int (Word.zero 64)
-      | Some ra -> DSL.var ra in
+      | None -> Dsl.int (Word.zero 64)
+      | Some ra -> Dsl.var ra in
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
-    let imm = Word.of_int64 ~width (Imm.to_int64 imm) in
-    DSL.[
-      ea := extract 31 0 (ra + cast signed width (int imm));
+    let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
+    Dsl.[
+      ea := extract 31 0 (ra + cast signed gpr_bitwidth (int imm));
       rt := cast unsigned 64 (load32 (var ea) endian size);
     ]
 
   let lz64 endian size rt imm ra =
     let rt = find_gpr rt in
-    let width = Registers.gpr_width in
     let ra = match find_gpr_opt ra with
-      | None -> DSL.int (Word.zero 64)
-      | Some ra -> DSL.var ra in
+      | None -> Dsl.int (Word.zero 64)
+      | Some ra -> Dsl.var ra in
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
-    let imm = Word.of_int64 ~width (Imm.to_int64 imm) in
-    DSL.[
-      ea := ra + cast signed width (int imm);
+    let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
+    Dsl.[
+      ea := ra + cast signed gpr_bitwidth (int imm);
       rt := cast unsigned 64 (load64 (var ea) endian size);
     ]
 end
@@ -57,19 +55,19 @@ module Lzx = struct
     let ra = find_gpr ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
-    DSL.[
+    Dsl.[
       ea := extract 31 0 (var ra + var rb);
       rt := cast unsigned 64 (load32 (var ea) endian size);
     ]
 
+  (** TODO: check ea  *)
   let lzx64 endian size rt ra rb =
     let rt = find_gpr rt in
     let ra = find_gpr ra in
     let rb = find_gpr rb in
-    let width = Registers.gpr_width in
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
-    DSL.[
-      ea := var ra + cast signed width (var ra + var rb);
+    Dsl.[
+      ea := var ra + var rb;
       rt := cast unsigned 64 (load64 (var ea) endian size);
     ]
 end
@@ -86,11 +84,10 @@ module Lzu = struct
   let lzu32 endian size rt imm ra =
     let rt = find_gpr rt in
     let ra = find_gpr ra in
-    let width = Registers.gpr_width in
-    let imm = Word.of_int64 ~width (Imm.to_int64 imm) in
+    let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
-    DSL.[
-      ea := extract 31 0 (var ra + cast signed width (int imm));
+    Dsl.[
+      ea := extract 31 0 (var ra + cast signed gpr_bitwidth (int imm));
       rt := cast unsigned 64 (load32 (var ea) endian size);
       ra := cast unsigned 64 (var ea);
     ]
@@ -98,11 +95,10 @@ module Lzu = struct
   let lzu64 endian size rt imm ra =
     let rt = find_gpr rt in
     let ra = find_gpr ra in
-    let width = Registers.gpr_width in
-    let imm = Word.of_int64 ~width (Imm.to_int64 imm) in
+    let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
-    DSL.[
-      ea := var ra + cast signed width (int imm);
+    Dsl.[
+      ea := var ra + cast signed gpr_bitwidth (int imm);
       rt := cast unsigned 64 (load64 (var ea) endian size);
       ra := var ea;
     ]
@@ -121,7 +117,7 @@ module Lzux = struct
     let ra = find_gpr ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
-    DSL.[
+    Dsl.[
       ea := extract 31 0 (var ra + var rb);
       rt := cast unsigned 64 (load32 (var ea) endian size);
       ra := cast unsigned 64 (var ea);
@@ -132,7 +128,7 @@ module Lzux = struct
     let ra = find_gpr ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
-    DSL.[
+    Dsl.[
       ea := var ra + var rb;
       rt := cast unsigned 64 (load64 (var ea) endian size);
       ra := var ea;

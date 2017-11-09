@@ -1,30 +1,18 @@
 open Core_kernel.Std
 open Bap.Std
 
-module DSL = struct
+module Dsl = struct
 
-  type cast = Bil.cast
+  type cast  = Bil.cast  [@@deriving bin_io, compare, sexp]
+  type binop = Bil.binop [@@deriving bin_io, compare, sexp]
+  type unop  = Bil.unop  [@@deriving bin_io, compare, sexp]
+  type exp   = Bil.exp   [@@deriving bin_io, compare, sexp]
+  type stmt  = Bil.stmt  [@@deriving bin_io, compare, sexp]
 
-  type exp =
-    | BinOp   of binop * exp * exp  (** binary operation  *)
-    | UnOp    of unop * exp         (** unary operation *)
-    | Var     of var                (** variable *)
-    | Int     of word               (** immediate value *)
-    | Cast    of cast * int * exp   (** casting  *)
-    | Unknown of string * typ       (** unknown or undefined value *)
-    | Extract of int * int * exp    (** extract portion of word  *)
-    | Concat  of exp * exp          (** concatenate two words  *)
+  type t = stmt list [@@deriving bin_io, compare, sexp]
 
-  type stmt =
-    | Move    of var * exp  (** assign value of expression to variable *)
-    | Jmp     of exp        (** jump to absolute address *)
-    | Special of string     (** Statement with semantics not expressible in BIL *)
-    | If      of exp * stmt list * stmt list (** if/then/else statement  *)
-    | CpuExn  of int                         (** CPU exception *)
-    | Load of addr * endian * size
-    | Store of addr * word * endian * size
-
-  include Bil.Infix
+  module Infix = Bil.Infix
+  include Infix
 
   let cast = Bil.cast
   let var = Bil.var
@@ -37,7 +25,14 @@ module DSL = struct
   let concat = Bil.concat
 end
 
+type dsl = Dsl.t [@@deriving bin_io, compare, sexp]
+type exp = Dsl.exp [@@deriving bin_io, compare, sexp]
+type stmt = Dsl.stmt [@@deriving bin_io, compare, sexp]
+
 open Ppc_model
+open Ppc_model.Hardware
+
+let bil_of_dsl = ident
 
 let find_var vars name =
   Var.Set.find vars
@@ -52,12 +47,23 @@ let find_register regs reg =
 let find_register_exn regs reg =
   Or_error.ok_exn (find_register regs reg)
 
-let find_gpr reg = find_register_exn Registers.gpr reg
+let find_gpr reg = find_register_exn gpr reg
 
-let find_gpr_opt reg = Result.ok (find_register Registers.gpr reg)
+let find_gpr_opt reg = Result.ok (find_register gpr reg)
 
-let load32 addr size endian =
-  Bil.(load ~mem:(var PPC32.mem) ~addr size endian)
+let load32 addr endian size =
+  Bil.(load ~mem:(var PPC32.mem) ~addr endian size)
 
-let load64 addr size endian =
-  Bil.(load ~mem:(var PPC64.mem) ~addr size endian)
+let load64 addr endian size =
+  Bil.(load ~mem:(var PPC64.mem) ~addr endian size)
+
+let set_cond_reg0 addr_size res =
+  let open Dsl in
+  let zero,res = match addr_size with
+    | `r32 -> extract 31 0 res, int (Word.zero 32)
+    | `r64 -> res, int (Word.zero 64) in
+  let bit0 = res < zero in
+  let bit1 = res > zero in
+  let bit2 = res = zero in
+  let field0 = var so ^ bit2 ^ bit1 ^ bit0 in
+  cr := extract 31 4 (var cr) ^ field0
