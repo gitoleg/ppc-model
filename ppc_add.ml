@@ -6,19 +6,19 @@
     --------------------------------------------------------------------------------
     |  opcode     |      asm          |  bits   |recognized by llvm| name in llvm  |
     |-------------|-------------------|---------|------------------|---------------|
-    | 7d 62 5a 14 |add   r11, r2, r11 |rc=0,oe=0|  add  11,2,11    | ADD4          |
-    | 7d 62 5a 15 |add.  r11, r2, r11 |rc=1,oe=0|  add. 11,2,11    | ADD4o         |
-    | 7d 62 5e 14 |addo  r11, r2, r11 |rc=0,oe=1|  not recognized    |  ---          |
-    | 7d 62 5e 15 |addo. r11, r2, r11 |rc=1,oe=1|  not recognized    |  ---          |
-    | 7d 62 58 14 |addc  r11, r2, r11 |rc=0,oe=0| addc  11,2,11    | ADDC          |
-    | 7d 62 58 15 |addc. r11, r2, r11 |rc=1,oe=0| addc.  11,2,11   | ADDCo         |
-    | 7d 62 5c 14 |addco r11, r2, r11 |rc=0,oe=1|  not recognized    |  ---          |
+    | 7d 62 5a 14 |add    r11, r2, r11|rc=0,oe=0|  add  11,2,11    | ADD4          |
+    | 7d 62 5a 15 |add.   r11, r2, r11|rc=1,oe=0|  add. 11,2,11    | ADD4o         |
+    | 7d 62 5e 14 |addo   r11, r2, r11|rc=0,oe=1|  not recognized    |  ---          |
+    | 7d 62 5e 15 |addo.  r11, r2, r11|rc=1,oe=1|  not recognized    |  ---          |
+    | 7d 62 58 14 |addc   r11, r2, r11|rc=0,oe=0| addc  11,2,11    | ADDC          |
+    | 7d 62 58 15 |addc.  r11, r2, r11|rc=1,oe=0| addc.  11,2,11   | ADDCo         |
+    | 7d 62 5c 14 |addco  r11, r2, r11|rc=0,oe=1|  not recognized    |  ---          |
     | 7d 62 5c 15 |addco. r11, r2, r11|rc=1,oe=1|  not recognized    |  ---          |
     --------------------------------------------------------------------------------
 
     And so on. Basicly, instructions
     addo addco addeo addmeo addzeo addo. addco. addeo. addmeo. addzeo.
-    doesn't recognized by llvm.
+    doesn't recognized by llvm. oe and rc are 21 and 31 bits.
 
     And theirs oe-less analogs - addc. adde. addme. addze. -
     contains "o" suffix in thers llvm names: ADDo ADDeo ADDMEo ADDZEo,
