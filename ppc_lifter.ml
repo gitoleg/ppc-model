@@ -7,17 +7,43 @@ open Ppc_rtl
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
 
-type opcode = [
-  | Ppc_load.t
-  | Ppc_add.t
-] [@@deriving sexp]
+module type Lifter = sig
+  type t [@@deriving sexp, enumerate]
+  val lift : t -> addr_size -> endian -> mem -> op array -> dsl
+end
+
+let lifters : (module Lifter) list = [
+  (module Ppc_load);
+  (module Ppc_add);
+]
+
+type ppc_lift = addr_size -> endian -> mem -> op array -> dsl
+
+let lifts : ppc_lift String.Table.t = String.Table.create ()
+
+let register =
+  List.iter lifters ~f:(fun x ->
+      let module L = (val x) in
+      List.iter ~f:(fun t ->
+          let name = Sexp.to_string (L.sexp_of_t t) in
+          String.Table.add_exn lifts name (L.lift t)) L.all)
+
+let register insn lift =
+  String.Table.change lifts insn (fun _ -> Some lift)
 
 let lift mode mem insn =
   let insn = Insn.of_basic insn in
-  let opcode = opcode_of_sexp @@ Sexp.of_string @@ Insn.name insn in
-  match opcode with
-  | #Ppc_load.t as op -> Ok (bil_of_dsl @@ Ppc_load.lift mode endian mem op (Insn.ops insn))
-  | #Ppc_add.t as op -> Ok (bil_of_dsl @@ Ppc_add.lift mode endian mem op (Insn.ops insn))
+  let insn_name = Insn.name insn in
+  let lift lifter =
+    try
+      lifter mode endian mem (Insn.ops insn) |>
+      bil_of_dsl |>
+      Result.return
+    with
+      Failure str -> Error (Error.of_string str) in
+  match String.Table.find lifts (Insn.name insn) with
+  | None -> Or_error.errorf "unknown instruction %s" insn_name
+  | Some lifter -> lift lifter
 
 module T32 = struct
   module CPU = PowerPC_32_cpu

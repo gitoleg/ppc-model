@@ -5,9 +5,6 @@ open Op
 open Ppc_model.Hardware
 open Ppc_rtl
 
-(** TODO: check all instructions - there are could be invalid outcomes
-    according to the documentation. so we need to reflect it somehow *)
-
 (** Fixed-point Load Byte/Halfword/Word and Zero
     Pages 48-54 of IBM Power ISATM Version 3.0 B
 
@@ -60,7 +57,6 @@ module Lzx = struct
       rt := cast unsigned 64 (load32 (var ea) endian size);
     ]
 
-  (** TODO: check ea  *)
   let lzx64 endian size rt ra rb =
     let rt = find_gpr rt in
     let ra = find_gpr ra in
@@ -82,6 +78,7 @@ end
 module Lzu = struct
 
   let lzu32 endian size rt imm ra =
+    if Reg.equal rt ra then failwith "Invalid instruction lzu: same operands";
     let rt = find_gpr rt in
     let ra = find_gpr ra in
     let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
@@ -93,6 +90,7 @@ module Lzu = struct
     ]
 
   let lzu64 endian size rt imm ra =
+    if Reg.equal rt ra then failwith "Invalid instruction lzu: same operands";
     let rt = find_gpr rt in
     let ra = find_gpr ra in
     let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
@@ -113,6 +111,7 @@ end
 module Lzux = struct
 
   let lzux32 endian size rt ra rb =
+    if Reg.equal rt ra then failwith "Invalid instruction lzux: same operands";
     let rt = find_gpr rt in
     let ra = find_gpr ra in
     let rb = find_gpr rb in
@@ -124,6 +123,7 @@ module Lzux = struct
     ]
 
   let lzux64 endian size rt ra rb =
+    if Reg.equal rt ra then failwith "Invalid instruction lzux: same operands";
     let rt = find_gpr rt in
     let ra = find_gpr ra in
     let rb = find_gpr rb in
@@ -139,34 +139,34 @@ type lz = [
   | `LBZ
   | `LHZ
   | `LWZ
-] [@@deriving sexp]
+] [@@deriving sexp, enumerate ]
 
 type lzx = [
   | `LBZX
   | `LHZX
   | `LWZX
-] [@@deriving sexp]
+] [@@deriving sexp, enumerate ]
 
 type lzu = [
   | `LBZU
   | `LHZU
   | `LWZU
-] [@@deriving sexp]
+] [@@deriving sexp, enumerate ]
 
 type lzux = [
   | `LBZUX
   | `LHZUX
   | `LWZUX
-] [@@deriving sexp]
+] [@@deriving sexp, enumerate]
 
-type t = [ lz | lzx | lzu | lzux ] [@@deriving sexp]
+type t = [ lz | lzx | lzu | lzux ] [@@deriving sexp, enumerate]
 
 let size_of_t = function
   | `LBZ | `LBZX | `LBZU | `LBZUX -> `r8
   | `LHZ | `LHZX | `LHZU | `LHZUX -> `r16
   | `LWZ | `LWZX | `LWZU | `LWZUX -> `r32
 
-let lift mode endian mem opcode ops =
+let lift opcode mode endian mem ops =
   let size = size_of_t opcode in
   match opcode, ops with
   | #lz, [| Reg rt; Imm imm; Reg ra; |] ->
@@ -189,9 +189,6 @@ let lift mode endian mem opcode ops =
       | `r32 -> Lzux.lzux32
       | `r64 -> Lzux.lzux64 in
     lzux endian size rt ra rb
-  | code, ops ->
-    let ops = Array.fold ~init:"" ~f:(fun ops op ->
-        sprintf "%s%s; " ops (Op.to_string op)) ops in
-    printf "something went wrong for %s; operands %s"
-      (Sexp.to_string (sexp_of_t code)) ops;
-    failwith "unexpected operand set"
+  | opcode, _ ->
+    let opcode = Sexp.to_string (sexp_of_t opcode) in
+    failwith @@ sprintf "%s: unexpected operand set" opcode

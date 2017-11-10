@@ -291,9 +291,9 @@ type t = [
   | `ADDMEo
   | `ADDZE
   | `ADDZEo
-] [@@deriving sexp]
+] [@@deriving sexp, enumerate]
 
-let lift mode endian mem opcode ops = match opcode, ops with
+let lift opcode mode endian mem ops = match opcode, ops with
   | `ADD4,   [| Reg rt; Reg ra; Reg rb  |] -> add rt ra rb
   | `ADD4o,  [| Reg rt; Reg ra; Reg rb  |] ->
     let add = match mode with

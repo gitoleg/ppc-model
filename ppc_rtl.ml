@@ -32,6 +32,8 @@ type stmt = Dsl.stmt [@@deriving bin_io, compare, sexp]
 open Ppc_model
 open Ppc_model.Hardware
 
+exception Invalid_instruction of string
+
 let bil_of_dsl = ident
 
 let find_var vars name =
@@ -45,11 +47,13 @@ let find_register regs reg =
   | Some reg -> Ok reg
 
 let find_register_exn regs reg =
-  Or_error.ok_exn (find_register regs reg)
+  match find_var regs (Reg.name reg) with
+  | None -> failwith (sprintf "Register not found: %s" (Reg.name reg))
+  | Some reg -> reg
 
 let find_gpr reg = find_register_exn gpr reg
-
 let find_gpr_opt reg = Result.ok (find_register gpr reg)
+let find_gpr_err reg = find_register gpr reg
 
 let load32 addr endian size =
   Bil.(load ~mem:(var PPC32.mem) ~addr endian size)

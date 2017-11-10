@@ -1,3 +1,4 @@
+open Core_kernel.Std
 open Bap.Std
 
 module Dsl : sig
@@ -131,15 +132,22 @@ type dsl = Dsl.t [@@deriving bin_io, compare, sexp]
 type exp = Dsl.exp [@@deriving bin_io, compare, sexp]
 type stmt = Dsl.stmt [@@deriving bin_io, compare, sexp]
 
+exception Invalid_instruction of string
+
+(** [bil_of_dsl d] - returns a program in BIL language   *)
 val bil_of_dsl : dsl -> bil
 
-(** [find_gpr reg] - return variable with the same name as
-    register or thrown failure *)
+(** [find_gpr reg] - returns variable with the same name as
+    register or thrown failure if variable is not found*)
 val find_gpr : reg -> var
 
-(** [find_gpr_opt reg] - return Some variable with the same name as
-     reg or None if variable is not found*)
+(** [find_gpr_opt reg] - returns [Some var] with the same name as
+    reg or [None] if variable is not found *)
 val find_gpr_opt : reg -> var option
+
+(** [find_gpr_err reg] - returns [Ok var] with the same name as
+    reg or [Error] if variable is not found *)
+val find_gpr_err : reg -> var Or_error.t
 
 (** [load32 addr size endian] - load from a 32-bit addressed memory *)
 val load32 : exp -> endian -> size -> exp
