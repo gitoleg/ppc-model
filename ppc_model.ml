@@ -24,8 +24,6 @@ let flag name = Var.create name (Type.imm 1)
 
     SF, CF, OF - bits in XER register
 *)
-(** TODO: think about flag names, e.g. may be it's better to name OV,
-    but not OF and so on  *)
 module Hardware = struct
 
   let gpr_bitwidth = 64
