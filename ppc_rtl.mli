@@ -31,6 +31,9 @@ module Dsl : sig
   (** [concat x y -> Concat (x,y)]  *)
   val concat : exp -> exp -> exp
 
+  (** [if_ cond s1 s2 -> If(cond,s1,s2)]  *)
+  val if_ : exp -> stmt list -> stmt list -> stmt
+
   (** Infix operators  *)
   module Infix : sig
 
@@ -150,16 +153,16 @@ val find_gpr_opt : reg -> var option
 val find_gpr_err : reg -> var Or_error.t
 
 (** [load32 addr size endian] - load from a 32-bit addressed memory *)
-val load32 : exp -> endian -> size -> exp
+val load32 : addr:exp -> endian -> size -> exp
 
 (** [load64 addr size endian] - load from a 64-bit addressed memory *)
-val load64 : exp -> endian -> size -> exp
+val load64 : addr:exp -> endian -> size -> exp
 
 (** [store32 addr size endian data] - store to a 32-bit addressed memory *)
-val store32 : exp -> endian -> size -> exp -> stmt
+val store32 : addr:exp -> endian -> size -> exp -> stmt
 
 (** [store64 addr size endian data] - store to a 64-bit addressed memory *)
-val store64 : exp -> endian -> size -> exp -> stmt
+val store64 : addr:exp -> endian -> size -> exp -> stmt
 
 (** [set_cr_field0 mode x] - set conditional register field 0
     according to comparisons x with zero. Also set SO bit:

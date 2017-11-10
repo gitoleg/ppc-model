@@ -16,6 +16,7 @@ let lifters : (module Lifter) list = [
   (module Ppc_load);
   (module Ppc_store);
   (module Ppc_add);
+  (module Ppc_logical);
 ]
 
 type ppc_lift = addr_size -> endian -> mem -> op array -> dsl

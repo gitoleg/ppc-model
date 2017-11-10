@@ -23,7 +23,7 @@ module St = struct
     let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
     Dsl.[
       ea := extract 31 0 (ra + cast signed gpr_bitwidth (int imm));
-      store32 (var ea) endian size (var rs);
+      store32 ~addr:(var ea) endian size (var rs);
     ]
 
   let st64 endian size rs imm ra =
@@ -35,7 +35,7 @@ module St = struct
     let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
     Dsl.[
       ea := ra + cast signed gpr_bitwidth (int imm);
-      store64 (var ea) endian size (var rs);
+      store64 ~addr:(var ea) endian size (var rs);
     ]
 end
 
@@ -55,7 +55,7 @@ module Stx = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
       ea := extract 31 0 (var ra + var rb);
-      store32 (var ea) endian size (var rs);
+      store32 ~addr:(var ea) endian size (var rs);
     ]
 
   let stx64 endian size rs ra rb =
@@ -65,7 +65,7 @@ module Stx = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
       ea := var ra + var rb;
-      store64 (var ea) endian size (var rs);
+      store64 ~addr:(var ea) endian size (var rs);
     ]
 end
 
@@ -86,7 +86,7 @@ module Stu = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
       ea := extract 31 0 (var ra + cast signed gpr_bitwidth (int imm));
-      store32 (var ea) endian size (var rs);
+      store32 ~addr:(var ea) endian size (var rs);
       ra := cast unsigned 64 (var ea);
     ]
 
@@ -98,7 +98,7 @@ module Stu = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
       ea := var ra + cast signed gpr_bitwidth (int imm);
-      store64 (var ea) endian size (var rs);
+      store64 ~addr:(var ea) endian size (var rs);
       ra := var ea;
     ]
 end
@@ -120,7 +120,7 @@ module Stux = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
       ea := extract 31 0 (var ra + var rb);
-      store32 (var ea) endian size (var rs);
+      store32 ~addr:(var ea) endian size (var rs);
       ra := cast unsigned 64 (var ea);
     ]
 
@@ -132,7 +132,7 @@ module Stux = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
       ea := var ra + var rb;
-      store64 (var ea) endian size (var rs);
+      store64 ~addr:(var ea) endian size (var rs);
       ra := var ea;
     ]
 end

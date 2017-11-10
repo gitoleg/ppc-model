@@ -55,6 +55,34 @@ let bytes = [
   "\x7c\x22\x01\xd5", "addme.";
   "\x7c\x22\x01\x94", "addze";
   "\x7c\x22\x01\x95", "addze.";
+
+  "\x71\x2a\x00\x20", "andi.";
+  "\x75\x2a\x08\x00", "andis.";
+  "\x7f\x39\xe8\x38", "and";
+  "\x7d\x49\x30\x39", "and.";
+  "\x7c\xea\x50\x78", "andc";
+  "\x7e\x09\x18\x79", "andc.";
+  "\x60\xc6\x51\xc1", "ori";
+  "\x65\x4a\x00\x10", "oris";
+  "\x7f\x38\xc3\x78", "or";
+  "\x7d\x0a\x4b\x79", "or.";
+  "\x7c\x8a\x53\x38", "orc";
+  "\x7c\x8a\x53\x39", "orc.";
+  "\x68\x63\x00\x01", "xori";
+  "\x6d\x2a\x04\x00", "xoris";
+  "\x7c\x6a\x52\x78", "xor";
+  "\x7d\x4a\x4a\x79", "xor.";
+  "\x7c\x63\x1b\xb8", "nand";
+  "\x7c\x63\x1b\xb9", "nand.";
+  "\x7d\x09\x48\xf8", "nor";
+  "\x7d\x09\x48\xf9", "nor.";
+  "\x7d\x09\x4a\x38", "eqv";
+  "\x7d\x09\x4a\x39", "eqv.";
+  "\x7d\x4a\x07\x74", "extsb";
+  "\x7d\x48\x07\x75", "extsb.";
+  "\x7d\x25\x07\x34", "extsh";
+  "\x7d\x25\x07\x35", "extsh.";
+
 ]
 
 let create_dis arch =
@@ -93,7 +121,6 @@ let check arch name = function
       (Arch.to_string arch) name
       (Error.to_string_hum er);
     1
-
 
 let check_bil arch (bytes, name) =
   let mem, insn = get_insn arch bytes in

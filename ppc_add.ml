@@ -63,12 +63,10 @@ let addi mode rt ra imm =
   | None ->
     Dsl.[
       rt := cast signed gpr_bitwidth (int imm);
-      set_cond_reg0 mode (var rt);
     ]
   | Some ra ->
     Dsl.[
       rt := var ra + cast signed gpr_bitwidth (int imm);
-      set_cond_reg0 mode (var rt);
     ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Shifted
@@ -78,19 +76,17 @@ let addi mode rt ra imm =
     3d 6b f0 00     addis   r11,r11,-4096 *)
 let addis mode rt ra imm =
   let rt = find_gpr rt in
+  let zero16 = Word.zero 16 in
   let imm =
-    Int64.(Imm.to_int64 imm lsl 16) |>
-    Word.of_int64 ~width:gpr_bitwidth in
+    Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   match find_gpr_opt ra with
   | None ->
     Dsl.[
-      rt := cast signed gpr_bitwidth (int imm);
-      set_cond_reg0 mode (var rt);
+      rt := cast signed gpr_bitwidth (int imm ^ int zero16);
     ]
   | Some ra ->
     Dsl.[
-      rt := var ra + cast signed gpr_bitwidth (int imm);
-      set_cond_reg0 mode (var rt);
+      rt := var ra + cast signed gpr_bitwidth (int imm ^ int zero16);
     ]
 
 (** Fixed-Point Arithmetic Instructions - Add PC Immediate Shifted
@@ -312,4 +308,4 @@ let lift opcode mode endian mem ops = match opcode, ops with
   | `ADDMEo, [| Reg rt; Reg ra;         |] -> addme_dot mode rt ra
   | `ADDZE,  [| Reg rt; Reg ra;         |] -> addze rt ra
   | `ADDZEo, [| Reg rt; Reg ra;         |] -> addze_dot mode rt ra
-  | _ -> failwith "unimplemented"
+  | _ -> failwith "unexpected operand set"

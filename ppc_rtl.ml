@@ -23,6 +23,7 @@ module Dsl = struct
   let int = Bil.int
   let extract = Bil.extract
   let concat = Bil.concat
+  let if_ = Bil.if_
 end
 
 type dsl = Dsl.t [@@deriving bin_io, compare, sexp]
@@ -55,16 +56,16 @@ let find_gpr reg = find_register_exn gpr reg
 let find_gpr_opt reg = Result.ok (find_register gpr reg)
 let find_gpr_err reg = find_register gpr reg
 
-let load32 addr endian size =
+let load32 ~addr endian size =
   Bil.(load ~mem:(var PPC32.mem) ~addr endian size)
 
-let load64 addr endian size =
+let load64 ~addr endian size =
   Bil.(load ~mem:(var PPC64.mem) ~addr endian size)
 
-let store32 addr endian size data =
+let store32 ~addr endian size data =
   Bil.(PPC32.mem := store ~mem:(var PPC32.mem) ~addr data endian size)
 
-let store64 addr endian size data =
+let store64 ~addr endian size data =
   Bil.(PPC64.mem := store ~mem:(var PPC64.mem) ~addr data endian size)
 
 let set_cond_reg0 addr_size res =

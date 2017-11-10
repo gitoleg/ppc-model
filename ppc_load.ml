@@ -23,7 +23,7 @@ module Lz = struct
     let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
     Dsl.[
       ea := extract 31 0 (ra + cast signed gpr_bitwidth (int imm));
-      rt := cast unsigned 64 (load32 (var ea) endian size);
+      rt := cast unsigned 64 (load32 ~addr:(var ea) endian size);
     ]
 
   let lz64 endian size rt imm ra =
@@ -35,7 +35,7 @@ module Lz = struct
     let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
     Dsl.[
       ea := ra + cast signed gpr_bitwidth (int imm);
-      rt := cast unsigned 64 (load64 (var ea) endian size);
+      rt := cast unsigned 64 (load64 ~addr:(var ea) endian size);
     ]
 end
 
@@ -54,7 +54,7 @@ module Lzx = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
       ea := extract 31 0 (var ra + var rb);
-      rt := cast unsigned 64 (load32 (var ea) endian size);
+      rt := cast unsigned 64 (load32 ~addr:(var ea) endian size);
     ]
 
   let lzx64 endian size rt ra rb =
@@ -64,7 +64,7 @@ module Lzx = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
       ea := var ra + var rb;
-      rt := cast unsigned 64 (load64 (var ea) endian size);
+      rt := cast unsigned 64 (load64 ~addr:(var ea) endian size);
     ]
 end
 
@@ -85,7 +85,7 @@ module Lzu = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
       ea := extract 31 0 (var ra + cast signed gpr_bitwidth (int imm));
-      rt := cast unsigned 64 (load32 (var ea) endian size);
+      rt := cast unsigned 64 (load32 ~addr:(var ea) endian size);
       ra := cast unsigned 64 (var ea);
     ]
 
@@ -97,7 +97,7 @@ module Lzu = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
       ea := var ra + cast signed gpr_bitwidth (int imm);
-      rt := cast unsigned 64 (load64 (var ea) endian size);
+      rt := cast unsigned 64 (load64 ~addr:(var ea) endian size);
       ra := var ea;
     ]
 end
@@ -118,7 +118,7 @@ module Lzux = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
       ea := extract 31 0 (var ra + var rb);
-      rt := cast unsigned 64 (load32 (var ea) endian size);
+      rt := cast unsigned 64 (load32 ~addr:(var ea) endian size);
       ra := cast unsigned 64 (var ea);
     ]
 
@@ -130,7 +130,7 @@ module Lzux = struct
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
       ea := var ra + var rb;
-      rt := cast unsigned 64 (load64 (var ea) endian size);
+      rt := cast unsigned 64 (load64 ~addr:(var ea) endian size);
       ra := var ea;
     ]
 end
