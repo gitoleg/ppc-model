@@ -61,6 +61,12 @@ let load32 addr endian size =
 let load64 addr endian size =
   Bil.(load ~mem:(var PPC64.mem) ~addr endian size)
 
+let store32 addr endian size data =
+  Bil.(PPC32.mem := store ~mem:(var PPC32.mem) ~addr data endian size)
+
+let store64 addr endian size data =
+  Bil.(PPC64.mem := store ~mem:(var PPC64.mem) ~addr data endian size)
+
 let set_cond_reg0 addr_size res =
   let open Dsl in
   let zero,res = match addr_size with

@@ -155,6 +155,12 @@ val load32 : exp -> endian -> size -> exp
 (** [load64 addr size endian] - load from a 64-bit addressed memory *)
 val load64 : exp -> endian -> size -> exp
 
+(** [store32 addr size endian data] - store to a 32-bit addressed memory *)
+val store32 : exp -> endian -> size -> exp -> stmt
+
+(** [store64 addr size endian data] - store to a 64-bit addressed memory *)
+val store64 : exp -> endian -> size -> exp -> stmt
+
 (** [set_cr_field0 mode x] - set conditional register field 0
     according to comparisons x with zero. Also set SO bit:
     |bit| set to |
