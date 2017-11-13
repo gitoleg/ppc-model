@@ -1,0 +1,56 @@
+OASISFormat:  0.4
+Name:         ppc-model
+Version:      0.2
+Synopsis:     PowerPC lifter
+Authors:      BAP Team
+Maintainers:  Ivan Gotovchits <ivg@ieee.org>,
+              Oleg Kamenkov <forown@yandex.ru>
+License:      MIT
+Copyrights:   (C) 2016 Carnegie Mellon University
+Plugins:      META (0.4), DevFiles (0.4)
+BuildTools:   ocamlbuild
+BuildDepends: ppx_jane, core_kernel, bap
+
+Library ppc_lifter
+  Path:           lib
+  FindLibName:    ppc_lifter
+  Modules:        Ppc_add,
+                  Ppc_lifter,
+                  Ppc_load,
+                  Ppc_logical,
+                  Ppc_model,
+                  Ppc_rtl,
+                  Ppc_store,
+                  Ppc_sub
+  CompiledObject: best
+  Install:        true
+
+Library ppc_tests
+  Path:           tests
+  FindLibName:    ppc_tests
+  Build$:         flag(tests)
+  Install:        false
+  CompiledObject: best
+  Modules:        Ppc_lift_test,
+                  Ppc_typecheck_test
+  BuildDepends:   oUnit, ppc_lifter
+
+Executable "ppc-run"
+  Path:           src
+  MainIs:         ppc_run.ml
+  CompiledObject: best
+  Install:        true
+  BuildDepends:   bap.plugins, findlib.dynload, ppc_lifter, cmdliner
+
+Executable run_test
+  Path:           tests
+  MainIs:         run_test.ml
+  Install:        false
+  Build$:         flag(tests)
+  CompiledObject: best
+  BuildDepends:   bap.plugins, ppc_tests, oUnit, findlib.dynload
+
+Test ppc_test
+  TestTools:      run_test
+  Run$:           flag(tests)
+  Command:        $run_test -runner sequential

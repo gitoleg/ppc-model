@@ -1,7 +1,13 @@
 REC
 
-S .
-B _build/
+S lib/
+S src/
+S tests/
+
+B _build/lib
+B _build/src
+B _build/tests
 
 PKG bap
 PKG core_kernel
+PKG oUnit
