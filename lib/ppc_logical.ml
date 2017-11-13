@@ -11,7 +11,7 @@ open Ppc_rtl
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     71 2a 00 20     andi.   r10,r9,32 *)
-let andi_dot mode rs ra imm =
+let andi_dot mode ra rs imm =
   let zero48 = Word.zero 48 in
   let rs = find_gpr rs in
   let ra = find_gpr ra in
@@ -486,7 +486,7 @@ let popcnt ra rs size =
     examples:
     7c 84 01 74     prtyd r4, r4 (not working in llvm)
     7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
-let parity rs ra size = []
+let parity rs ra size = failwith "llvm doens't now about this insn"
 
 type and_ = [
   | `ANDIo
@@ -552,7 +552,7 @@ type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | parity ] [@@de
 
 let lift t mode endian mem ops =
   match t, ops with
-  | `ANDIo,   [| Reg rs; Reg ra; Imm ui |] -> andi_dot mode rs ra ui
+  | `ANDIo,   [| Reg ra; Reg rs; Imm ui |] -> andi_dot mode ra rs ui
   | `ANDISo,  [| Reg rs; Reg ra; Imm ui |] -> andis_dot mode rs ra ui
   | `AND,     [| Reg rs; Reg ra; Reg rb |] -> and_ rs ra rb
   | `ANDo,    [| Reg rs; Reg ra; Reg rb |] -> and_dot mode rs ra rb
@@ -584,7 +584,7 @@ let lift t mode endian mem ops =
   | `CNTTZWo, [| Reg rs; Reg ra; |] -> cnttzw_dot mode rs ra
   | `CMPB,    [| Reg ra; Reg rs; Reg rb; |] -> cmpb ra rs rb
   | `POPCNTW, [| Reg ra; Reg rs; |] -> popcnt ra rs `r32
-  (* | `POPCNTB, [| Reg rs; Reg ra; |] -> popcnt rs ra `r8 *)
+  | `POPCNTB, [| Reg ra; Reg rs; |] -> popcnt ra rs `r8
   (* | `PRTYD,  [| Reg rs; Reg ra; |] -> parity rs ra `r64 *)
   (* | `PRTYB,  [| Reg rs; Reg ra; |] -> parity rs ra `r8 *)
   | _ -> failwith "unexpected operand set"

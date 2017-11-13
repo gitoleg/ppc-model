@@ -51,7 +51,58 @@ let check_gpr init bytes var expected arch ctxt =
   | None -> assert_bool "var not found OR it's result not Imm" false
   | Some w -> assert_equal ~cmp:Word.equal w expected
 
-let check_cntlz value zeros ctxt =
+let andi_dot ctxt =
+  let bytes = "\x71\x2a\x00\x20" in  (** andi.   r10,r9,32 *)
+  let r10 = find_gpr "R10" in
+  let r9 = find_gpr "R9" in
+  let init = Bil.[
+      r9 := int (Word.of_int ~width:64 10);
+    ] in
+  let expected = Word.of_int ~width:64 42 in
+  check_gpr init bytes r10 expected `ppc ctxt;
+  check_gpr init bytes r10 expected `ppc64 ctxt
+
+let andis_dot ctxt =
+  let bytes = "\x75\x2a\x0E\x00" in  (** andis.  r10,r9,2048 *)
+  let r10 = find_gpr "R10" in
+  let r9 = find_gpr "R9" in
+  let value = Word.of_int ~width:64 0x0800_0000 in
+  let init = Bil.[
+      r9 := int value;
+    ] in
+  let expected = value in
+  check_gpr init bytes r10 expected `ppc ctxt;
+  check_gpr init bytes r10 expected `ppc64 ctxt
+
+let and_ rs ra rb = failwith "unimplemented"
+let and_dot mode rs ra rb = failwith "unimplemented"
+let andc rs ra rb = failwith "unimplemented"
+let andc_dot mode rs ra rb = failwith "unimplemented"
+
+let ori rs ra imm = failwith "unimplemented"
+let oris rs ra ui = failwith "unimplemented"
+let or_ rs ra rb = failwith "unimplemented"
+let or_dot mode rs ra rb = failwith "unimplemented"
+let orc rs ra rb = failwith "unimplemented"
+let orc_dot mode rs ra rb = failwith "unimplemented"
+
+let xori rs ra imm = failwith "unimplemented"
+let xoris rs ra ui = failwith "unimplemented"
+let xor_ rs ra rb = failwith "unimplemented"
+let xor_dot mode rs ra rb = failwith "unimplemented"
+
+let nand rs ra rb = failwith "unimplemented"
+let nand_dot mode rs ra rb = failwith "unimplemented"
+let nor rs ra rb = failwith "unimplemented"
+let nor_dot mode rs ra rb = failwith "unimplemented"
+
+let eqv rs ra rb = failwith "unimplemented"
+let eqv_dot mode rs ra rb = failwith "unimplemented"
+let exts rs ra size = failwith "unimplemented"
+let exts_dot mode rs ra size = failwith "unimplemented"
+
+
+let cntlz value zeros ctxt =
   let bytes = "\x7c\x63\x00\x34" in
   let r = find_gpr "R3" in
   let init = Bil.[
@@ -61,7 +112,7 @@ let check_cntlz value zeros ctxt =
   check_gpr init bytes r expected `ppc ctxt;
   check_gpr init bytes r expected `ppc64 ctxt
 
-let check_cnttz value zeros ctxt =
+let cnttz value zeros ctxt =
   let bytes = "\x7c\x63\x04\x34" in
   let r = find_gpr "R3" in
   let init = Bil.[
@@ -71,7 +122,7 @@ let check_cnttz value zeros ctxt =
   check_gpr init bytes r expected `ppc ctxt;
   check_gpr init bytes r expected `ppc64 ctxt
 
-let check_cmpb ~bytes_cnt x y expected ctxt =
+let cmpb ~bytes_cnt x y expected ctxt =
   let bytes = "\x7c\x8a\x53\xf8" in
   let x = Word.of_int ~width:64 x in
   let y = Word.of_int ~width:64 y in
@@ -87,7 +138,7 @@ let check_cmpb ~bytes_cnt x y expected ctxt =
   check_gpr init bytes r10 expected `ppc ctxt;
   check_gpr init bytes r10 expected `ppc64 ctxt
 
-let check_popcntw ctxt =
+let popcntw ctxt =
   let bytes = "\x7c\x44\x02\xf4" in (** popcntw r4, r2 *)
   let r4 = find_gpr "R4" in
   let r2 = find_gpr "R2" in
@@ -100,16 +151,18 @@ let check_popcntw ctxt =
   check_gpr init bytes r4 expected `ppc64 ctxt
 
 let suite = "result" >::: [
-    "check cntlz: 1"  >:: check_cntlz 0x0 32;
-    "check cntlz: 2"  >:: check_cntlz 0x4000000 5;
-    "check cntlz: 3"  >:: check_cntlz 0x40000000 1;
-    "check cntlz: 4"  >:: check_cntlz 0x80000000 0;
-    "check cnttz: 1"  >:: check_cnttz 0x0 32;
-    "check cnttz: 2"  >:: check_cnttz 0x1 0;
-    "check cnttz: 3"  >:: check_cnttz 0x2 1;
-    "check cnttz: 4"  >:: check_cnttz 0x20 5;
-    "check cmpb: 1"   >:: check_cmpb ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
-    "check cmpb: 2"   >:: check_cmpb ~bytes_cnt:3 0 0x34_42_AD 0x0;
-    "check cmpb: 3"   >:: check_cmpb ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
-    "check popcntw"   >:: check_popcntw;
+    "andi."     >:: andi_dot;
+    "andis."    >:: andis_dot;
+    "cntlz: 1"  >:: cntlz 0x0 32;
+    "cntlz: 2"  >:: cntlz 0x4000000 5;
+    "cntlz: 3"  >:: cntlz 0x40000000 1;
+    "cntlz: 4"  >:: cntlz 0x80000000 0;
+    "cnttz: 1"  >:: cnttz 0x0 32;
+    "cnttz: 2"  >:: cnttz 0x1 0;
+    "cnttz: 3"  >:: cnttz 0x2 1;
+    "cnttz: 4"  >:: cnttz 0x20 5;
+    "cmpb: 1"   >:: cmpb ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
+    "cmpb: 2"   >:: cmpb ~bytes_cnt:3 0 0x34_42_AD 0x0;
+    "cmpb: 3"   >:: cmpb ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
+    "popcntw"   >:: popcntw;
   ]

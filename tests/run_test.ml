@@ -11,7 +11,7 @@ let () =
 
 let suite = "PPC" >::: [
     Ppc_typecheck_test.suite;
-    Ppc_lift_test.suite;
+    Ppc_logical_tests.suite;
   ]
 
 let () = run_test_tt_main suite
