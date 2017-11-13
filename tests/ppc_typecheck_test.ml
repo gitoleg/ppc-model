@@ -113,5 +113,5 @@ let suite = "typecheck" >::: [
     "cnttzw"  >:: run "\x7c\x63\x04\x34";
     "cnttzw." >:: run "\x7c\x63\x04\x35";
     "cmpb"    >:: run "\x7c\x8a\x53\xf8";
-    (* "popcntw" >:: run "\x7c\x84\x02\xf4"; *)
+    "popcntw" >:: run "\x7c\x84\x02\xf4";
   ]

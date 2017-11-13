@@ -436,7 +436,50 @@ let cmpb ra rs rb =
     examples:
     7c 84 00 f4       popcntb r4, r4 (not working in llvm)
     7c 84 02 f4       popcntw r4, r4 *)
-let popcnt rs ra size = []
+let popcnt ra rs size =
+  let ra = find_gpr ra in
+  let rs = find_gpr rs in
+  let bits = Size.in_bits size in
+  let steps = gpr_bitwidth / bits in
+  let one = Word.one gpr_bitwidth in
+  let zero = Word.zero gpr_bitwidth in
+  let res = Var.create ~fresh:true "res" (Type.imm gpr_bitwidth) in
+  let x = Var.create ~fresh:true "x" (Type.imm bits) in
+  let cnt = Var.create ~fresh:true "cnt" (Type.imm gpr_bitwidth) in
+  let foreach_bit reg index =
+    let index = Word.of_int ~width:bits index in
+    Dsl.[
+      if_ (extract 0 0 (var reg lsr int index) = int Word.b1 ) [
+        cnt := var cnt + int one;
+      ] [];
+    ] in
+  let foreach_size index =
+    let lo = index * bits in
+    let hi = (index + 1) * bits - 1 in
+    let shift = Word.of_int ~width:gpr_bitwidth (index * bits) in
+    let init = Dsl.[
+      cnt := int zero;
+      x := extract hi lo (var rs);
+    ] in
+    let loop = List.concat @@ List.init bits (foreach_bit x) in
+    let finish = Dsl.[
+      res := var res lor (var cnt lsl int shift);
+    ] in
+    List.concat [
+      init;
+      loop;
+      finish;
+    ] in
+  let init = Dsl.[
+    res := int zero;
+  ] in
+  let loop = List.concat @@ List.init steps ~f:foreach_size in
+  let finish = Dsl.[ra := var res] in
+  List.concat [
+    init;
+    loop;
+    finish;
+  ]
 
 (** Fixed-point Parity Doubleword/Word
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -540,8 +583,8 @@ let lift t mode endian mem ops =
   | `CNTTZW,  [| Reg rs; Reg ra; |] -> cnttzw rs ra
   | `CNTTZWo, [| Reg rs; Reg ra; |] -> cnttzw_dot mode rs ra
   | `CMPB,    [| Reg ra; Reg rs; Reg rb; |] -> cmpb ra rs rb
+  | `POPCNTW, [| Reg ra; Reg rs; |] -> popcnt ra rs `r32
   (* | `POPCNTB, [| Reg rs; Reg ra; |] -> popcnt rs ra `r8 *)
-  (* | `POPCNTW, [| Reg rs; Reg ra; |] -> popcnt rs ra `r32 *)
   (* | `PRTYD,  [| Reg rs; Reg ra; |] -> parity rs ra `r64 *)
   (* | `PRTYB,  [| Reg rs; Reg ra; |] -> parity rs ra `r8 *)
   | _ -> failwith "unexpected operand set"
