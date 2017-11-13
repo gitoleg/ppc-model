@@ -82,7 +82,8 @@ let bytes = [
   "\x7d\x48\x07\x75", "extsb.";
   "\x7d\x25\x07\x34", "extsh";
   "\x7d\x25\x07\x35", "extsh.";
-
+  "\x7c\x63\x00\x34", "cntlzw";
+  (* "\x7c\x63\x00\x35", "cntlzw."; *)
 ]
 
 let create_dis arch =
@@ -127,7 +128,7 @@ let check_bil arch (bytes, name) =
   let bil = to_bil arch mem insn in
   check arch name bil
 
-module Check_bil = struct
+module Check_result = struct
 
   let check_var c var =
     match c#lookup var with
@@ -137,6 +138,13 @@ module Check_bil = struct
       | Bil.Imm word ->
         printf "%s := %s\n" (Var.name var) (Word.to_string word)
       | Bil.Bot | Bil.Mem _ -> printf "that result is not imm\n"
+
+  let get_var c var = match c#lookup var with
+    | None -> None
+    | Some r ->
+      match Bil.Result.value r with
+      | Bil.Imm word -> Some word
+      | Bil.Bot | Bil.Mem _ -> None
 
   let run arch =
     let bytes = "\x3f\xde\x00\x02" in
@@ -149,10 +157,39 @@ module Check_bil = struct
       ] @ bil in
     let c = Stmt.eval bil (new Bili.context) in
     check_var c r
+
+  let check_cntlz arch =
+    let () = printf "check bil cntlz result on %s:  " (Arch.to_string arch) in
+    let bytes = "\x7c\x63\x00\x34" in
+    let r = Var.Set.find_exn
+        Hardware.gpr ~f:(fun v -> Var.name v = "R3") in
+    let mem,insn = get_insn arch bytes in
+    let bil = Or_error.ok_exn @@ to_bil arch mem insn in
+    let bil = Bil.[
+        r := int (Word.of_int ~width:64 0x4000020);
+      ] @ bil in
+    let c = Stmt.eval bil (new Bili.context) in
+    let expected = Word.of_int ~width:64 5 in
+    match get_var c r with
+    | None ->
+      printf "failed\n";
+      1
+    | Some w ->
+      if Word.equal w expected then
+        let () = printf "ok\n" in
+        0
+      else
+        let () = printf "failed\n" in
+        1
 end
 
 let () =
   let x =
     List.fold ~init:0 ~f:(fun x b -> x + check_bil `ppc64 b) bytes in
   let y = List.fold ~init:x ~f:(fun x b -> x + check_bil `ppc b) bytes in
+  let results = [
+    Check_result.check_cntlz `ppc;
+    Check_result.check_cntlz `ppc64;
+  ] in
+  let y = List.fold ~init:y ~f:(+) results in
   exit y

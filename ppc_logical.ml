@@ -312,6 +312,39 @@ let exts_dot mode rs ra size =
     set_cond_reg0 mode (var ra);
   ]
 
+(** Fixed-point Count Leading Zeros Word
+    Pages 92-98 of IBM Power ISATM Version 3.0 B
+    examples:
+    7c 63 00 34     cntlzw   r3,r3
+    7c 63 00 35     cntlzw.  r3,r3 *)
+let cntlzw rs ra =
+  let rs = find_gpr rs in
+  let ra = find_gpr ra in
+  let w_one = Word.one gpr_bitwidth in
+  let w_31 = Word.of_int ~width:gpr_bitwidth 31 in
+  let probe = Word.(w_one lsl w_31) in
+  let zero = Word.zero gpr_bitwidth in
+  let xv = Var.create ~fresh:true "x" (Type.imm gpr_bitwidth) in
+  let nv = Var.create ~fresh:true "n" (Type.imm gpr_bitwidth) in
+  let iv = Var.create ~fresh:true "i" (Type.imm gpr_bitwidth) in
+  let is_zero = Var.create ~fresh:true "is_zero" (Type.imm 1) in
+  let init = Dsl.[
+      xv := var rs;
+      nv := int probe;
+      iv := int zero;
+      is_zero := int Word.b1;
+    ] in
+  let code = Dsl.[
+      if_ (var is_zero land (var xv land var nv = int zero)) [
+        iv := var iv + int w_one;
+        is_zero := int Word.b1;
+        nv := var nv lsr int w_one;
+      ] [ is_zero := int Word.b0 ];
+    ] in
+  let code = List.concat @@ List.init 32 ~f:(fun _ -> code) in
+  let finish = Dsl.[ra := var iv] in
+  init @ code @ finish
+
 type and_ = [
   | `ANDIo
   | `ANDISo
@@ -353,7 +386,15 @@ type exts = [
   | `EXTSHo
 ] [@@deriving sexp,enumerate]
 
-type t = [ and_ | or_ | xor | eqv | exts ] [@@deriving sexp,enumerate]
+type cntz = [
+  | `CNTLZW
+  | `CNTLZWo
+  | `CNTTZW
+  | `CNTTZWo
+] [@@deriving sexp,enumerate]
+
+
+type t = [ and_ | or_ | xor | eqv | exts | cntz ] [@@deriving sexp,enumerate]
 
 let lift t mode endian mem ops =
   match t, ops with
@@ -383,4 +424,5 @@ let lift t mode endian mem ops =
   | `EXTSBo, [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r8
   | `EXTSH,  [| Reg rs; Reg ra; |] -> exts rs ra `r16
   | `EXTSHo, [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r16
+  | `CNTLZW, [| Reg rs; Reg ra; |] -> cntlzw rs ra
   | _ -> failwith "unexpected operand set"
