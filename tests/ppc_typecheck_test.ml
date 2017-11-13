@@ -34,7 +34,6 @@ let get_insn arch bytes =
 let check_bil arch bytes ctxt =
   let mem, insn = get_insn arch bytes in
   let bil = to_bil arch mem insn in
-  let bil' = Or_error.ok_exn bil in
   assert_bool "typecheck failed" (Result.is_ok bil)
 
 let arches = [`ppc; `ppc64;]
@@ -110,4 +109,9 @@ let suite = "typecheck" >::: [
     "extsh"   >:: run "\x7d\x25\x07\x34";
     "extsh."  >:: run "\x7d\x25\x07\x35";
     "cntlzw"  >:: run "\x7c\x63\x00\x34";
+    "cntlzw." >:: run "\x7c\x63\x00\x35";
+    "cnttzw"  >:: run "\x7c\x63\x04\x34";
+    "cnttzw." >:: run "\x7c\x63\x04\x35";
+    "cmpb"    >:: run "\x7c\x8a\x53\xf8";
+    (* "popcntw" >:: run "\x7c\x84\x02\xf4"; *)
   ]

@@ -5,6 +5,8 @@ open Op
 open Ppc_model.Hardware
 open Ppc_rtl
 
+(** TODO: we still need to invent a way to write dot instructions  *)
+
 (** Fixed-point AND Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
@@ -320,30 +322,128 @@ let exts_dot mode rs ra size =
 let cntlzw rs ra =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
-  let w_one = Word.one gpr_bitwidth in
-  let w_31 = Word.of_int ~width:gpr_bitwidth 31 in
-  let probe = Word.(w_one lsl w_31) in
-  let zero = Word.zero gpr_bitwidth in
-  let xv = Var.create ~fresh:true "x" (Type.imm gpr_bitwidth) in
-  let nv = Var.create ~fresh:true "n" (Type.imm gpr_bitwidth) in
-  let iv = Var.create ~fresh:true "i" (Type.imm gpr_bitwidth) in
-  let is_zero = Var.create ~fresh:true "is_zero" (Type.imm 1) in
+  let bits = 32 in
+  let one = Word.one bits in
+  let probe = Word.of_int ~width:bits (1 lsl 31) in
+  let zero = Word.zero bits in
+  let xv = Var.create ~fresh:true "x" (Type.imm bits) in
+  let mask = Var.create ~fresh:true "mask" (Type.imm bits) in
+  let cnt = Var.create ~fresh:true "cnt" (Type.imm bits) in
+  let has_no_ones = Var.create ~fresh:true "has_no_ones" (Type.imm 1) in
   let init = Dsl.[
-      xv := var rs;
-      nv := int probe;
-      iv := int zero;
-      is_zero := int Word.b1;
+      xv := extract 31 0 (var rs);
+      mask := int probe;
+      cnt := int zero;
+      has_no_ones := int Word.b1;
     ] in
-  let code = Dsl.[
-      if_ (var is_zero land (var xv land var nv = int zero)) [
-        iv := var iv + int w_one;
-        is_zero := int Word.b1;
-        nv := var nv lsr int w_one;
-      ] [ is_zero := int Word.b0 ];
+  let foreach_bit = Dsl.[
+      if_ (var has_no_ones land ((var xv land var mask) = int zero)) [
+        cnt := var cnt + int one;
+        mask := var mask lsr int one;
+      ] [
+        has_no_ones := int Word.b0;
+      ];
     ] in
-  let code = List.concat @@ List.init 32 ~f:(fun _ -> code) in
-  let finish = Dsl.[ra := var iv] in
-  init @ code @ finish
+  let loop = List.concat @@ List.init bits ~f:(fun _ -> foreach_bit) in
+  let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
+  init @ loop @ finish
+
+let cntlzw_dot mode rs ra =
+  let rav = find_gpr ra in
+  cntlzw rs ra @
+  Dsl.[set_cond_reg0 mode (var rav)]
+
+(** Fixed-point Count Trailing Zeros Word
+    Pages 92-98 of IBM Power ISATM Version 3.0 B
+    examples:
+    7c 63 04 34     cnttzw   r3,r3
+    7c 63 04 35     cnttzw.  r3,r3 *)
+let cnttzw rs ra =
+  let rs = find_gpr rs in
+  let ra = find_gpr ra in
+  let bits = 32 in
+  let one = Word.one bits in
+  let probe = Word.one bits in
+  let zero = Word.zero bits in
+  let xv = Var.create ~fresh:true "x" (Type.imm bits) in
+  let mask = Var.create ~fresh:true "mask" (Type.imm bits) in
+  let cnt = Var.create ~fresh:true "cnt" (Type.imm bits) in
+  let has_no_ones = Var.create ~fresh:true "has_no_ones" (Type.imm 1) in
+  let init = Dsl.[
+      xv := extract 31 0 (var rs);
+      mask := int probe;
+      cnt := int zero;
+      has_no_ones := int Word.b1;
+    ] in
+  let foreach_bit = Dsl.[
+      if_ (var has_no_ones land ((var xv land var mask) = int zero)) [
+        cnt := var cnt + int one;
+        mask := var mask lsl int one;
+      ] [
+        has_no_ones := int Word.b0;
+      ];
+    ] in
+  let loop = List.concat @@ List.init bits ~f:(fun _ -> foreach_bit) in
+  let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
+  init @ loop @ finish
+
+let cnttzw_dot mode rs ra =
+  let rav = find_gpr ra in
+  cnttzw rs ra @
+  Dsl.[set_cond_reg0 mode (var rav)]
+
+(** Fixed-point Compare Bytes
+    Pages 92-98 of IBM Power ISATM Version 3.0 B
+    examples:
+    7c 8a 53 f8   cmpb r10, r4, r10 *)
+let cmpb ra rs rb =
+  let rs = find_gpr rs in
+  let ra = find_gpr ra in
+  let rb = find_gpr rb in
+  let byte = 8 in
+  let rs_byte = Var.create ~fresh:true "rs_byte" (Type.imm byte) in
+  let rb_byte = Var.create ~fresh:true "rb_byte" (Type.imm byte) in
+  let res = Var.create ~fresh:true "res" (Type.imm gpr_bitwidth) in
+  let zero = Word.zero gpr_bitwidth in
+  let get_byte reg n =
+    let hi = (n + 1) * byte - 1 in
+    let lo = n * byte in
+    Dsl.extract hi lo (Dsl.var reg) in
+  let set_byte reg n value =
+    let shift = Word.of_int ~width:gpr_bitwidth (n * byte) in
+    let value = Word.of_int ~width:gpr_bitwidth value in
+    let value = Word.(value lsl shift) in
+    Dsl.(var reg lor int value) in
+  let foreach_byte index =
+    Dsl.[
+      rs_byte := get_byte rs index;
+      rb_byte := get_byte rb index;
+      if_ (var rs_byte = var rb_byte) [
+        res := set_byte res index 0xFF
+      ] [ ]
+    ] in
+  let init = Dsl.[res := int zero ] in
+  let loop = List.concat (List.init 8 ~f:foreach_byte) in
+  let finish = Dsl.[ra := var res] in
+  List.concat [
+    init;
+    loop;
+    finish;
+  ]
+
+(** Fixed-point Population Count Bytes/Words
+    Pages 92-98 of IBM Power ISATM Version 3.0 B
+    examples:
+    7c 84 00 f4       popcntb r4, r4 (not working in llvm)
+    7c 84 02 f4       popcntw r4, r4 *)
+let popcnt rs ra size = []
+
+(** Fixed-point Parity Doubleword/Word
+    Pages 92-98 of IBM Power ISATM Version 3.0 B
+    examples:
+    7c 84 01 74     prtyd r4, r4 (not working in llvm)
+    7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
+let parity rs ra size = []
 
 type and_ = [
   | `ANDIo
@@ -393,36 +493,55 @@ type cntz = [
   | `CNTTZWo
 ] [@@deriving sexp,enumerate]
 
+type cmpb = [ `CMPB ] [@@deriving sexp,enumerate]
 
-type t = [ and_ | or_ | xor | eqv | exts | cntz ] [@@deriving sexp,enumerate]
+type popcnt = [
+  | `POPCNTB
+  | `POPCNTW
+] [@@deriving sexp,enumerate]
+
+type parity = [
+  | `PRTYD
+  | `PRTYW
+] [@@deriving sexp,enumerate]
+
+type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | parity ] [@@deriving sexp,enumerate]
 
 let lift t mode endian mem ops =
   match t, ops with
-  | `ANDIo,  [| Reg rs; Reg ra; Imm ui |] -> andi_dot mode rs ra ui
-  | `ANDISo, [| Reg rs; Reg ra; Imm ui |] -> andis_dot mode rs ra ui
-  | `AND,    [| Reg rs; Reg ra; Reg rb |] -> and_ rs ra rb
-  | `ANDo,   [| Reg rs; Reg ra; Reg rb |] -> and_dot mode rs ra rb
-  | `ANDC,   [| Reg rs; Reg ra; Reg rb |] -> andc rs ra rb
-  | `ANDCo,  [| Reg rs; Reg ra; Reg rb |] -> andc_dot mode rs ra rb
-  | `ORI,    [| Reg rs; Reg ra; Imm ui |] -> ori rs ra ui
-  | `ORIS,   [| Reg rs; Reg ra; Imm ui |] -> oris rs ra ui
-  | `OR,     [| Reg rs; Reg ra; Reg rb |] -> or_ rs ra rb
-  | `ORo,    [| Reg rs; Reg ra; Reg rb |] -> or_dot mode rs ra rb
-  | `ORC,    [| Reg rs; Reg ra; Reg rb |] -> orc rs ra rb
-  | `ORCo,   [| Reg rs; Reg ra; Reg rb |] -> orc_dot mode rs ra rb
-  | `XORI,   [| Reg rs; Reg ra; Imm ui |] -> xori rs ra ui
-  | `XORIS,  [| Reg rs; Reg ra; Imm ui |] -> xoris rs ra ui
-  | `XOR,    [| Reg rs; Reg ra; Reg rb |] -> xor_ rs ra rb
-  | `XORo,   [| Reg rs; Reg ra; Reg rb |] -> xor_dot mode rs ra rb
-  | `NAND,   [| Reg rs; Reg ra; Reg rb |] -> nand rs ra rb
-  | `NANDo,  [| Reg rs; Reg ra; Reg rb |] -> nand_dot mode rs ra rb
-  | `NOR,    [| Reg rs; Reg ra; Reg rb |] -> nor rs ra rb
-  | `NORo,   [| Reg rs; Reg ra; Reg rb |] -> nor_dot mode rs ra rb
-  | `EQV,    [| Reg rs; Reg ra; Reg rb |] -> eqv rs ra rb
-  | `EQVo,   [| Reg rs; Reg ra; Reg rb |] -> eqv_dot mode rs ra rb
-  | `EXTSB,  [| Reg rs; Reg ra; |] -> exts rs ra `r8
-  | `EXTSBo, [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r8
-  | `EXTSH,  [| Reg rs; Reg ra; |] -> exts rs ra `r16
-  | `EXTSHo, [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r16
-  | `CNTLZW, [| Reg rs; Reg ra; |] -> cntlzw rs ra
+  | `ANDIo,   [| Reg rs; Reg ra; Imm ui |] -> andi_dot mode rs ra ui
+  | `ANDISo,  [| Reg rs; Reg ra; Imm ui |] -> andis_dot mode rs ra ui
+  | `AND,     [| Reg rs; Reg ra; Reg rb |] -> and_ rs ra rb
+  | `ANDo,    [| Reg rs; Reg ra; Reg rb |] -> and_dot mode rs ra rb
+  | `ANDC,    [| Reg rs; Reg ra; Reg rb |] -> andc rs ra rb
+  | `ANDCo,   [| Reg rs; Reg ra; Reg rb |] -> andc_dot mode rs ra rb
+  | `ORI,     [| Reg rs; Reg ra; Imm ui |] -> ori rs ra ui
+  | `ORIS,    [| Reg rs; Reg ra; Imm ui |] -> oris rs ra ui
+  | `OR,      [| Reg rs; Reg ra; Reg rb |] -> or_ rs ra rb
+  | `ORo,     [| Reg rs; Reg ra; Reg rb |] -> or_dot mode rs ra rb
+  | `ORC,     [| Reg rs; Reg ra; Reg rb |] -> orc rs ra rb
+  | `ORCo,    [| Reg rs; Reg ra; Reg rb |] -> orc_dot mode rs ra rb
+  | `XORI,    [| Reg rs; Reg ra; Imm ui |] -> xori rs ra ui
+  | `XORIS,   [| Reg rs; Reg ra; Imm ui |] -> xoris rs ra ui
+  | `XOR,     [| Reg rs; Reg ra; Reg rb |] -> xor_ rs ra rb
+  | `XORo,    [| Reg rs; Reg ra; Reg rb |] -> xor_dot mode rs ra rb
+  | `NAND,    [| Reg rs; Reg ra; Reg rb |] -> nand rs ra rb
+  | `NANDo,   [| Reg rs; Reg ra; Reg rb |] -> nand_dot mode rs ra rb
+  | `NOR,     [| Reg rs; Reg ra; Reg rb |] -> nor rs ra rb
+  | `NORo,    [| Reg rs; Reg ra; Reg rb |] -> nor_dot mode rs ra rb
+  | `EQV,     [| Reg rs; Reg ra; Reg rb |] -> eqv rs ra rb
+  | `EQVo,    [| Reg rs; Reg ra; Reg rb |] -> eqv_dot mode rs ra rb
+  | `EXTSB,   [| Reg rs; Reg ra; |] -> exts rs ra `r8
+  | `EXTSBo,  [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r8
+  | `EXTSH,   [| Reg rs; Reg ra; |] -> exts rs ra `r16
+  | `EXTSHo,  [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r16
+  | `CNTLZW,  [| Reg rs; Reg ra; |] -> cntlzw rs ra
+  | `CNTLZWo, [| Reg rs; Reg ra; |] -> cntlzw_dot mode rs ra
+  | `CNTTZW,  [| Reg rs; Reg ra; |] -> cnttzw rs ra
+  | `CNTTZWo, [| Reg rs; Reg ra; |] -> cnttzw_dot mode rs ra
+  | `CMPB,    [| Reg ra; Reg rs; Reg rb; |] -> cmpb ra rs rb
+  (* | `POPCNTB, [| Reg rs; Reg ra; |] -> popcnt rs ra `r8 *)
+  (* | `POPCNTW, [| Reg rs; Reg ra; |] -> popcnt rs ra `r32 *)
+  (* | `PRTYD,  [| Reg rs; Reg ra; |] -> parity rs ra `r64 *)
+  (* | `PRTYB,  [| Reg rs; Reg ra; |] -> parity rs ra `r8 *)
   | _ -> failwith "unexpected operand set"
