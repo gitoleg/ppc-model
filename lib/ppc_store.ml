@@ -50,21 +50,25 @@ module Stx = struct
 
   let stx32 endian size rs ra rb =
     let rs = find_gpr rs in
-    let ra = find_gpr ra in
+    let ra = match find_gpr_opt ra with
+      | None -> Dsl.int (Word.zero 64)
+      | Some ra -> Dsl.var ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
-      ea := extract 31 0 (var ra + var rb);
+      ea := extract 31 0 (ra + var rb);
       store32 ~addr:(var ea) endian size (var rs);
     ]
 
   let stx64 endian size rs ra rb =
     let rs = find_gpr rs in
-    let ra = find_gpr ra in
+    let ra = match find_gpr_opt ra with
+      | None -> Dsl.int (Word.zero 64)
+      | Some ra -> Dsl.var ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
-      ea := var ra + var rb;
+      ea :=  ra + var rb;
       store64 ~addr:(var ea) endian size (var rs);
     ]
 end
@@ -181,12 +185,12 @@ let lift opcode mode endian mem ops =
       | `r32 -> Stx.stx32
       | `r64 -> Stx.stx64 in
     stx endian size rs ra rb
-  | #stu, [| Reg rs; Reg _; Imm imm; Reg ra; |] ->
+  | #stu, [| Reg _; Reg rs; Imm imm; Reg ra; |] ->
     let stu = match mode with
       | `r32 -> Stu.stu32
       | `r64 -> Stu.stu64 in
     stu endian size rs imm ra
-  | #stux, [| Reg rs; Reg _; Reg ra; Reg rb |] ->
+  | #stux, [| Reg _; Reg rs; Reg ra; Reg rb |] ->
     let stux = match mode with
       | `r32 -> Stux.stux32
       | `r64 -> Stux.stux64 in

@@ -31,7 +31,10 @@ Library ppc_tests
   Build$:         flag(tests)
   Install:        false
   CompiledObject: best
-  Modules:        Ppc_logical_tests,
+  Modules:        Ppc_load_tests,
+                  Ppc_logical_tests,
+                  Ppc_store_tests,
+                  Ppc_tests_helpers,
                   Ppc_typecheck_test
   BuildDepends:   oUnit, ppc_lifter
 

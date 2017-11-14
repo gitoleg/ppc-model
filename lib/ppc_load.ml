@@ -49,21 +49,25 @@ module Lzx = struct
 
   let lzx32 endian size rt ra rb =
     let rt = find_gpr rt in
-    let ra = find_gpr ra in
+    let ra = match find_gpr_opt ra with
+      | None -> Dsl.int (Word.zero 64)
+      | Some ra -> Dsl.var ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 32) in
     Dsl.[
-      ea := extract 31 0 (var ra + var rb);
+      ea := extract 31 0 (ra + var rb);
       rt := cast unsigned 64 (load32 ~addr:(var ea) endian size);
     ]
 
   let lzx64 endian size rt ra rb =
     let rt = find_gpr rt in
-    let ra = find_gpr ra in
+    let ra = match find_gpr_opt ra with
+      | None -> Dsl.int (Word.zero 64)
+      | Some ra -> Dsl.var ra in
     let rb = find_gpr rb in
     let ea = Var.create ~fresh:true "ea" (Type.imm 64) in
     Dsl.[
-      ea := var ra + var rb;
+      ea := ra + var rb;
       rt := cast unsigned 64 (load64 ~addr:(var ea) endian size);
     ]
 end

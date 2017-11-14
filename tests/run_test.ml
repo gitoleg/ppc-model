@@ -10,8 +10,10 @@ let () =
       path (Error.to_string_hum er)
 
 let suite = "PPC" >::: [
-    Ppc_typecheck_test.suite;
-    Ppc_logical_tests.suite;
+    (* Ppc_typecheck_test.suite; *)
+    (* Ppc_logical_tests.suite; *)
+    (* Ppc_load_tests.suite; *)
+    Ppc_store_tests.suite;
   ]
 
 let () = run_test_tt_main suite
