@@ -183,6 +183,7 @@ let suite = "store" >::: [
     "stwu32"   >:: stwu `ppc;
     "stbux32"  >:: stbux `ppc;
     "stwux32"  >:: stwux `ppc;
+
     "stb64"    >:: stb `ppc64;
     "stb64_0"  >:: stb_zero_op `ppc64;
     "stw64"    >:: stw `ppc64;

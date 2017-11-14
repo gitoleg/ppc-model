@@ -186,6 +186,7 @@ let suite = "load" >::: [
     "lbzu32"    >:: lbzu `ppc;
     "lwzu32"    >:: lwzu `ppc;
     "lbzux32"   >:: lbzux `ppc;
+
     "lbz64"     >:: lbz `ppc64;
     "lbz64_0"   >:: lbz_zero_op `ppc64;
     "lwz64"     >:: lwz `ppc64;
