@@ -25,7 +25,7 @@ let andi_dot mode ra rs imm =
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     75 2a 08 00     andis.  r10,r9,2048 *)
-let andis_dot mode rs ra ui =
+let andis_dot mode ra rs ui =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let zero16 = Word.zero 16 in
@@ -41,7 +41,7 @@ let andis_dot mode rs ra ui =
     examples:
     7f 39 e8 38     and     r25,r25,r29
     7d 49 30 39     and.    r9,r10,r6 *)
-let and_ rs ra rb =
+let and_ ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -49,7 +49,7 @@ let and_ rs ra rb =
     ra := var rs land var rb;
   ]
 
-let and_dot mode rs ra rb =
+let and_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -63,7 +63,7 @@ let and_dot mode rs ra rb =
     examples:
     7c ea 50 78     andc    r10,r7,r10
     7e 09 18 79     andc.   r9,r16,r3  *)
-let andc rs ra rb =
+let andc ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -71,7 +71,7 @@ let andc rs ra rb =
     ra := var rs land (lnot (var rb));
   ]
 
-let andc_dot mode rs ra rb =
+let andc_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -85,7 +85,7 @@ let andc_dot mode rs ra rb =
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     60 c6 51 c1     ori     r6,r6,20929 *)
-let ori rs ra imm =
+let ori ra rs imm =
   let zero48 = Word.zero 48 in
   let rs = find_gpr rs in
   let ra = find_gpr ra in
@@ -98,7 +98,7 @@ let ori rs ra imm =
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     65 4a 00 10     oris    r10,r10,16 *)
-let oris rs ra ui =
+let oris ra rs ui =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let zero16 = Word.zero 16 in
@@ -113,7 +113,7 @@ let oris rs ra ui =
     examples:
     7f 38 c3 78     or      r24,r25,r24
     7d 0a 4b 79     or.     r10,r8,r9  *)
-let or_ rs ra rb =
+let or_ ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -121,7 +121,7 @@ let or_ rs ra rb =
     ra := var rs lor var rb;
   ]
 
-let or_dot mode rs ra rb =
+let or_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -135,7 +135,7 @@ let or_dot mode rs ra rb =
     examples:
     7c 8a 53 38     orc     r10,r4,r10
     7c 8a 53 39     orc.    r10,r4,r10 *)
-let orc rs ra rb =
+let orc ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -143,7 +143,7 @@ let orc rs ra rb =
     ra := var rs lor (lnot (var rb));
   ]
 
-let orc_dot mode rs ra rb =
+let orc_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -156,7 +156,7 @@ let orc_dot mode rs ra rb =
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     68 63 00 01     xori    r3,r3,1 *)
-let xori rs ra imm =
+let xori ra rs imm =
   let zero48 = Word.zero 48 in
   let rs = find_gpr rs in
   let ra = find_gpr ra in
@@ -170,7 +170,7 @@ let xori rs ra imm =
     examples:
     6d 2a 04 00     xoris   r10,r9,1024
  *)
-let xoris rs ra ui =
+let xoris ra rs ui =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let zero16 = Word.zero 16 in
@@ -185,7 +185,7 @@ let xoris rs ra ui =
     examples:
     7c 6a 52 78     xor     r10,r3,r10
     7d 4a 4a 79     xor.    r10,r10,r9 *)
-let xor_ rs ra rb =
+let xor_ ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -193,7 +193,7 @@ let xor_ rs ra rb =
     ra := var rs lxor var rb;
   ]
 
-let xor_dot mode rs ra rb =
+let xor_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -207,7 +207,7 @@ let xor_dot mode rs ra rb =
     examples:
     7c 63 1b b8     nand    r3,r3,r3
     7c 63 1b b9     nand.   r3,r3,r3 *)
-let nand rs ra rb =
+let nand ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -215,7 +215,7 @@ let nand rs ra rb =
     ra := lnot (var rs land var rb);
   ]
 
-let nand_dot mode rs ra rb =
+let nand_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -229,7 +229,7 @@ let nand_dot mode rs ra rb =
     examples:
     7d 09 48 f8     nor     r9,r8,r9
     7d 09 48 f9     nor.    r9,r8,r9  *)
-let nor rs ra rb =
+let nor ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -237,7 +237,7 @@ let nor rs ra rb =
     ra := lnot (var rs lor var rb);
   ]
 
-let nor_dot mode rs ra rb =
+let nor_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -251,7 +251,7 @@ let nor_dot mode rs ra rb =
     examples:
     7d 09 4a 38     eqv     r9,r8,r9
     7d 09 4a 39     eqv.    r9,r8,r9 *)
-let eqv rs ra rb =
+let eqv ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -259,7 +259,7 @@ let eqv rs ra rb =
     ra := lnot (var rs lxor (var rb));
   ]
 
-let eqv_dot mode rs ra rb =
+let eqv_dot mode ra rs rb =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -268,14 +268,14 @@ let eqv_dot mode rs ra rb =
     set_cond_reg0 mode (var ra);
   ]
 
-(** Fixed-point Equivalent
+(** Fixed-point Extend Sign Byte/Halfword
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7d 4a 07 74     extsb   r10,r10
     7d 48 07 75     extsb.  r8,r10
     7d 25 07 34     extsh   r5,r9
     7d 25 07 35     extsh.  r5,r9 *)
-let exts rs ra size =
+let exts ra rs size =
   let bits = Size.in_bits size in
   let sign_pos = Size.in_bits size - 1 in
   let zero_tail = Word.zero bits in
@@ -294,7 +294,7 @@ let exts rs ra size =
     ]
   ]
 
-let exts_dot mode rs ra size =
+let exts_dot mode ra rs size =
   let bits = Size.in_bits size in
   let sign_pos = Size.in_bits size - 1 in
   let zero_tail = Word.zero bits in
@@ -319,7 +319,7 @@ let exts_dot mode rs ra size =
     examples:
     7c 63 00 34     cntlzw   r3,r3
     7c 63 00 35     cntlzw.  r3,r3 *)
-let cntlzw rs ra =
+let cntlzw ra rs =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let bits = 32 in
@@ -348,9 +348,9 @@ let cntlzw rs ra =
   let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
   init @ loop @ finish
 
-let cntlzw_dot mode rs ra =
+let cntlzw_dot mode ra rs =
   let rav = find_gpr ra in
-  cntlzw rs ra @
+  cntlzw ra rs @
   Dsl.[set_cond_reg0 mode (var rav)]
 
 (** Fixed-point Count Trailing Zeros Word
@@ -358,7 +358,7 @@ let cntlzw_dot mode rs ra =
     examples:
     7c 63 04 34     cnttzw   r3,r3
     7c 63 04 35     cnttzw.  r3,r3 *)
-let cnttzw rs ra =
+let cnttzw ra rs =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let bits = 32 in
@@ -387,9 +387,9 @@ let cnttzw rs ra =
   let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
   init @ loop @ finish
 
-let cnttzw_dot mode rs ra =
+let cnttzw_dot mode ra rs =
   let rav = find_gpr ra in
-  cnttzw rs ra @
+  cnttzw ra rs @
   Dsl.[set_cond_reg0 mode (var rav)]
 
 (** Fixed-point Compare Bytes
@@ -486,7 +486,7 @@ let popcnt ra rs size =
     examples:
     7c 84 01 74     prtyd r4, r4 (not working in llvm)
     7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
-let parity rs ra size = failwith "llvm doens't now about this insn"
+let parity ra rs size = failwith "llvm doens't now about this insn"
 
 type and_ = [
   | `ANDIo
@@ -553,38 +553,38 @@ type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | parity ] [@@de
 let lift t mode endian mem ops =
   match t, ops with
   | `ANDIo,   [| Reg ra; Reg rs; Imm ui |] -> andi_dot mode ra rs ui
-  | `ANDISo,  [| Reg rs; Reg ra; Imm ui |] -> andis_dot mode rs ra ui
-  | `AND,     [| Reg rs; Reg ra; Reg rb |] -> and_ rs ra rb
-  | `ANDo,    [| Reg rs; Reg ra; Reg rb |] -> and_dot mode rs ra rb
-  | `ANDC,    [| Reg rs; Reg ra; Reg rb |] -> andc rs ra rb
-  | `ANDCo,   [| Reg rs; Reg ra; Reg rb |] -> andc_dot mode rs ra rb
-  | `ORI,     [| Reg rs; Reg ra; Imm ui |] -> ori rs ra ui
-  | `ORIS,    [| Reg rs; Reg ra; Imm ui |] -> oris rs ra ui
-  | `OR,      [| Reg rs; Reg ra; Reg rb |] -> or_ rs ra rb
-  | `ORo,     [| Reg rs; Reg ra; Reg rb |] -> or_dot mode rs ra rb
-  | `ORC,     [| Reg rs; Reg ra; Reg rb |] -> orc rs ra rb
-  | `ORCo,    [| Reg rs; Reg ra; Reg rb |] -> orc_dot mode rs ra rb
-  | `XORI,    [| Reg rs; Reg ra; Imm ui |] -> xori rs ra ui
-  | `XORIS,   [| Reg rs; Reg ra; Imm ui |] -> xoris rs ra ui
-  | `XOR,     [| Reg rs; Reg ra; Reg rb |] -> xor_ rs ra rb
-  | `XORo,    [| Reg rs; Reg ra; Reg rb |] -> xor_dot mode rs ra rb
-  | `NAND,    [| Reg rs; Reg ra; Reg rb |] -> nand rs ra rb
-  | `NANDo,   [| Reg rs; Reg ra; Reg rb |] -> nand_dot mode rs ra rb
-  | `NOR,     [| Reg rs; Reg ra; Reg rb |] -> nor rs ra rb
-  | `NORo,    [| Reg rs; Reg ra; Reg rb |] -> nor_dot mode rs ra rb
-  | `EQV,     [| Reg rs; Reg ra; Reg rb |] -> eqv rs ra rb
-  | `EQVo,    [| Reg rs; Reg ra; Reg rb |] -> eqv_dot mode rs ra rb
-  | `EXTSB,   [| Reg rs; Reg ra; |] -> exts rs ra `r8
-  | `EXTSBo,  [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r8
-  | `EXTSH,   [| Reg rs; Reg ra; |] -> exts rs ra `r16
-  | `EXTSHo,  [| Reg rs; Reg ra; |] -> exts_dot mode rs ra `r16
-  | `CNTLZW,  [| Reg rs; Reg ra; |] -> cntlzw rs ra
-  | `CNTLZWo, [| Reg rs; Reg ra; |] -> cntlzw_dot mode rs ra
-  | `CNTTZW,  [| Reg rs; Reg ra; |] -> cnttzw rs ra
-  | `CNTTZWo, [| Reg rs; Reg ra; |] -> cnttzw_dot mode rs ra
+  | `ANDISo,  [| Reg ra; Reg rs; Imm ui |] -> andis_dot mode ra rs ui
+  | `AND,     [| Reg ra; Reg rs; Reg rb |] -> and_ ra rs rb
+  | `ANDo,    [| Reg ra; Reg rs; Reg rb |] -> and_dot mode ra rs rb
+  | `ANDC,    [| Reg ra; Reg rs; Reg rb |] -> andc ra rs rb
+  | `ANDCo,   [| Reg ra; Reg rs; Reg rb |] -> andc_dot mode ra rs rb
+  | `ORI,     [| Reg ra; Reg rs; Imm ui |] -> ori ra rs ui
+  | `ORIS,    [| Reg ra; Reg rs; Imm ui |] -> oris ra rs ui
+  | `OR,      [| Reg ra; Reg rs; Reg rb |] -> or_ ra rs rb
+  | `ORo,     [| Reg ra; Reg rs; Reg rb |] -> or_dot mode ra rs rb
+  | `ORC,     [| Reg ra; Reg rs; Reg rb |] -> orc ra rs rb
+  | `ORCo,    [| Reg ra; Reg rs; Reg rb |] -> orc_dot mode ra rs rb
+  | `XORI,    [| Reg ra; Reg rs; Imm ui |] -> xori ra rs ui
+  | `XORIS,   [| Reg ra; Reg rs; Imm ui |] -> xoris ra rs ui
+  | `XOR,     [| Reg ra; Reg rs; Reg rb |] -> xor_ ra rs rb
+  | `XORo,    [| Reg ra; Reg rs; Reg rb |] -> xor_dot mode ra rs rb
+  | `NAND,    [| Reg ra; Reg rs; Reg rb |] -> nand ra rs rb
+  | `NANDo,   [| Reg ra; Reg rs; Reg rb |] -> nand_dot mode ra rs rb
+  | `NOR,     [| Reg ra; Reg rs; Reg rb |] -> nor ra rs rb
+  | `NORo,    [| Reg ra; Reg rs; Reg rb |] -> nor_dot mode ra rs rb
+  | `EQV,     [| Reg ra; Reg rs; Reg rb |] -> eqv ra rs rb
+  | `EQVo,    [| Reg ra; Reg rs; Reg rb |] -> eqv_dot mode ra rs rb
+  | `EXTSB,   [| Reg ra; Reg rs; |] -> exts ra rs `r8
+  | `EXTSBo,  [| Reg ra; Reg rs; |] -> exts_dot mode ra rs `r8
+  | `EXTSH,   [| Reg ra; Reg rs; |] -> exts ra rs `r16
+  | `EXTSHo,  [| Reg ra; Reg rs; |] -> exts_dot mode ra rs `r16
+  | `CNTLZW,  [| Reg ra; Reg rs; |] -> cntlzw rs ra
+  | `CNTLZWo, [| Reg ra; Reg rs; |] -> cntlzw_dot mode rs ra
+  | `CNTTZW,  [| Reg ra; Reg rs; |] -> cnttzw rs ra
+  | `CNTTZWo, [| Reg ra; Reg rs; |] -> cnttzw_dot mode rs ra
   | `CMPB,    [| Reg ra; Reg rs; Reg rb; |] -> cmpb ra rs rb
   | `POPCNTW, [| Reg ra; Reg rs; |] -> popcnt ra rs `r32
   | `POPCNTB, [| Reg ra; Reg rs; |] -> popcnt ra rs `r8
-  (* | `PRTYD,  [| Reg rs; Reg ra; |] -> parity rs ra `r64 *)
-  (* | `PRTYB,  [| Reg rs; Reg ra; |] -> parity rs ra `r8 *)
+  (* | `PRTYD,  [| Reg rs; Reg ra; |] -> parity ra rs `r64 *)
+  (* | `PRTYB,  [| Reg rs; Reg ra; |] -> parity ra rs `r8 *)
   | _ -> failwith "unexpected operand set"
