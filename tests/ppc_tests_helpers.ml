@@ -68,6 +68,6 @@ let check_mem init bytes mem ~addr ~size expected ?(endian=BigEndian) arch ctxt 
   let memory,insn = get_insn arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch memory insn in
   let c = Stmt.eval (init @ bil) (new Bili.context) in
-  match get_word c mem addr endian size with
-  | None -> assert_bool "var not found OR it's result not Imm" false
+   match get_word c mem addr endian size with
+  | None -> assert_bool "word not found OR it's result not Imm" false
   | Some w -> assert_equal ~cmp:Word.equal w expected

@@ -11,8 +11,8 @@ let () =
 
 let suite = "PPC" >::: [
     (* Ppc_typecheck_test.suite; *)
-    (* Ppc_logical_tests.suite; *)
-    (* Ppc_load_tests.suite; *)
+    Ppc_logical_tests.suite;
+    Ppc_load_tests.suite;
     Ppc_store_tests.suite;
   ]
 
