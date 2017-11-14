@@ -172,8 +172,7 @@ let stwux arch ctxt =
   let expected_addr = Word.of_int ~width:64 0xABCD0001 in
   check_gpr init bytes r1 expected_addr arch ctxt
 
-
-let suite = "load" >::: [
+let suite = "store" >::: [
     "stb32"    >:: stb `ppc;
     "stb32_0"  >:: stb_zero_op `ppc;
     "stw32"    >:: stw `ppc;

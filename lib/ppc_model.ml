@@ -71,7 +71,7 @@ module Hardware = struct
   let float_unordered = flag "FU" (** Floating-Point Unordered or NaN *)
 
   let flags = Var.Set.of_list [
-      so; ca; ov; zf; nf; pf;
+      so; ca; ov; zf; nf; pf; ca32; ov32;
       float_c; float_less; float_equal;
       float_greater; float_unordered
     ]

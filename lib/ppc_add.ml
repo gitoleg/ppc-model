@@ -37,7 +37,7 @@ let set_ov32 x y r =
   let x_msb = cast high 1 x in
   let y_msb = cast high 1 y in
   let r_msb = cast high 1 r in
-  ov := (x_msb = y_msb) land (x_msb lxor r_msb)
+  ov32 := (x_msb = y_msb) land (x_msb lxor r_msb)
 
 let set_ov x y r =
   let open Dsl in
@@ -49,13 +49,14 @@ let set_ov x y r =
 let set_ca x r = Dsl.(ca := r < x)
 
 let set_ca32 x =
-  Dsl.(ca := cast unsigned gpr_bitwidth (extract 31 0 x) <> x)
+  Dsl.(ca32 := cast unsigned gpr_bitwidth (extract 31 0 x) <> x)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate
     Page 67 of IBM Power ISATM Version 3.0 B
     examples:
     38 21 00 10     addi    r1,r1,16
-    3b de fd 28     addi    r30,r30,-728 *)
+    3b de fd 28     addi    r30,r30,-728
+    38 20 00 10     addi    r1,0,16 (OR li r1, 16) *)
 let addi mode rt ra imm =
   let rt = find_gpr rt in
   let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
@@ -68,6 +69,13 @@ let addi mode rt ra imm =
     Dsl.[
       rt := var ra + cast signed gpr_bitwidth (int imm);
     ]
+
+let li rt imm =
+  let rt = find_gpr rt in
+  let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
+  Dsl.[
+    rt := cast signed gpr_bitwidth (int imm);
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Shifted
     Page 67 of IBM Power ISATM Version 3.0 B
@@ -89,6 +97,14 @@ let addis mode rt ra imm =
       rt := var ra + cast signed gpr_bitwidth (int imm ^ int zero16);
     ]
 
+let lis rt imm =
+  let rt = find_gpr rt in
+  let zero16 = Word.zero 16 in
+  let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
+  Dsl.[
+    rt := cast signed gpr_bitwidth (int imm ^ int zero16);
+  ]
+
 (** Fixed-Point Arithmetic Instructions - Add PC Immediate Shifted
     Page 68 of IBM Power ISATM Version 3.0 B
     example:
@@ -107,26 +123,13 @@ let add rt ra rb =
   let rb = find_gpr rb in
   Dsl.[rt := var ra + var rb]
 
-let add_dot_32 rt ra rb =
+let add_dot mode rt ra rb =
   let rt = find_gpr rt in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
   Dsl.[
     rt := var ra + var rb;
-    set_ov32 (var ra) (var rb) (var rt);
-    ov := var ov32;
-    so := var ov;
-  ]
-
-let add_dot_64 rt ra rb =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    rt := var ra + var rb;
-    set_ov (var ra) (var rb) (var rt);
-    set_ov32 (var ra) (var rb) (var rt);
-    so := var ov;
+    set_cond_reg0 mode (var rt);
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
@@ -222,9 +225,9 @@ let adde_dot mode rt ra rb =
 let addme rt ra =
   let rt = find_gpr rt in
   let ra = find_gpr ra in
-  let minus_one = Word.ones gpr_bitwidth in
+  let one = Word.one gpr_bitwidth in
   Dsl.[
-    rt := var ra + cast unsigned gpr_bitwidth (var ca) + int minus_one;
+    rt := var ra + cast unsigned gpr_bitwidth (var ca) - int one;
     set_ca (var ra) (var rt);
     set_ca32 (var rt);
   ]
@@ -232,9 +235,9 @@ let addme rt ra =
 let addme_dot mode rt ra =
   let rt = find_gpr rt in
   let ra = find_gpr ra in
-  let minus_one = Word.ones gpr_bitwidth in
+  let one = Word.one gpr_bitwidth in
   Dsl.[
-    rt := var ra + cast unsigned gpr_bitwidth (var ca) + int minus_one;
+    rt := var ra + cast unsigned gpr_bitwidth (var ca) - int one;
     set_ca (var ra) (var rt);
     set_ca32 (var rt);
     set_cond_reg0 mode (var rt);
@@ -287,15 +290,14 @@ type t = [
   | `ADDMEo
   | `ADDZE
   | `ADDZEo
+  | `LI
+  | `LIS
+  | `LA
 ] [@@deriving sexp, enumerate]
 
 let lift opcode mode endian mem ops = match opcode, ops with
   | `ADD4,   [| Reg rt; Reg ra; Reg rb  |] -> add rt ra rb
-  | `ADD4o,  [| Reg rt; Reg ra; Reg rb  |] ->
-    let add = match mode with
-      | `r32 -> add_dot_32
-      | `r64 -> add_dot_64 in
-    add rt ra rb
+  | `ADD4o,  [| Reg rt; Reg ra; Reg rb  |] -> add_dot mode rt ra rb
   | `ADDI,   [| Reg rt; Reg ra; Imm imm |] -> addi mode rt ra imm
   | `ADDIS,  [| Reg rt; Reg ra; Imm imm |] -> addis mode rt ra imm
   | `ADDIC,  [| Reg rt; Reg ra; Imm imm |] -> addic rt ra imm
@@ -308,4 +310,7 @@ let lift opcode mode endian mem ops = match opcode, ops with
   | `ADDMEo, [| Reg rt; Reg ra;         |] -> addme_dot mode rt ra
   | `ADDZE,  [| Reg rt; Reg ra;         |] -> addze rt ra
   | `ADDZEo, [| Reg rt; Reg ra;         |] -> addze_dot mode rt ra
+  | `LI,     [| Reg rt; Imm imm;        |] -> li rt imm
+  | `LIS,    [| Reg rt; Imm imm;        |] -> lis rt imm
+  | `LA,     [| Reg rt; Imm imm; Reg ra |] -> addi mode rt ra imm
   | _ -> failwith "unexpected operand set"
