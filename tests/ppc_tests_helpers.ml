@@ -43,11 +43,6 @@ let find_gpr name =
   Var.Set.find_exn Hardware.gpr
     ~f:(fun v -> String.equal (Var.name v) name)
 
-(** [find_flag name] - find a flag by it's name *)
-let find_flag name =
-  Var.Set.find_exn Hardware.flags
-    ~f:(fun v -> String.equal (Var.name v) name)
-
 (** [check_gpr init_bil bytes var expected arch ctxt] -
     tests if a result bound to the [var] is equal to
     [exptected]. Evaluates bil, that is a concatenation

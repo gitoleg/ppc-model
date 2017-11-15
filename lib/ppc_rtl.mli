@@ -164,11 +164,14 @@ val store32 : addr:exp -> endian -> size -> exp -> stmt
 (** [store64 addr size endian data] - store to a 64-bit addressed memory *)
 val store64 : addr:exp -> endian -> size -> exp -> stmt
 
-(** [set_cr_field0 mode x] - set conditional register field 0
-    according to comparisons x with zero. Also set SO bit:
-    |bit| set to |
-    | 0 |  x < 0 |
-    | 1 |  x > 0 |
-    | 2 |  x = 0 |
-    | 3 |  SO    |  *)
-val set_cond_reg0 : addr_size -> exp -> stmt
+(** [is_negative mode result] - returns an expression for
+    calculating NF depending on mode *)
+val is_negative : addr_size -> var -> exp
+
+(** [is_positive mode result] - returns an expression for
+    calculating PF depending on mode *)
+val is_positive : addr_size -> var -> exp
+
+(** [is_zero mode result] - returns an expression for
+    calculating ZF depending on mode *)
+val is_zero : addr_size -> var -> exp

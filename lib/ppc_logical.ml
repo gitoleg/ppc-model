@@ -18,7 +18,9 @@ let andi_dot mode ra rs imm =
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   Dsl.[
     ra := var rs land (int zero48 ^ int imm);
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -33,7 +35,9 @@ let andis_dot mode ra rs ui =
   let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
   Dsl.[
     ra := var rs land (int zero32 ^ int ui ^ int zero16);
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point AND
@@ -55,7 +59,9 @@ let and_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := var rs land var rb;
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point AND with Complement
@@ -77,9 +83,10 @@ let andc_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := var rs land (lnot (var rb));
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
-
 
 (** Fixed-point OR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -127,7 +134,9 @@ let or_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := var rs lor var rb;
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point OR with Complement
@@ -149,7 +158,9 @@ let orc_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := var rs lor (lnot (var rb));
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point XOR Immediate
@@ -199,7 +210,9 @@ let xor_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := var rs lxor var rb;
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point NAND
@@ -221,7 +234,9 @@ let nand_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := lnot (var rs land var rb);
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point NOR
@@ -243,7 +258,9 @@ let nor_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := lnot (var rs lor var rb);
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point Equivalent
@@ -265,7 +282,9 @@ let eqv_dot mode ra rs rb =
   let rb = find_gpr rb in
   Dsl.[
     ra := lnot (var rs lxor (var rb));
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point Extend Sign Byte/Halfword
@@ -311,7 +330,9 @@ let exts_dot mode ra rs size =
     ] [
       ra := var ra lor (int zeros)
     ];
-    set_cond_reg0 mode (var ra);
+    nf := is_negative mode ra;
+    pf := is_positive mode ra;
+    zf := is_zero mode ra;
   ]
 
 (** Fixed-point Count Leading Zeros Word
@@ -351,7 +372,11 @@ let cntlzw ra rs =
 let cntlzw_dot mode ra rs =
   let rav = find_gpr ra in
   cntlzw ra rs @
-  Dsl.[set_cond_reg0 mode (var rav)]
+  Dsl.[
+    nf := is_negative mode rav;
+    pf := is_positive mode rav;
+    zf := is_zero mode rav;
+  ]
 
 (** Fixed-point Count Trailing Zeros Word
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -390,7 +415,11 @@ let cnttzw ra rs =
 let cnttzw_dot mode ra rs =
   let rav = find_gpr ra in
   cnttzw ra rs @
-  Dsl.[set_cond_reg0 mode (var rav)]
+  Dsl.[
+    nf := is_negative mode rav;
+    pf := is_positive mode rav;
+    zf := is_zero mode rav;
+  ]
 
 (** Fixed-point Compare Bytes
     Pages 92-98 of IBM Power ISATM Version 3.0 B

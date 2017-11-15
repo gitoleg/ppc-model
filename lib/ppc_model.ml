@@ -1,34 +1,27 @@
 open Core_kernel.Std
 open Bap.Std
 
-let indexes = List.range 0 32
+let index_range = List.range 0 32
 
-let make_reg_i typ prefix i = Var.create (sprintf "%s%d" prefix i) typ
+let make_var_i typ prefix i = Var.create (sprintf "%s%d" prefix i) typ
 
 let make_regs typ prefix =
   List.fold ~init:Var.Set.empty ~f:(fun regs i ->
-      Var.Set.add regs (make_reg_i typ prefix i)) indexes
+      Var.Set.add regs (make_var_i typ prefix i)) index_range
+
+let make_bits range prefix =
+  List.fold index_range ~init:Int.Map.empty ~f:(fun bits i ->
+      Int.Map.add bits ~key:i ~data:(make_var_i (Type.imm 1) prefix i))
 
 let flag name = Var.create name (Type.imm 1)
 
-(** TODO: there are some instructions that alter a conditional register
-    (CR) bits explicitly, also there are some which do it implicitly.
-    e.g. crand and add instructions. Any way, both of them
-    should have the same behaviour in part of "flags", since
-    some of them are part of CR. So a question here is:
-    Do we need a  CR register in our model, and if we do,
-    then how to write flags ?
-
-    ZF NF PF - are part of CR.
-    SF - there are two equal bits in CR and in XER.
-
-    SF, CF, OF - bits in XER register
-*)
 module Hardware = struct
 
   let gpr_bitwidth = 64
   let fpr_bitwidth = 64
-  let vr_bitwidth = 128
+  let vr_bitwidth  = 128
+  let cr_bitwidth  = 32
+  let xer_bitwidth = 64
 
   let gpr = make_regs (Type.imm gpr_bitwidth) "R"
 
@@ -37,12 +30,6 @@ module Hardware = struct
 
   (** vector registers *)
   let vr = make_regs (Type.imm vr_bitwidth) "VR"
-
-  (** fixed point exception register  *)
-  let xer = Var.create "XER" (Type.imm 64)
-
-  (** conditional register  *)
-  let cr = Var.create "CR" (Type.imm 32)
 
   (** count register  *)
   let ctr = Var.create "CTR" (Type.imm 64)
@@ -54,7 +41,7 @@ module Hardware = struct
   let tar = Var.create "TAR" (Type.imm 64)
 
   (** fixed precision flags  *)
-  let so = flag "SO" (** stands for summary overflow *)
+  let so = flag "SO" (** summary overflow *)
   let ca = flag "CA"
   let ov = flag "OV"
   let zf = flag "ZF" (** the result is zero      *)
@@ -69,6 +56,30 @@ module Hardware = struct
   let float_equal = flag "FE"     (** Greater Than or Positive        *)
   let float_greater = flag "FG"   (** Floating-Point Equal or Zero    *)
   let float_unordered = flag "FU" (** Floating-Point Unordered or NaN *)
+
+  (** conditional register bits *)
+  let cr =
+    List.fold index_range ~init:Int.Map.empty
+      ~f:(fun bits i ->
+          let bit = match i with
+            | 0 -> nf
+            | 1 -> pf
+            | 2 -> zf
+            | 3 -> so
+            | _ -> make_var_i (Type.imm 1) "CR" i in
+          Int.Map.add bits ~key:i ~data:bit)
+
+  (** fixed point exception register  *)
+  let xer =
+    List.fold index_range ~init:Int.Map.empty
+      ~f:(fun bits i ->
+          let bit = match i with
+            | 33-> ov
+            | 34 -> ca
+            | 44 -> ov32
+            | 45 -> ca32
+            | _ -> make_var_i (Type.imm 1) "XER" i in
+          Int.Map.add bits ~key:i ~data:bit)
 
   let flags = Var.Set.of_list [
       so; ca; ov; zf; nf; pf; ca32; ov32;
