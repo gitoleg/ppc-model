@@ -253,7 +253,6 @@ let adde_dot arch ctxt =
   assert_bool "adde. failed" (is_equal_words pf_expected pf_value);
   assert_bool "adde. failed" (is_equal_words Word.b0 zf_value)
 
-(** TODO: CA suspicious here  *)
 let addme_dot arch ctxt =
   let bytes = "\x7c\x22\x01\xd5" in (** addme. r1, r2  *)
   let r1 = find_gpr "R1" in

@@ -5,29 +5,34 @@ open Op
 open Ppc_model.Hardware
 open Ppc_rtl
 
-(** TODO: we still need to invent a way to write dot instructions  *)
+(** Extended mnemonics:
+
+    nop         = ori 0, 0, 0
+    xnop        = xri 0, 0, 0
+    mr  rx, ry  = or rx, ry, ry
+    not   rx, ry  = nor rx, ry, ry *)
 
 (** Fixed-point AND Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     71 2a 00 20     andi.   r10,r9,32 *)
-let andi_dot mode ra rs imm =
+let andi_dot addr_size ra rs imm =
   let zero48 = Word.zero 48 in
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   Dsl.[
     ra := var rs land (int zero48 ^ int imm);
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
+    nf := is_negative addr_size (var ra);
+    pf := is_positive addr_size (var ra);
+    zf := is_zero addr_size (var ra);
   ]
 
 (** Fixed-point AND Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     75 2a 08 00     andis.  r10,r9,2048 *)
-let andis_dot mode ra rs ui =
+let andis_dot addr_size ra rs ui =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let zero16 = Word.zero 16 in
@@ -35,9 +40,9 @@ let andis_dot mode ra rs ui =
   let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
   Dsl.[
     ra := var rs land (int zero32 ^ int ui ^ int zero16);
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
+    nf := is_negative addr_size (var ra);
+    pf := is_positive addr_size (var ra);
+    zf := is_zero addr_size (var ra);
   ]
 
 (** Fixed-point AND
@@ -53,16 +58,8 @@ let and_ ra rs rb =
     ra := var rs land var rb;
   ]
 
-let and_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := var rs land var rb;
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let and_dot addr_size ra rs rb =
+  and_ ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point AND with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -77,16 +74,8 @@ let andc ra rs rb =
     ra := var rs land (lnot (var rb));
   ]
 
-let andc_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := var rs land (lnot (var rb));
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let andc_dot addr_size ra rs rb =
+  andc ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point OR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -128,16 +117,8 @@ let or_ ra rs rb =
     ra := var rs lor var rb;
   ]
 
-let or_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := var rs lor var rb;
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let or_dot addr_size ra rs rb =
+  or_ ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point OR with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -152,16 +133,8 @@ let orc ra rs rb =
     ra := var rs lor (lnot (var rb));
   ]
 
-let orc_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := var rs lor (lnot (var rb));
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let orc_dot addr_size ra rs rb =
+  orc ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point XOR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -204,16 +177,8 @@ let xor_ ra rs rb =
     ra := var rs lxor var rb;
   ]
 
-let xor_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := var rs lxor var rb;
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let xor_dot addr_size ra rs rb =
+  xor_ ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point NAND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -228,16 +193,8 @@ let nand ra rs rb =
     ra := lnot (var rs land var rb);
   ]
 
-let nand_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := lnot (var rs land var rb);
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let nand_dot addr_size ra rs rb =
+  nand ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point NOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -252,16 +209,8 @@ let nor ra rs rb =
     ra := lnot (var rs lor var rb);
   ]
 
-let nor_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := lnot (var rs lor var rb);
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let nor_dot addr_size ra rs rb =
+  nor ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point Equivalent
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -276,24 +225,18 @@ let eqv ra rs rb =
     ra := lnot (var rs lxor (var rb));
   ]
 
-let eqv_dot mode ra rs rb =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  Dsl.[
-    ra := lnot (var rs lxor (var rb));
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let eqv_dot addr_size ra rs rb =
+  eqv ra rs rb @ write_result_bits addr_size (find_gpr ra)
 
-(** Fixed-point Extend Sign Byte/Halfword
-    Pages 92-98 of IBM Power ISATM Version 3.0 B
+(** Fixed-point Extend Sign Byte/Halfword/Word
+    Pages 92-99 of IBM Power ISATM Version 3.0 B
     examples:
     7d 4a 07 74     extsb   r10,r10
     7d 48 07 75     extsb.  r8,r10
     7d 25 07 34     extsh   r5,r9
-    7d 25 07 35     extsh.  r5,r9 *)
+    7d 25 07 35     extsh.  r5,r9
+    7d 25 07 b4     extsw   r5,r9
+    7d 25 07 b5     extsw.  r5,r9 *)
 let exts ra rs size =
   let bits = Size.in_bits size in
   let sign_pos = Size.in_bits size - 1 in
@@ -313,46 +256,33 @@ let exts ra rs size =
     ]
   ]
 
-let exts_dot mode ra rs size =
-  let bits = Size.in_bits size in
-  let sign_pos = Size.in_bits size - 1 in
-  let zero_tail = Word.zero bits in
-  let zeros = Word.concat (Word.zero (gpr_bitwidth - bits)) zero_tail in
-  let ones = Word.concat (Word.ones (gpr_bitwidth - bits)) zero_tail in
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let sign = Var.create ~fresh:true "sign" (Type.imm 1) in
-  Dsl.[
-    sign := extract sign_pos sign_pos (var rs);
-    ra := cast unsigned gpr_bitwidth (extract sign_pos 0 (var rs));
-    if_ (var sign) [
-      ra := var ra lor (int ones)
-    ] [
-      ra := var ra lor (int zeros)
-    ];
-    nf := is_negative mode ra;
-    pf := is_positive mode ra;
-    zf := is_zero mode ra;
-  ]
+let exts_dot addr_size ra rs size =
+  exts ra rs size @ write_result_bits addr_size (find_gpr ra)
 
-(** Fixed-point Count Leading Zeros Word
-    Pages 92-98 of IBM Power ISATM Version 3.0 B
+(** Fixed-point Count Leading Zeros Word/Doubleword
+    Pages 92-99 of IBM Power ISATM Version 3.0 B
     examples:
     7c 63 00 34     cntlzw   r3,r3
-    7c 63 00 35     cntlzw.  r3,r3 *)
-let cntlzw ra rs =
+    7c 63 00 35     cntlzw.  r3,r3
+    7c 63 00 74     cntlzd   r3,r3
+    7c 63 00 75     cntlzd.  r3,r3 *)
+let cntlz ra rs size =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
-  let bits = 32 in
+  let bits = Size.in_bits size in
+  let high_bit = bits - 1 in
   let one = Word.one bits in
-  let probe = Word.of_int ~width:bits (1 lsl 31) in
+  let probe =
+    let one_ = Word.one bits in
+    let shift = Word.of_int ~width:bits (bits -1) in
+    Word.(one_ lsl shift) in
   let zero = Word.zero bits in
   let xv = Var.create ~fresh:true "x" (Type.imm bits) in
   let mask = Var.create ~fresh:true "mask" (Type.imm bits) in
   let cnt = Var.create ~fresh:true "cnt" (Type.imm bits) in
   let has_no_ones = Var.create ~fresh:true "has_no_ones" (Type.imm 1) in
   let init = Dsl.[
-      xv := extract 31 0 (var rs);
+      xv := extract high_bit 0 (var rs);
       mask := int probe;
       cnt := int zero;
       has_no_ones := int Word.b1;
@@ -369,24 +299,21 @@ let cntlzw ra rs =
   let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
   init @ loop @ finish
 
-let cntlzw_dot mode ra rs =
-  let rav = find_gpr ra in
-  cntlzw ra rs @
-  Dsl.[
-    nf := is_negative mode rav;
-    pf := is_positive mode rav;
-    zf := is_zero mode rav;
-  ]
+let cntlz_dot addr_size ra rs size =
+  cntlz ra rs size @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point Count Trailing Zeros Word
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 63 04 34     cnttzw   r3,r3
-    7c 63 04 35     cnttzw.  r3,r3 *)
-let cnttzw ra rs =
+    7c 63 04 35     cnttzw.  r3,r3
+    7c 63 04 74     cnttzd   r3,r3
+    7c 63 04 75     cnttzd.  r3,r3 *)
+let cnttz ra rs size =
   let rs = find_gpr rs in
   let ra = find_gpr ra in
-  let bits = 32 in
+  let bits = Size.in_bits size in
+  let high_bit = bits - 1 in
   let one = Word.one bits in
   let probe = Word.one bits in
   let zero = Word.zero bits in
@@ -395,7 +322,7 @@ let cnttzw ra rs =
   let cnt = Var.create ~fresh:true "cnt" (Type.imm bits) in
   let has_no_ones = Var.create ~fresh:true "has_no_ones" (Type.imm 1) in
   let init = Dsl.[
-      xv := extract 31 0 (var rs);
+      xv := extract high_bit 0 (var rs);
       mask := int probe;
       cnt := int zero;
       has_no_ones := int Word.b1;
@@ -412,14 +339,8 @@ let cnttzw ra rs =
   let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
   init @ loop @ finish
 
-let cnttzw_dot mode ra rs =
-  let rav = find_gpr ra in
-  cnttzw ra rs @
-  Dsl.[
-    nf := is_negative mode rav;
-    pf := is_positive mode rav;
-    zf := is_zero mode rav;
-  ]
+let cnttz_dot addr_size ra rs size =
+  cnttz ra rs size @ write_result_bits addr_size (find_gpr ra)
 
 (** Fixed-point Compare Bytes
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -460,11 +381,12 @@ let cmpb ra rs rb =
     finish;
   ]
 
-(** Fixed-point Population Count Bytes/Words
+(** Fixed-point Population Count Bytes/Words/Doubleword
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 84 00 f4       popcntb r4, r4 (not working in llvm)
-    7c 84 02 f4       popcntw r4, r4 *)
+    7c 84 02 f4       popcntw r4, r4
+    7c 84 03 f4       popcntd r4, r4 *)
 let popcnt ra rs size =
   let ra = find_gpr ra in
   let rs = find_gpr rs in
@@ -517,6 +439,48 @@ let popcnt ra rs size =
     7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
 let parity ra rs size = failwith "llvm doens't now about this insn"
 
+(** Fixed-point Bit Permute Doubleword
+    Pages 100 of IBM Power ISATM Version 3.0 B
+    examples:
+    7c a1 49 f8    bperm r1, r5, r9 *)
+let bpermd ra rs rb =
+  let ra = find_gpr ra in
+  let rb = find_gpr rb in
+  let rs = find_gpr rs in
+  let max_ind = Word.of_int ~width:8 64 in
+  let index = Var.create ~fresh:true "index" (Type.imm 8) in
+  let iv = Var.create ~fresh:true "iv" (Type.imm 8) in
+  let tmp = Var.create ~fresh:true "tmp" (Type.imm gpr_bitwidth) in
+  let bit = Var.create ~fresh:true "bit" (Type.imm 1) in
+  let zero_bit = Word.zero 1 in
+  let zero = Word.zero gpr_bitwidth in
+  let init = Dsl.[
+      tmp := int zero;
+    ] in
+  let foreach_byte i =
+    let hi = (i + 1) * 8 - 1 in
+    let lo = i * 8 in
+    let i = Word.of_int ~width:8 i in
+    Dsl.[
+      iv := int i;
+      index := extract hi lo (var rs);
+      if_ (var index < int max_ind) [
+        bit := extract 0 0 (var rb lsr var index);
+      ] [
+        bit := int zero_bit;
+      ];
+      tmp := var tmp lor ((cast unsigned gpr_bitwidth (var bit)) lsl var iv);
+    ] in
+  let loop = List.concat @@ List.init 8 ~f:foreach_byte in
+  let finish = Dsl.[
+      ra := cast unsigned gpr_bitwidth (extract 7 0 (var tmp));
+    ] in
+  List.concat [
+    init;
+    loop;
+    finish;
+  ]
+
 type and_ = [
   | `ANDIo
   | `ANDISo
@@ -556,13 +520,19 @@ type exts = [
   | `EXTSBo
   | `EXTSH
   | `EXTSHo
+  | `EXTSW
+  | `EXTSWo
 ] [@@deriving sexp,enumerate]
 
 type cntz = [
   | `CNTLZW
   | `CNTLZWo
+  | `CNTLZD
+  | `CNTLZDo
   | `CNTTZW
   | `CNTTZWo
+  | `CNTTZD
+  | `CNTTZDo
 ] [@@deriving sexp,enumerate]
 
 type cmpb = [ `CMPB ] [@@deriving sexp,enumerate]
@@ -570,50 +540,54 @@ type cmpb = [ `CMPB ] [@@deriving sexp,enumerate]
 type popcnt = [
   | `POPCNTB
   | `POPCNTW
+  | `POPCNTD
 ] [@@deriving sexp,enumerate]
 
-type parity = [
-  | `PRTYD
-  | `PRTYW
-] [@@deriving sexp,enumerate]
+type bperm = [ `BPERMD ] [@@deriving sexp,enumerate]
 
-type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | parity ] [@@deriving sexp,enumerate]
+type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | bperm ] [@@deriving sexp,enumerate]
 
-let lift t mode endian mem ops =
+let lift t addr_size endian mem ops =
   match t, ops with
-  | `ANDIo,   [| Reg ra; Reg rs; Imm ui |] -> andi_dot mode ra rs ui
-  | `ANDISo,  [| Reg ra; Reg rs; Imm ui |] -> andis_dot mode ra rs ui
+  | `ANDIo,   [| Reg ra; Reg rs; Imm ui |] -> andi_dot addr_size ra rs ui
+  | `ANDISo,  [| Reg ra; Reg rs; Imm ui |] -> andis_dot addr_size ra rs ui
   | `AND,     [| Reg ra; Reg rs; Reg rb |] -> and_ ra rs rb
-  | `ANDo,    [| Reg ra; Reg rs; Reg rb |] -> and_dot mode ra rs rb
+  | `ANDo,    [| Reg ra; Reg rs; Reg rb |] -> and_dot addr_size ra rs rb
   | `ANDC,    [| Reg ra; Reg rs; Reg rb |] -> andc ra rs rb
-  | `ANDCo,   [| Reg ra; Reg rs; Reg rb |] -> andc_dot mode ra rs rb
+  | `ANDCo,   [| Reg ra; Reg rs; Reg rb |] -> andc_dot addr_size ra rs rb
   | `ORI,     [| Reg ra; Reg rs; Imm ui |] -> ori ra rs ui
   | `ORIS,    [| Reg ra; Reg rs; Imm ui |] -> oris ra rs ui
   | `OR,      [| Reg ra; Reg rs; Reg rb |] -> or_ ra rs rb
-  | `ORo,     [| Reg ra; Reg rs; Reg rb |] -> or_dot mode ra rs rb
+  | `ORo,     [| Reg ra; Reg rs; Reg rb |] -> or_dot addr_size ra rs rb
   | `ORC,     [| Reg ra; Reg rs; Reg rb |] -> orc ra rs rb
-  | `ORCo,    [| Reg ra; Reg rs; Reg rb |] -> orc_dot mode ra rs rb
+  | `ORCo,    [| Reg ra; Reg rs; Reg rb |] -> orc_dot addr_size ra rs rb
   | `XORI,    [| Reg ra; Reg rs; Imm ui |] -> xori ra rs ui
   | `XORIS,   [| Reg ra; Reg rs; Imm ui |] -> xoris ra rs ui
   | `XOR,     [| Reg ra; Reg rs; Reg rb |] -> xor_ ra rs rb
-  | `XORo,    [| Reg ra; Reg rs; Reg rb |] -> xor_dot mode ra rs rb
+  | `XORo,    [| Reg ra; Reg rs; Reg rb |] -> xor_dot addr_size ra rs rb
   | `NAND,    [| Reg ra; Reg rs; Reg rb |] -> nand ra rs rb
-  | `NANDo,   [| Reg ra; Reg rs; Reg rb |] -> nand_dot mode ra rs rb
+  | `NANDo,   [| Reg ra; Reg rs; Reg rb |] -> nand_dot addr_size ra rs rb
   | `NOR,     [| Reg ra; Reg rs; Reg rb |] -> nor ra rs rb
-  | `NORo,    [| Reg ra; Reg rs; Reg rb |] -> nor_dot mode ra rs rb
+  | `NORo,    [| Reg ra; Reg rs; Reg rb |] -> nor_dot addr_size ra rs rb
   | `EQV,     [| Reg ra; Reg rs; Reg rb |] -> eqv ra rs rb
-  | `EQVo,    [| Reg ra; Reg rs; Reg rb |] -> eqv_dot mode ra rs rb
+  | `EQVo,    [| Reg ra; Reg rs; Reg rb |] -> eqv_dot addr_size ra rs rb
   | `EXTSB,   [| Reg ra; Reg rs; |] -> exts ra rs `r8
-  | `EXTSBo,  [| Reg ra; Reg rs; |] -> exts_dot mode ra rs `r8
+  | `EXTSBo,  [| Reg ra; Reg rs; |] -> exts_dot addr_size ra rs `r8
   | `EXTSH,   [| Reg ra; Reg rs; |] -> exts ra rs `r16
-  | `EXTSHo,  [| Reg ra; Reg rs; |] -> exts_dot mode ra rs `r16
-  | `CNTLZW,  [| Reg ra; Reg rs; |] -> cntlzw rs ra
-  | `CNTLZWo, [| Reg ra; Reg rs; |] -> cntlzw_dot mode rs ra
-  | `CNTTZW,  [| Reg ra; Reg rs; |] -> cnttzw rs ra
-  | `CNTTZWo, [| Reg ra; Reg rs; |] -> cnttzw_dot mode rs ra
+  | `EXTSHo,  [| Reg ra; Reg rs; |] -> exts_dot addr_size ra rs `r16
+  | `EXTSW,   [| Reg ra; Reg rs; |] -> exts ra rs `r32
+  | `EXTSWo,  [| Reg ra; Reg rs; |] -> exts_dot addr_size ra rs `r32
+  | `CNTLZW,  [| Reg ra; Reg rs; |] -> cntlz rs ra `r32
+  | `CNTLZWo, [| Reg ra; Reg rs; |] -> cntlz_dot addr_size rs ra `r32
+  | `CNTLZD,  [| Reg ra; Reg rs; |] -> cntlz rs ra `r64
+  | `CNTLZDo, [| Reg ra; Reg rs; |] -> cntlz_dot addr_size rs ra `r64
+  | `CNTTZW,  [| Reg ra; Reg rs; |] -> cnttz rs ra `r32
+  | `CNTTZWo, [| Reg ra; Reg rs; |] -> cnttz_dot addr_size rs ra `r32
+  | `CNTTZD,  [| Reg ra; Reg rs; |] -> cnttz rs ra `r64
+  | `CNTTZDo, [| Reg ra; Reg rs; |] -> cnttz_dot addr_size rs ra `r64
   | `CMPB,    [| Reg ra; Reg rs; Reg rb; |] -> cmpb ra rs rb
   | `POPCNTW, [| Reg ra; Reg rs; |] -> popcnt ra rs `r32
   | `POPCNTB, [| Reg ra; Reg rs; |] -> popcnt ra rs `r8
-  (* | `PRTYD,  [| Reg rs; Reg ra; |] -> parity ra rs `r64 *)
-  (* | `PRTYB,  [| Reg rs; Reg ra; |] -> parity ra rs `r8 *)
+  | `POPCNTD, [| Reg ra; Reg rs; |] -> popcnt ra rs `r64
+  | `BPERMD,  [| Reg ra; Reg rs; Reg rb |] -> bpermd ra rs rb
   | _ -> failwith "unexpected operand set"

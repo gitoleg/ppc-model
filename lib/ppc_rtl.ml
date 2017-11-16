@@ -84,14 +84,21 @@ let store addr_size ~addr endian size data =
 
 let extract_low_32 exp = Bil.extract 31 0 exp
 
-let is_negative mode x = match mode with
-    | `r32 -> Bil.(extract 31 0 (var x) <$ int @@ Word.zero 32)
-    | `r64 -> Bil.(var x <$ int @@ Word.zero 64)
+let is_negative mode exp = match mode with
+    | `r32 -> Bil.(extract_low_32 exp <$ int @@ Word.zero 32)
+    | `r64 -> Bil.(exp <$ int @@ Word.zero 64)
 
-let is_positive mode x = match mode with
-    | `r32 -> Bil.(extract 31 0 (var x) >$ int @@ Word.zero 32)
-    | `r64 -> Bil.(var x >$ int @@ Word.zero 64)
+let is_positive mode exp = match mode with
+    | `r32 -> Bil.(extract_low_32 exp >$ int @@ Word.zero 32)
+    | `r64 -> Bil.(exp >$ int @@ Word.zero 64)
 
-let is_zero mode x = match mode with
-    | `r32 -> Bil.(extract 31 0 (var x) = int @@ Word.zero 32)
-    | `r64 -> Bil.(var x = int @@ Word.zero 64)
+let is_zero mode exp = match mode with
+    | `r32 -> Bil.(extract_low_32 exp = int @@ Word.zero 32)
+    | `r64 -> Bil.(exp = int @@ Word.zero 64)
+
+let write_result_bits addr_size res =
+  Bil.[
+    nf := is_negative addr_size (var res);
+    pf := is_positive addr_size (var res);
+    zf := is_zero addr_size (var res);
+  ]

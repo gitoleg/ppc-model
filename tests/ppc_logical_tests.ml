@@ -402,7 +402,27 @@ let exts_dot arch ctxt =
   assert_bool "extsh. failed" (is_equal_words Word.b0 pf_value);
   assert_bool "extsh. failed" (is_equal_words Word.b0 zf_value)
 
-let cntlz arch value zeros ctxt =
+let extsw arch ctxt =
+  let bytes = "\x7d\x25\x07\xb4" in   (** extsw   r5,r9 *)
+  let r5 = find_gpr "R5" in
+  let r9 = find_gpr "R9" in
+  let init = Bil.[
+      r9 := int (Word.of_int ~width:64 0xC0000000);
+    ] in
+  let expected = Word.of_int64 0xFFFFFFFFC0000000L in
+  check_gpr init bytes r5 expected arch ctxt
+
+let extsw_dot arch ctxt =
+  let bytes = "\x7d\x25\x07\xb5" in   (** extsw.  r5,r9 *)
+  let r5 = find_gpr "R5" in
+  let r9 = find_gpr "R9" in
+  let init = Bil.[
+      r9 := int (Word.of_int ~width:64 0xC0000000);
+    ] in
+  let expected = Word.of_int64 0xFFFFFFFFC0000000L in
+  check_gpr init bytes r5 expected arch ctxt
+
+let cntlzw arch value zeros ctxt =
   let bytes = "\x7c\x63\x00\x34" in
   let r = find_gpr "R3" in
   let init = Bil.[
@@ -411,13 +431,33 @@ let cntlz arch value zeros ctxt =
   let expected = Word.of_int ~width:64 zeros in
   check_gpr init bytes r expected arch ctxt
 
-let cnttz arch value zeros ctxt =
+let cnttzw arch value zeros ctxt =
   let bytes = "\x7c\x63\x04\x34" in
   let r = find_gpr "R3" in
   let init = Bil.[
       r := int (Word.of_int ~width:64 value);
     ] in
   let expected = Word.of_int ~width:64 zeros in
+  check_gpr init bytes r expected arch ctxt
+
+let cntlzd arch ctxt =
+  let bytes = "\x7c\x63\x00\x74" in
+  let r = find_gpr "R3" in
+  let value = Word.of_int64 0x0000FFFF_00000000L in
+  let init = Bil.[
+      r := int value;
+    ] in
+  let expected = Word.of_int ~width:64 16 in
+  check_gpr init bytes r expected arch ctxt
+
+let cnttzd arch ctxt =
+  let bytes = "\x7c\x63\x04\x75" in
+  let r = find_gpr "R3" in
+  let value = Word.of_int64 0x00000000_FFFF0000L in
+  let init = Bil.[
+      r := int value;
+    ] in
+  let expected = Word.of_int ~width:64 16 in
   check_gpr init bytes r expected arch ctxt
 
 let cmpb arch ~bytes_cnt x y expected ctxt =
@@ -446,6 +486,31 @@ let popcntw arch ctxt =
     ] in
   check_gpr init bytes r4 expected arch ctxt
 
+let popcntd arch ctxt =
+  let bytes = "\x7c\x44\x03\xf4" in (** popcntw r4, r2 *)
+  let r4 = find_gpr "R4" in
+  let r2 = find_gpr "R2" in
+  let value = Word.of_int64 0x0F00000F_00000001L in
+  let expected = Word.of_int ~width:64 9 in
+  let init = Bil.[
+      r2 := int value;
+    ] in
+  check_gpr init bytes r4 expected arch ctxt
+
+let bperm arch ctxt =
+  let bytes = "\x7c\xa1\x49\xf8" in (** bpermd r1, r5, r9  *)
+  let r1 = find_gpr "R1" in
+  let r5 = find_gpr "R5" in
+  let r9 = find_gpr "R9" in
+  let index_bits = Word.of_int64 0x05_00_01_44_25_1B_02_04L in
+  let value = Word.of_int64 0xFFABCDEF0A0B0C0DL in
+  let expected = Word.of_int ~width:64 0x4e in
+  let init = Bil.[
+      r5 := int index_bits;
+      r9 := int value;
+    ] in
+  check_gpr init bytes r1 expected arch ctxt
+
 let suite = "logical" >::: [
     "andi.32"     >:: andi_dot `ppc;
     "andis.32"    >:: andis_dot `ppc;
@@ -471,19 +536,24 @@ let suite = "logical" >::: [
     "eqv.32"      >:: eqv_dot `ppc;
     "extsb32"     >:: extsb `ppc;
     "extsh32"     >:: extsh `ppc;
+    "extsw32"     >:: extsw `ppc;
     "exts.32"     >:: exts_dot `ppc;
-    "cntlz32: 1"  >:: cntlz `ppc 0x0 32;
-    "cntlz32: 2"  >:: cntlz `ppc 0x4000000 5;
-    "cntlz32: 3"  >:: cntlz `ppc 0x40000000 1;
-    "cntlz32: 4"  >:: cntlz `ppc 0x80000000 0;
-    "cnttz32: 1"  >:: cnttz `ppc 0x0 32;
-    "cnttz32: 2"  >:: cnttz `ppc 0x1 0;
-    "cnttz32: 3"  >:: cnttz `ppc 0x2 1;
-    "cnttz32: 4"  >:: cnttz `ppc 0x20 5;
+    "cntlzw32: 1" >:: cntlzw `ppc 0x0 32;
+    "cntlzw32: 2" >:: cntlzw `ppc 0x4000000 5;
+    "cntlzw32: 3" >:: cntlzw `ppc 0x40000000 1;
+    "cntlzw32: 4" >:: cntlzw `ppc 0x80000000 0;
+    "cnttzw32: 1" >:: cnttzw `ppc 0x0 32;
+    "cnttzw32: 2" >:: cnttzw `ppc 0x1 0;
+    "cnttzw32: 3" >:: cnttzw `ppc 0x2 1;
+    "cnttzw32: 4" >:: cnttzw `ppc 0x20 5;
+    "cntlzd32"    >:: cntlzd `ppc;
+    "cnttzd32"    >:: cnttzd `ppc;
     "cmpb32: 1"   >:: cmpb `ppc ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
     "cmpb32: 2"   >:: cmpb `ppc ~bytes_cnt:3 0 0x34_42_AD 0x0;
     "cmpb32: 3"   >:: cmpb `ppc ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
-    "popcntw"     >:: popcntw `ppc;
+    "popcntw32"   >:: popcntw `ppc;
+    "popcntd32"   >:: popcntd `ppc;
+    "bperm32"     >:: bperm `ppc;
 
     "andi.64"     >:: andi_dot `ppc64;
     "andis.64"    >:: andis_dot `ppc64;
@@ -509,17 +579,22 @@ let suite = "logical" >::: [
     "eqv.64"      >:: eqv_dot `ppc64;
     "extsb64"     >:: extsb `ppc64;
     "extsh64"     >:: extsh `ppc64;
+    "extsw64"     >:: extsw `ppc64;
     "exts.64"     >:: exts_dot `ppc64;
-    "cntlz64: 1"  >:: cntlz `ppc64 0x0 32;
-    "cntlz64: 2"  >:: cntlz `ppc64 0x4000000 5;
-    "cntlz64: 3"  >:: cntlz `ppc64 0x40000000 1;
-    "cntlz64: 4"  >:: cntlz `ppc64 0x80000000 0;
-    "cnttz64: 1"  >:: cnttz `ppc64 0x0 32;
-    "cnttz64: 2"  >:: cnttz `ppc64 0x1 0;
-    "cnttz64: 3"  >:: cnttz `ppc64 0x2 1;
-    "cnttz64: 4"  >:: cnttz `ppc64 0x20 5;
+    "cntlz64: 1"  >:: cntlzw `ppc64 0x0 32;
+    "cntlz64: 2"  >:: cntlzw `ppc64 0x4000000 5;
+    "cntlz64: 3"  >:: cntlzw `ppc64 0x40000000 1;
+    "cntlz64: 4"  >:: cntlzw `ppc64 0x80000000 0;
+    "cnttz64: 1"  >:: cnttzw `ppc64 0x0 32;
+    "cnttz64: 2"  >:: cnttzw `ppc64 0x1 0;
+    "cnttz64: 3"  >:: cnttzw `ppc64 0x2 1;
+    "cnttz64: 4"  >:: cnttzw `ppc64 0x20 5;
+    "cntlzd64"    >:: cntlzd `ppc64;
+    "cnttzd64"    >:: cnttzd `ppc64;
     "cmpb64: 1"   >:: cmpb `ppc64 ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
     "cmpb64: 2"   >:: cmpb `ppc64 ~bytes_cnt:3 0 0x34_42_AD 0x0;
     "cmpb64: 3"   >:: cmpb `ppc64 ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
     "popcntw64"   >:: popcntw `ppc64;
+    "popcntd64"   >:: popcntd `ppc64;
+    "bperm64"     >:: bperm `ppc64;
   ]

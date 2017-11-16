@@ -158,17 +158,21 @@ val load : addr_size -> addr:exp -> endian -> size -> exp
 (** [load addr_size ~addr size endian] - store to a memory *)
 val store : addr_size -> addr:exp -> endian -> size -> exp -> stmt
 
-(** [extract_low_32 e]  *)
+(** [extract_low_32 e] - extracts low 32 bits from [e] *)
 val extract_low_32 : exp -> exp
 
 (** [is_negative mode result] - returns an expression for
     calculating NF depending on mode *)
-val is_negative : addr_size -> var -> exp
+val is_negative : addr_size -> exp -> exp
 
 (** [is_positive mode result] - returns an expression for
     calculating PF depending on mode *)
-val is_positive : addr_size -> var -> exp
+val is_positive : addr_size -> exp -> exp
 
 (** [is_zero mode result] - returns an expression for
     calculating ZF depending on mode *)
-val is_zero : addr_size -> var -> exp
+val is_zero : addr_size -> exp -> exp
+
+(** [write_result_bits addr_size result] - writes three bits
+    of condition register according to the [result] *)
+val write_result_bits : addr_size -> var -> stmt list
