@@ -172,6 +172,98 @@ let stwux arch ctxt =
   let expected_addr = Word.of_int ~width:64 0xABCD0001 in
   check_gpr init bytes r1 expected_addr arch ctxt
 
+let std arch ctxt =
+  let bytes = "\xf8\x29\x00\x08" in (** std r1, 8(r9) *)
+  let mem, addr_size = env_of_arch arch in
+  let r1 = find_gpr "R1" in
+  let r9 = find_gpr "R9" in
+  let addr = 0xABCDEF44 in
+  let disp = 8 lsl 2 in
+  let ea = Word.of_int ~width:addr_size (addr + disp) in
+  let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
+  let init = Bil.[
+    r9 := int (Word.of_int ~width:64 addr);
+    r1 := int data;
+  ] in
+  let expected = data in
+  check_mem init bytes mem ~addr:ea ~size:`r64 expected arch ctxt
+
+let stdx arch ctxt =
+  let bytes = "\x7c\x28\x49\x2a" in (** stdx r1, r8, r9 *)
+  let mem, addr_size = env_of_arch arch in
+  let r1 = find_gpr "R1" in
+  let r8 = find_gpr "R8" in
+  let r9 = find_gpr "R9" in
+  let x = Word.of_int ~width:addr_size 0xABCD0000 in
+  let y = Word.of_int ~width:addr_size 0x0000EF42 in
+  let ea = Word.(x + y) in
+  let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
+  let init = Bil.[
+      r1 := int data;
+      r8 := int x;
+      r9 := int y;
+    ] in
+  let expected = data in
+  check_mem init bytes mem ~addr:ea ~size:`r64 expected arch ctxt
+
+let stdu arch ctxt =
+  let bytes = "\xf8\x29\x00\x09" in (**  stdu r1, 8(r9) *)
+  let mem, addr_size = env_of_arch arch in
+  let r1 = find_gpr "R1" in
+  let r9 = find_gpr "R9" in
+  let addr = 0xABCDEF42 in
+  let disp = 8 lsl 2 in
+  let ea = Word.of_int ~width:addr_size (addr + disp) in
+  let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
+  let init = Bil.[
+      r9 := int (Word.of_int ~width:64 addr);
+      r1 := int data;
+  ] in
+  let expected = data in
+  check_mem init bytes mem ~addr:ea ~size:`r64 expected arch ctxt;
+  let expected_addr = Word.of_int ~width:64 (addr + disp) in
+  check_gpr init bytes r9 expected_addr arch ctxt
+
+let stdux arch ctxt =
+  let bytes = "\x7c\x28\x49\x6a" in (** stdux r1, r8, r9 *)
+  let mem, addr_size = env_of_arch arch in
+  let r1 = find_gpr "R1" in
+  let r8 = find_gpr "R8" in
+  let r9 = find_gpr "R9" in
+  let x = Word.of_int ~width:addr_size 0xABCD0000 in
+  let y = Word.of_int ~width:addr_size 0x0000EF42 in
+  let ea = Word.(x + y) in
+  let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
+  let init = Bil.[
+      r1 := int data;
+      r8 := int x;
+      r9 := int y;
+    ] in
+  let expected = data in
+  check_mem init bytes mem ~addr:ea ~size:`r64 expected arch ctxt;
+  let expected_addr = Word.of_int ~width:64 0xABCDEF42 in
+  check_gpr init bytes r8 expected_addr arch ctxt
+
+let stdux_big_addr ctxt =
+  let bytes = "\x7c\x28\x49\x6a" in (** stdux r1, r8, r9 *)
+  let mem, addr_size = env_of_arch `ppc64 in
+  let r1 = find_gpr "R1" in
+  let r8 = find_gpr "R8" in
+  let r9 = find_gpr "R9" in
+  let x = Word.of_int64 0xCABCEF42_ABCD0000L in
+  let y = Word.of_int64 0x0000EF42L in
+  let ea = Word.(x + y) in
+  let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
+  let init = Bil.[
+      r1 := int data;
+      r8 := int x;
+      r9 := int y;
+    ] in
+  let expected = data in
+  check_mem init bytes mem ~addr:ea ~size:`r64 expected `ppc64 ctxt;
+  let expected_addr = ea in
+  check_gpr init bytes r8 expected_addr `ppc64 ctxt
+
 let suite = "store" >::: [
     "stb32"    >:: stb `ppc;
     "stb32_0"  >:: stb_zero_op `ppc;
@@ -183,6 +275,10 @@ let suite = "store" >::: [
     "stwu32"   >:: stwu `ppc;
     "stbux32"  >:: stbux `ppc;
     "stwux32"  >:: stwux `ppc;
+    "std32"    >:: std `ppc;
+    "stdx32"   >:: stdx `ppc;
+    "stdu32"   >:: stdu `ppc;
+    "stdux32"  >:: stdux `ppc;
 
     "stb64"    >:: stb `ppc64;
     "stb64_0"  >:: stb_zero_op `ppc64;
@@ -194,4 +290,9 @@ let suite = "store" >::: [
     "stwu64"   >:: stwu `ppc64;
     "stbux64"  >:: stbux `ppc64;
     "stwux64"  >:: stwux `ppc64;
+    "std64"    >:: std `ppc64;
+    "stdx64"   >:: stdx `ppc64;
+    "stdu64"   >:: stdu `ppc64;
+    "stdux64"  >:: stdux `ppc64;
+    "stdux64a" >:: stdux_big_addr;
   ]

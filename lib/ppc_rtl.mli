@@ -152,17 +152,14 @@ val find_gpr_opt : reg -> var option
     reg or [Error] if variable is not found *)
 val find_gpr_err : reg -> var Or_error.t
 
-(** [load32 addr size endian] - load from a 32-bit addressed memory *)
-val load32 : addr:exp -> endian -> size -> exp
+(** [load addr_size ~addr size endian] - load from a memory *)
+val load : addr_size -> addr:exp -> endian -> size -> exp
 
-(** [load64 addr size endian] - load from a 64-bit addressed memory *)
-val load64 : addr:exp -> endian -> size -> exp
+(** [load addr_size ~addr size endian] - store to a memory *)
+val store : addr_size -> addr:exp -> endian -> size -> exp -> stmt
 
-(** [store32 addr size endian data] - store to a 32-bit addressed memory *)
-val store32 : addr:exp -> endian -> size -> exp -> stmt
-
-(** [store64 addr size endian data] - store to a 64-bit addressed memory *)
-val store64 : addr:exp -> endian -> size -> exp -> stmt
+(** [extract_low_32 e]  *)
+val extract_low_32 : exp -> exp
 
 (** [is_negative mode result] - returns an expression for
     calculating NF depending on mode *)

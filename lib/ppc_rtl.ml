@@ -47,35 +47,51 @@ let find_register regs reg =
     (Or_error.errorf "unknown register %s" (Reg.name reg))
   | Some reg -> Ok reg
 
+let reg_not_found reg =
+  failwith (sprintf "Register not found: %s" (Reg.name reg))
+
 let find_register_exn regs reg =
   match find_var regs (Reg.name reg) with
-  | None -> failwith (sprintf "Register not found: %s" (Reg.name reg))
+  | None -> reg_not_found reg
   | Some reg -> reg
 
-let find_gpr reg = find_register_exn gpr reg
 let find_gpr_opt reg = Result.ok (find_register gpr reg)
 let find_gpr_err reg = find_register gpr reg
 
-let load32 ~addr endian size =
-  Bil.(load ~mem:(var PPC32.mem) ~addr endian size)
+(** will also try to find R# when got X#, (e.g. R3 when got X3)
+    for reasons depended only from llvm side *)
+let find_gpr reg = match find_gpr_opt reg with
+  | Some r -> r
+  | None ->
+    let reg_name = Reg.name reg in
+    if String.is_prefix reg_name ~prefix:"X" then
+      let name = String.substr_replace_first
+          reg_name ~pattern:"X" ~with_:"R" in
+      Var.Set.find_exn gpr ~f:(fun v ->
+          String.equal (Var.name v) name)
+    else reg_not_found reg
 
-let load64 ~addr endian size =
-  Bil.(load ~mem:(var PPC64.mem) ~addr endian size)
+let load addr_size ~addr endian size = match addr_size with
+  | `r32 -> Bil.(load ~mem:(var PPC32.mem) ~addr endian size)
+  | `r64 -> Bil.(load ~mem:(var PPC64.mem) ~addr endian size)
 
-let store32 ~addr endian size data =
-  Bil.(PPC32.mem := store ~mem:(var PPC32.mem) ~addr data endian size)
+let store addr_size ~addr endian size data =
+  match addr_size with
+  | `r32 ->
+    Bil.(PPC32.mem := store ~mem:(var PPC32.mem) ~addr data endian size)
+  | `r64 ->
+    Bil.(PPC64.mem := store ~mem:(var PPC64.mem) ~addr data endian size)
 
-let store64 ~addr endian size data =
-  Bil.(PPC64.mem := store ~mem:(var PPC64.mem) ~addr data endian size)
+let extract_low_32 exp = Bil.extract 31 0 exp
 
 let is_negative mode x = match mode with
-    | `r32 -> Dsl.(extract 31 0 (var x) <$ int @@ Word.zero 32)
-    | `r64 -> Dsl.(var x <$ int @@ Word.zero 64)
+    | `r32 -> Bil.(extract 31 0 (var x) <$ int @@ Word.zero 32)
+    | `r64 -> Bil.(var x <$ int @@ Word.zero 64)
 
 let is_positive mode x = match mode with
-    | `r32 -> Dsl.(extract 31 0 (var x) >$ int @@ Word.zero 32)
-    | `r64 -> Dsl.(var x >$ int @@ Word.zero 64)
+    | `r32 -> Bil.(extract 31 0 (var x) >$ int @@ Word.zero 32)
+    | `r64 -> Bil.(var x >$ int @@ Word.zero 64)
 
 let is_zero mode x = match mode with
-    | `r32 -> Dsl.(extract 31 0 (var x) = int @@ Word.zero 32)
-    | `r64 -> Dsl.(var x = int @@ Word.zero 64)
+    | `r32 -> Bil.(extract 31 0 (var x) = int @@ Word.zero 32)
+    | `r64 -> Bil.(var x = int @@ Word.zero 64)
