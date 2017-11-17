@@ -437,7 +437,7 @@ let popcnt ra rs size =
     examples:
     7c 84 01 74     prtyd r4, r4 (not working in llvm)
     7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
-let parity ra rs size = failwith "llvm doens't now about this insn"
+let parity ra rs size = ppc_fail "llvm doens't now about this insn"
 
 (** Fixed-point Bit Permute Doubleword
     Pages 100 of IBM Power ISATM Version 3.0 B
@@ -590,4 +590,6 @@ let lift t addr_size endian mem ops =
   | `POPCNTB, [| Reg ra; Reg rs; |] -> popcnt ra rs `r8
   | `POPCNTD, [| Reg ra; Reg rs; |] -> popcnt ra rs `r64
   | `BPERMD,  [| Reg ra; Reg rs; Reg rb |] -> bpermd ra rs rb
-  | _ -> failwith "unexpected operand set"
+  | opcode, _ ->
+    let opcode = Sexp.to_string (sexp_of_t opcode) in
+    ppc_fail "%s: unexpected operand set" opcode

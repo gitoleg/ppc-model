@@ -13,10 +13,11 @@ module type Lifter = sig
 end
 
 let lifters : (module Lifter) list = [
-  (module Ppc_load);
-  (module Ppc_store);
   (module Ppc_add);
+  (module Ppc_branch);
+  (module Ppc_load);
   (module Ppc_logical);
+  (module Ppc_store);
 ]
 
 type ppc_lift = addr_size -> endian -> mem -> op array -> dsl

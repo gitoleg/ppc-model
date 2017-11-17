@@ -3,18 +3,37 @@ open Bap.Std
 
 module Hardware : sig
 
+  (** general purpose registers bitwidth *)
   val gpr_bitwidth : int
+
+  (** floating point registers bitwidth *)
   val fpr_bitwidth : int
+
+  (** vector registers bitwidth *)
   val vr_bitwidth  : int
+
+  (** condition register bitwidth *)
   val cr_bitwidth  : int
+
+  (** xer register bitwidth *)
   val xer_bitwidth : int
 
+  (** link register bitwidth *)
+  val lr_bitwidth  : int
+
+  (** count register bitwidth *)
+  val ctr_bitwidth : int
+
+  (** target address register bitwidth *)
+  val tar_bitwidth : int
+
+  (** all general purpose registers *)
   val gpr : Var.Set.t
 
-  (** floating point registers *)
+  (** all floating point registers *)
   val fpr : Var.Set.t
 
-  (** vector registers *)
+  (** all vector registers *)
   val vr : Var.Set.t
 
   (** xer register bits *)

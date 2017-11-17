@@ -37,6 +37,10 @@ exception Invalid_instruction of string
 
 let bil_of_dsl = ident
 
+let ppc_fail format =
+  let fail str = failwith (sprintf "PowerPC lifter fail: %s" str) in
+  Printf.ksprintf fail format
+
 let find_var vars name =
   Var.Set.find vars
     ~f:(fun v -> String.equal name (Var.name v))
@@ -47,8 +51,7 @@ let find_register regs reg =
     (Or_error.errorf "unknown register %s" (Reg.name reg))
   | Some reg -> Ok reg
 
-let reg_not_found reg =
-  failwith (sprintf "Register not found: %s" (Reg.name reg))
+let reg_not_found reg = ppc_fail "Register not found: %s" (Reg.name reg)
 
 let find_register_exn regs reg =
   match find_var regs (Reg.name reg) with

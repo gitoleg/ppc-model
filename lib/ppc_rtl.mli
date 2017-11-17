@@ -140,6 +140,9 @@ exception Invalid_instruction of string
 (** [bil_of_dsl d] - returns a program in BIL language   *)
 val bil_of_dsl : dsl -> bil
 
+(** [ppc_fail error_string] - raise a failure with [error_string] *)
+val ppc_fail : ('a, unit, string, 'b) format4 -> 'a
+
 (** [find_gpr reg] - returns variable with the same name as
     register or thrown failure if variable is not found*)
 val find_gpr : reg -> var

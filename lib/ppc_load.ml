@@ -55,7 +55,7 @@ let lzx addr_size endian size rt ra rb =
     a5 3c 00 14  lhzu r9, 20(r28)
     85 3f ff fc  lwzu r9, -4(r31)  *)
 let lzu addr_size endian size rt imm ra =
-  if Reg.equal rt ra then failwith "Invalid instruction lzu: same operands";
+  if Reg.equal rt ra then ppc_fail "Invalid instruction lzu: same operands";
   let rt = find_gpr rt in
   let ra = find_gpr ra in
   let bits = Size.in_bits addr_size in
@@ -74,7 +74,7 @@ let lzu addr_size endian size rt imm ra =
     7d 3d 52 6e  lhzux r9, r29, r10
     7d 3d 50 6e  lwzux r9, r29, r10  *)
 let lzux addr_size endian size rt ra rb =
-  if Reg.equal rt ra then failwith "Invalid instruction lzux: same operands";
+  if Reg.equal rt ra then ppc_fail "Invalid instruction lzux: same operands";
   let rt = find_gpr rt in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -171,7 +171,7 @@ let lax addr_size endian size rt ra rb =
     examples:
     ac 29 00 05    lhau r1, 5(r9) *)
 let lhau addr_size endian rt ra imm =
-  if Reg.equal rt ra then failwith "Invalid instruction lhau: same operands";
+  if Reg.equal rt ra then ppc_fail "Invalid instruction lhau: same operands";
   let size = `r16 in
   let rt = find_gpr rt in
   let ra = find_gpr ra in
@@ -200,7 +200,7 @@ let lhau addr_size endian rt ra imm =
     7c 25 4a ee    lhaux r1, r5, r9
     7c 25 4a ea    lwaux r1, r5, r9 *)
 let laux addr_size endian size rt ra rb =
-  if Reg.equal rt ra then failwith "Invalid instruction lhaux: same operands";
+  if Reg.equal rt ra then ppc_fail "Invalid instruction lhaux: same operands";
   let rt = find_gpr rt in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -263,7 +263,7 @@ let ldx addr_size endian rt ra rb =
     examples:
     e8 29 00 09    ldu r1, 8(r9) *)
 let ldu addr_size endian rt ra imm =
-  if Reg.equal rt ra then failwith "Invalid instruction ldu: same operands";
+  if Reg.equal rt ra then ppc_fail "Invalid instruction ldu: same operands";
   let rt = find_gpr rt in
   let ra = find_gpr ra in
   let bits = Size.in_bits addr_size in
@@ -282,7 +282,7 @@ let ldu addr_size endian rt ra imm =
     examples:
     7c 28 48 6a    ldux r1, r8, r9 *)
 let ldux addr_size endian rt ra rb =
-  if Reg.equal rt ra then failwith "Invalid instruction ldux: same operands";
+  if Reg.equal rt ra then ppc_fail "Invalid instruction ldux: same operands";
   let rt = find_gpr rt in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -372,4 +372,4 @@ let lift opcode mode endian mem ops =
   | `LDUX, [| Reg rt; Reg _; Reg ra; Reg rb; |] -> ldux mode endian rt ra rb
   | opcode, _ ->
     let opcode = Sexp.to_string (sexp_of_t opcode) in
-    failwith @@ sprintf "%s: unexpected operand set" opcode
+    ppc_fail "%s: unexpected operand set" opcode

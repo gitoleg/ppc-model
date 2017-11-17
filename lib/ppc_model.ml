@@ -1,17 +1,14 @@
 open Core_kernel.Std
 open Bap.Std
 
-let index_range = List.range 0 32
+let range32 = List.range 0 32
+let range64 = List.range 0 64
 
 let make_var_i typ prefix i = Var.create (sprintf "%s%d" prefix i) typ
 
-let make_regs typ prefix =
+let make_regs typ prefix range =
   List.fold ~init:Var.Set.empty ~f:(fun regs i ->
-      Var.Set.add regs (make_var_i typ prefix i)) index_range
-
-let make_bits range prefix =
-  List.fold index_range ~init:Int.Map.empty ~f:(fun bits i ->
-      Int.Map.add bits ~key:i ~data:(make_var_i (Type.imm 1) prefix i))
+      Var.Set.add regs (make_var_i typ prefix i)) range
 
 let flag name = Var.create name (Type.imm 1)
 
@@ -22,23 +19,26 @@ module Hardware = struct
   let vr_bitwidth  = 128
   let cr_bitwidth  = 32
   let xer_bitwidth = 64
+  let lr_bitwidth  = 64
+  let ctr_bitwidth = 64
+  let tar_bitwidth = 64
 
-  let gpr = make_regs (Type.imm gpr_bitwidth) "R"
+  let gpr = make_regs (Type.imm gpr_bitwidth) "R" range32
 
   (** floating point registers *)
-  let fpr = make_regs (Type.imm fpr_bitwidth) "F"
+  let fpr = make_regs (Type.imm fpr_bitwidth) "F" range32
 
   (** vector registers *)
-  let vr = make_regs (Type.imm vr_bitwidth) "VR"
+  let vr = make_regs (Type.imm vr_bitwidth) "VR" range32
 
   (** count register  *)
-  let ctr = Var.create "CTR" (Type.imm 64)
+  let ctr = Var.create "CTR" (Type.imm ctr_bitwidth)
 
   (** link register  *)
-  let lr = Var.create "LR" (Type.imm 64)
+  let lr = Var.create "LR" (Type.imm lr_bitwidth)
 
   (** target register  *)
-  let tar = Var.create "TAR" (Type.imm 64)
+  let tar = Var.create "TAR" (Type.imm tar_bitwidth)
 
   (** fixed precision flags  *)
   let so = flag "SO" (** summary overflow *)
@@ -59,7 +59,7 @@ module Hardware = struct
 
   (** conditional register bits *)
   let cr =
-    List.fold index_range ~init:Int.Map.empty
+    List.fold range32 ~init:Int.Map.empty
       ~f:(fun bits i ->
           let bit = match i with
             | 0 -> nf
@@ -71,7 +71,7 @@ module Hardware = struct
 
   (** fixed point exception register  *)
   let xer =
-    List.fold index_range ~init:Int.Map.empty
+    List.fold range64 ~init:Int.Map.empty
       ~f:(fun bits i ->
           let bit = match i with
             | 33-> ov

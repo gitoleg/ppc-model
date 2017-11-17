@@ -56,7 +56,7 @@ let stx addr_size endian size rs ra rb =
     b5 3d ff ff     sthu r9,-1(r29)
     94 21 ff f0     stwu r1,-16(r1)  *)
 let stu addr_size endian size rs imm ra =
-  if Reg.equal rs ra then failwith "Invalid instruction szu: same operands";
+  if Reg.equal rs ra then ppc_fail "Invalid instruction szu: same operands";
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
@@ -76,7 +76,7 @@ let stu addr_size endian size rs imm ra =
     7d 41 49 6e     stwux r10,r1,r9
     7c 28 49 6a     stdux r1,r8,r9   *)
 let stux addr_size endian size rs ra rb =
-  if Reg.equal rs ra then failwith "Invalid instruction szux: same operands";
+  if Reg.equal rs ra then ppc_fail "Invalid instruction szux: same operands";
   let rs = find_gpr rs in
   let ra = find_gpr ra in
   let rb = find_gpr rb in
@@ -175,4 +175,4 @@ let lift opcode addr_size endian mem ops =
   | `STDU,[| Reg _; Reg rs; Imm imm; Reg ra |] -> stdu addr_size endian rs imm ra
   | opcode, _ ->
     let opcode = Sexp.to_string (sexp_of_t opcode) in
-    failwith @@ sprintf "%s: unexpected operand set" opcode
+    ppc_fail "%s: unexpected operand set" opcode

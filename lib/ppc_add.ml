@@ -125,7 +125,7 @@ let lis rt imm =
     example:
     4c 22 00 04     addpcis r1,4
     llvm doesn't recognize this instruction  *)
-let addpcis rt imm = failwith "unimplemented"
+let addpcis rt imm = ppc_fail "unimplemented"
 
 (** Fixed-Point Arithmetic Instructions - Add
     Page 69 of IBM Power ISATM Version 3.0 B
@@ -232,7 +232,7 @@ let addme_dot addr_size rt ra =
     example:
     7c 22 19 54   addex r1,r2,r3
     llvm doesn't recognize this instruction *)
-let addex rt ra rb = failwith "unimplemented"
+let addex rt ra rb = ppc_fail "unimplemented"
 
 (** Fixed-Point Arithmetic Instructions -
     Page 72 of IBM Power ISATM Version 3.0 B
@@ -292,4 +292,6 @@ let lift opcode addr_size endian mem ops = match opcode, ops with
   | `LI,     [| Reg rt; Imm imm;        |] -> li rt imm
   | `LIS,    [| Reg rt; Imm imm;        |] -> lis rt imm
   | `LA,     [| Reg rt; Imm imm; Reg ra |] -> addi rt ra imm
-  | _ -> failwith "unexpected operand set"
+  | opcode, _ ->
+    let opcode = Sexp.to_string (sexp_of_t opcode) in
+    ppc_fail "%s: unexpected operand set" opcode
