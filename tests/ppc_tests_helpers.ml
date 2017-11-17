@@ -22,9 +22,11 @@ let to_bil arch mem insn =
   let module T = (val (target_of_arch arch)) in
   T.lift mem insn
 
-let get_insn arch bytes =
+let get_insn ?addr arch bytes =
   let width = Arch.addr_size arch |> Size.in_bits in
-  let addr = Addr.of_int ~width 0 in
+  let addr = match addr with
+    | None -> Addr.of_int ~width 0
+    | Some a -> a in
   let mem = create_memory arch bytes addr in
   let dis = create_dis arch in
   match Dis.insn_of_mem dis mem with
@@ -43,26 +45,28 @@ let find_gpr name =
   Var.Set.find_exn Hardware.gpr
     ~f:(fun v -> String.equal (Var.name v) name)
 
-let get_bil arch bytes =
-  let mem,insn = get_insn arch bytes in
+let get_bil ?addr arch bytes =
+  let mem,insn = get_insn ?addr arch bytes in
   to_bil arch mem insn
 
-(** [check_gpr init_bil bytes var expected arch ctxt] -
+(** [check_gpr ?addr init_bil bytes var expected arch ctxt] -
     tests if a result bound to the [var] is equal to
     [exptected]. Evaluates bil, that is a concatenation
-    of [init_bil] and code, obtained from lifting [bytes]. *)
-let check_gpr init bytes var expected arch ctxt =
-  let mem,insn = get_insn arch bytes in
+    of [init_bil] and code, obtained from lifting [bytes].
+    [addr] is an instruction address, 0 by default. *)
+let check_gpr ?addr init bytes var expected arch ctxt =
+  let mem,insn = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
   let c = Stmt.eval (init @ bil) (new Bili.context) in
   match lookup_var c var with
   | None -> assert_bool "var not found OR it's result not Imm" false
   | Some w -> assert_equal ~cmp:Word.equal w expected
 
-(** [eval init_bil bytes arch] - evaluates bil, that is a concatenation
-    of [init_bil] and code, obtained from lifting [bytes]. *)
-let eval init bytes arch =
-  let mem,insn = get_insn arch bytes in
+(** [eval ?addr init_bil bytes arch] - evaluates bil, that is a concatenation
+    of [init_bil] and code, obtained from lifting [bytes].
+    [addr] is an instruction address, 0 by default. *)
+let eval ?addr init bytes arch =
+  let mem,insn = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
   Stmt.eval (init @ bil) (new Bili.context)
 
