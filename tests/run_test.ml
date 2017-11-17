@@ -11,6 +11,7 @@ let () =
 
 let suite = "PPC" >::: [
     Ppc_add_tests.suite;
+    Ppc_branch_tests.suite;
     Ppc_logical_tests.suite;
     Ppc_load_tests.suite;
     Ppc_store_tests.suite;

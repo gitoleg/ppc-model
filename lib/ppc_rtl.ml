@@ -24,6 +24,7 @@ module Dsl = struct
   let extract = Bil.extract
   let concat = Bil.concat
   let if_ = Bil.if_
+  let jmp = Bil.jmp
 end
 
 type dsl = Dsl.t [@@deriving bin_io, compare, sexp]
@@ -105,3 +106,12 @@ let write_result_bits addr_size res =
     pf := is_positive addr_size (var res);
     zf := is_zero addr_size (var res);
   ]
+
+let condition_register_bit n =
+  match Int.Map.find cr n with
+  | Some b -> b
+  | None -> ppc_fail "CR bit number %d does not exists" n
+
+let decrement_counter_register =
+  let one = Word.one ctr_bitwidth in
+  Bil.(ctr := var ctr - int one)

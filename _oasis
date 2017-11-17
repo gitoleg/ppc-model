@@ -15,6 +15,7 @@ Library ppc_lifter
   Path:           lib
   FindLibName:    ppc_lifter
   Modules:        Ppc_add,
+                  Ppc_branch,
                   Ppc_lifter,
                   Ppc_load,
                   Ppc_logical,
@@ -32,6 +33,7 @@ Library ppc_tests
   Install:        false
   CompiledObject: best
   Modules:        Ppc_add_tests,
+                  Ppc_branch_tests,
                   Ppc_load_tests,
                   Ppc_logical_tests,
                   Ppc_store_tests,

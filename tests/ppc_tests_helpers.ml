@@ -43,6 +43,10 @@ let find_gpr name =
   Var.Set.find_exn Hardware.gpr
     ~f:(fun v -> String.equal (Var.name v) name)
 
+let get_bil arch bytes =
+  let mem,insn = get_insn arch bytes in
+  to_bil arch mem insn
+
 (** [check_gpr init_bil bytes var expected arch ctxt] -
     tests if a result bound to the [var] is equal to
     [exptected]. Evaluates bil, that is a concatenation

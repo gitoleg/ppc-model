@@ -34,6 +34,9 @@ module Dsl : sig
   (** [if_ cond s1 s2 -> If(cond,s1,s2)]  *)
   val if_ : exp -> stmt list -> stmt list -> stmt
 
+  (** [jmp x -> Jmp x] *)
+  val jmp : exp -> stmt
+
   (** Infix operators  *)
   module Infix : sig
 
@@ -164,18 +167,25 @@ val store : addr_size -> addr:exp -> endian -> size -> exp -> stmt
 (** [extract_low_32 e] - extracts low 32 bits from [e] *)
 val extract_low_32 : exp -> exp
 
-(** [is_negative mode result] - returns an expression for
-    calculating NF depending on mode *)
+(** [is_negative addr_size exp] - returns an expression that
+    checks an [exp] for negative depending on address size *)
 val is_negative : addr_size -> exp -> exp
 
-(** [is_positive mode result] - returns an expression for
-    calculating PF depending on mode *)
+(** [is_positive addr_size exp] - returns an expression that
+    checks an [exp] for positive depending on address size *)
 val is_positive : addr_size -> exp -> exp
 
-(** [is_zero mode result] - returns an expression for
-    calculating ZF depending on mode *)
+(** [is_zero addr_size exp] - returns an expression that
+    checks an [exp] for zero depending on address size *)
 val is_zero : addr_size -> exp -> exp
 
 (** [write_result_bits addr_size result] - writes three bits
     of condition register according to the [result] *)
 val write_result_bits : addr_size -> var -> stmt list
+
+(** [condition_register_bit] - returns a CR bit number [n].
+    fail if bit not found  *)
+val condition_register_bit : int -> var
+
+(** [decrement_counter_register]  *)
+val decrement_counter_register : stmt
