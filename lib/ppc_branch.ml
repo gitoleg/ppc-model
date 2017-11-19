@@ -4,9 +4,19 @@ open Bap.Std
 open Ppc_model.Hardware
 open Ppc_rtl
 
-let addr_of_exp addr_size exp = match addr_size with
+let addr_of_exp addr_size ?(exp_size=64) exp = match addr_size with
   | `r32 -> extract_low_32 exp
-  | `r64 -> exp
+  | `r64 ->
+    if exp_size = 64 then exp
+    else Dsl.(cast unsigned 64 exp)
+
+let update_lr_register mem addr_size  =
+  let addr_bits = Size.in_bits addr_size in
+  let current = Memory.min_addr mem in
+  let next = Word.(of_int ~width:addr_bits 4 + current) in
+  match addr_size with
+  | `r32 -> Dsl.[lr := cast unsigned lr_bitwidth (int next)]
+  | `r64 -> Dsl.[lr := int next]
 
 (** TODO:  That's weird!, so it's just a temporary solution *)
 let get_cr_bit reg =
@@ -47,27 +57,10 @@ let ba mem addr_size imm =
   Dsl.[ jmp (addr_of_exp addr_size (int jmp_addr)) ]
 
 let bl mem addr_size imm =
-  let addr_bits = Size.in_bits addr_size in
-  let current = Memory.min_addr mem in
-  let next = Word.(of_int ~width:addr_bits 4 + current) in
-  let imm = Imm.to_int64 imm in
-  let imm = Word.of_int64 Int64.(imm lsl 2) in
-  let jmp_addr = Word.(current + imm) in
-  Dsl.[
-    jmp (addr_of_exp addr_size (int jmp_addr));
-    lr := cast unsigned lr_bitwidth (int next);
-  ]
+   b mem addr_size imm  @ update_lr_register mem addr_size
 
 let bla mem addr_size imm =
-  let addr_bits = Size.in_bits addr_size in
-  let current = Memory.min_addr mem in
-  let next = Word.(of_int ~width:addr_bits 4 + current) in
-  let imm = Imm.to_int64 imm in
-  let jmp_addr = Word.of_int64 Int64.(imm lsl 2) in
-  Dsl.[
-    jmp (addr_of_exp addr_size (int jmp_addr));
-    lr := cast unsigned lr_bitwidth (int next);
-  ]
+   ba mem addr_size imm  @ update_lr_register mem addr_size
 
 (** [bo_field_bits bo] - returns an indexed list of bits of BO field  *)
 let bo_field_bits bo =
@@ -136,55 +129,92 @@ let bca mem addr_size endian bo bi bd =
     ]
 
 let bcl mem addr_size endian bo bi bd =
-  let addr_bits = Size.in_bits addr_size in
-  let current = Memory.min_addr mem in
-  let next = Word.(of_int ~width:addr_bits 4 + current) in
-  let bo_bit = bo_bit bo in
-  let bd = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
-  let jmp_addr = Word.(bd + current) in
-  let cr_bit = condition_register_bit (get_cr_bit bi) in
-  let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
-  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
-  with_decrement_counter bo @@
-  if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
-    Dsl.[
-      jmp (addr_of_exp addr_size (int jmp_addr));
-      lr := cast unsigned lr_bitwidth (int next);
-    ]
-  else
-    Dsl.[
-      ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
-      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
-      if_ (var ctr_ok land var cond_ok) [
-        jmp (addr_of_exp addr_size (int jmp_addr));
-      ] [  ];
-      lr := cast unsigned lr_bitwidth (int next);
-    ]
+  bc mem addr_size endian bo bi bd  @ update_lr_register mem addr_size
 
 let bcla mem addr_size endian bo bi bd =
-  let addr_bits = Size.in_bits addr_size in
-  let current = Memory.min_addr mem in
-  let next = Word.(of_int ~width:addr_bits 4 + current) in
+  bca mem addr_size endian bo bi bd  @ update_lr_register mem addr_size
+
+(** Branch Instructions, Branch Conditional to Link Register
+     Page 37 of IBM Power ISATM Version 3.0 B
+     examples:
+    4e 9f 00 20 	bclr	 20, 31
+    4e 9f 00 21 	bclrl	 20, 31 *)
+let bclr mem addr_size endian bo bi bh =
   let bo_bit = bo_bit bo in
-  let jmp_addr = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
   let cr_bit = condition_register_bit (get_cr_bit bi) in
   let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
   let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let zeros = Word.zero 2 in
   with_decrement_counter bo @@
   if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
     Dsl.[
-      jmp (addr_of_exp addr_size (int jmp_addr));
-      lr := cast unsigned lr_bitwidth (int next);
+      jmp (addr_of_exp addr_size ~exp_size:66 (var lr ^ int zeros));
     ]
   else
     Dsl.[
       ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
       cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
       if_ (var ctr_ok land var cond_ok) [
-        jmp (addr_of_exp addr_size (int jmp_addr));
+        jmp (addr_of_exp addr_size ~exp_size:66 (var lr ^ int zeros));
       ] [  ];
-      lr := cast unsigned lr_bitwidth (int next);
     ]
+
+let bclrl mem addr_size endian bo bi bh =
+  bclr mem addr_size endian bo bi bh @ update_lr_register mem addr_size
+
+(** Branch Instructions, Branch Conditional to Count Register
+     Page 37 of IBM Power ISATM Version 3.0 B
+     examples:
+    4d 5f 04 20    bcctr 10,31
+    4d 5f 04 21    bcctrl 10,31 *)
+let bcctr mem addr_size endian bo bi bh =
+  let bo_bit = bo_bit bo in
+  let cr_bit = condition_register_bit (get_cr_bit bi) in
+  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let zeros = Word.zero 2 in
+  if  Word.is_one (bo_bit 4) then
+    Dsl.[
+      jmp (addr_of_exp addr_size ~exp_size:66 (var ctr ^ int zeros));
+    ]
+  else
+    Dsl.[
+      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      if_ (var cond_ok) [
+        jmp (addr_of_exp addr_size ~exp_size:66 (var ctr ^ int zeros));
+      ] [  ];
+    ]
+
+let bcctrl mem addr_size endian bo bi bh =
+  bcctr mem addr_size endian bo bi bh @ update_lr_register mem addr_size
+
+(** Branch Instructions, Branch Conditional to Target Register
+     Page 37 of IBM Power ISATM Version 3.0 B
+     examples:
+    TODO: examples
+    4e 9f 00 20 	bclr	 20, 31
+    4e 9f 00 21 	bclrl	 20, 31 *)
+let bctar mem addr_size endian bo bi bh =
+  let bo_bit = bo_bit bo in
+  let cr_bit = condition_register_bit (get_cr_bit bi) in
+  let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
+  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let zeros = Word.zero 2 in
+  with_decrement_counter bo @@
+  if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
+    Dsl.[
+      jmp (addr_of_exp addr_size ~exp_size:66 (var tar ^ int zeros));
+    ]
+  else
+    Dsl.[
+      ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
+      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      if_ (var ctr_ok land var cond_ok) [
+        jmp (addr_of_exp addr_size ~exp_size:66 (var tar ^ int zeros));
+      ] [  ];
+    ]
+
+let bctarl mem addr_size endian bo bi bh =
+  bctar mem addr_size endian bo bi bh @ update_lr_register mem addr_size
 
 type b = [
   | `B
@@ -200,7 +230,16 @@ type bc = [
   | `gBCLA
 ] [@@deriving sexp, enumerate]
 
-type t = [ b | bc ] [@@deriving sexp, enumerate]
+type bc_reg = [
+  | `gBCLR
+  | `gBCLRL
+  | `gBCCTR
+  | `gBCCTRL
+  | `gBCTAR
+  | `gBCTARL
+] [@@deriving sexp, enumerate]
+
+type t = [ b | bc | bc_reg] [@@deriving sexp, enumerate]
 
 let lift opcode addr_size endian mem ops =
   let open Op in
@@ -213,7 +252,15 @@ let lift opcode addr_size endian mem ops =
   | `gBCA,  [| Imm bo; Reg reg; Imm bd |] -> bca mem addr_size endian bo reg bd
   | `gBCL,  [| Imm bo; Reg reg; Imm bd |] -> bcl mem addr_size endian bo reg bd
   | `gBCLA, [| Imm bo; Reg reg; Imm bd |] -> bcla mem addr_size endian bo reg bd
-  | opcode, _ ->
+ | `gBCLR, [| Imm bo; Reg reg; Imm bd |] -> bclr mem addr_size endian bo reg bd
+ | `gBCLRL,[| Imm bo; Reg reg; Imm bd |] -> bclrl mem addr_size endian bo reg bd
+| `gBCCTR, [| Imm bo; Reg reg; Imm bd |] -> bcctr mem addr_size endian bo reg bd
+ | `gBCCTRL,[| Imm bo; Reg reg; Imm bd |] -> bcctrl mem addr_size endian bo reg bd
+| `gBCTAR, [| Imm bo; Reg reg; Imm bd |] -> bctar mem addr_size endian bo reg bd
+ | `gBCTARL,[| Imm bo; Reg reg; Imm bd |] -> bctarl mem addr_size endian bo reg bd
+
+
+ | opcode, _ ->
     (* let opcode = Sexp.to_string (sexp_of_t opcode) in *)
     (* ppc_fail "%s: unexpected operand set" opcode *)
     ppc_fail "unexpected operand set"
