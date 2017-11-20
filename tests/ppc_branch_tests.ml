@@ -268,41 +268,68 @@ let bcctrl = bcxrx "bcctrl" 528 1 ctr
 let bctar = bcxrx "bctar" 560 0 tar
 let bctar = bcxrx "bctarl" 560 1 tar
 
+let bdnzlr ~jmp arch  (ctxt : test_ctxt) =
+  let bits = Size.in_bits @@ Arch.addr_size arch in
+  let opcode = Word.of_int ~width:6 19 in
+  let bo = Word.of_int ~width:5 0b10000 in
+  let bi = Word.of_int ~width:5 0 in
+  let no_matter = Word.zero 3 in
+  let bh = Word.zero 2 in
+  let opt_opcode = Word.of_int ~width:10 16 in
+  let fin = Word.of_int ~width:1 0 in
+  let bytes = make_bytes [opcode; bo; bi; no_matter; bh; opt_opcode; fin] in
+  let ctr_val =
+    if jmp then Word.of_int ~width:ctr_bitwidth 42
+    else Word.one ctr_bitwidth in
+  let addr = addr_of_arch arch in
+  let init =  Bil.[
+      ctr := int ctr_val;
+      lr := cast unsigned 64 (int addr);
+    ] in
+  let c = eval ~addr init bytes arch in
+  if jmp then
+    let expected = Word.(addr lsl Word.of_int ~width:bits 2) in
+    check_pc "bdnz" c expected
+  else
+    check_jmp_absence "bdzf" c;
+  let x = Word.pred ctr_val in
+  assert_bool "bdnz cnt check failed" @@ is_equal_words x (lookup_var c ctr)
+
 let suite  = "branch" >::: [
-    "b32"                       >:: b `ppc;
-    "ba32"                      >:: ba `ppc;
-    "bl32"                      >:: bl `ppc;
-    "bla32"                     >:: bla `ppc;
+    "b32"                         >:: b `ppc;
+    "ba32"                        >:: ba `ppc;
+    "bl32"                        >:: bl `ppc;
+    "bla32"                       >:: bla `ppc;
 
-    "bc32 counter_unchanged "   >:: bc `ppc counter_unchanged;
-    "bc32 counter_decremented"  >:: bc `ppc counter_decremented;
-    "bc32 jmp_anyway"           >:: bc `ppc jmp_anyway;
-    "bc32 cond_ctr_ok_1"        >:: bc `ppc cond_ctr_ok_1;
-    "bc32 cond_ctr_ok_2"        >:: bc `ppc cond_ctr_ok_2;
-    "bc32 cond_ctr_ok_3"        >:: bc `ppc cond_ctr_ok_3;
-    "bc32 cond_ctr_ok_4"        >:: bc `ppc cond_ctr_ok_4;
-    "bc32 cond_ok_ctr_not_1"    >:: bc `ppc cond_ok_ctr_not_1;
-    "bc32 cond_not_ctr_ok_1"    >:: bc `ppc cond_not_ctr_ok_1;
+    "bc32 counter_unchanged "     >:: bc `ppc counter_unchanged;
+    "bc32 counter_decremented"    >:: bc `ppc counter_decremented;
+    "bc32 jmp_anyway"             >:: bc `ppc jmp_anyway;
+    "bc32 cond_ctr_ok_1"          >:: bc `ppc cond_ctr_ok_1;
+    "bc32 cond_ctr_ok_2"          >:: bc `ppc cond_ctr_ok_2;
+    "bc32 cond_ctr_ok_3"          >:: bc `ppc cond_ctr_ok_3;
+    "bc32 cond_ctr_ok_4"          >:: bc `ppc cond_ctr_ok_4;
+    "bc32 cond_ok_ctr_not_1"      >:: bc `ppc cond_ok_ctr_not_1;
+    "bc32 cond_not_ctr_ok_1"      >:: bc `ppc cond_not_ctr_ok_1;
 
-    "bca32 counter_unchanged "   >:: bca `ppc counter_unchanged;
-    "bca32 counter_decremented"  >:: bca `ppc counter_decremented;
-    "bca32 jmp_anyway"           >:: bca `ppc jmp_anyway;
-    "bca32 cond_ctr_ok_1"        >:: bca `ppc cond_ctr_ok_1;
-    "bca32 cond_ctr_ok_2"        >:: bca `ppc cond_ctr_ok_2;
-    "bca32 cond_ctr_ok_3"        >:: bca `ppc cond_ctr_ok_3;
-    "bca32 cond_ctr_ok_4"        >:: bca `ppc cond_ctr_ok_4;
-    "bca32 cond_ok_ctr_not_1"    >:: bca `ppc cond_ok_ctr_not_1;
-    "bca32 cond_not_ctr_ok_1"    >:: bca `ppc cond_not_ctr_ok_1;
+    "bca32 counter_unchanged "    >:: bca `ppc counter_unchanged;
+    "bca32 counter_decremented"   >:: bca `ppc counter_decremented;
+    "bca32 jmp_anyway"            >:: bca `ppc jmp_anyway;
+    "bca32 cond_ctr_ok_1"         >:: bca `ppc cond_ctr_ok_1;
+    "bca32 cond_ctr_ok_2"         >:: bca `ppc cond_ctr_ok_2;
+    "bca32 cond_ctr_ok_3"         >:: bca `ppc cond_ctr_ok_3;
+    "bca32 cond_ctr_ok_4"         >:: bca `ppc cond_ctr_ok_4;
+    "bca32 cond_ok_ctr_not_1"     >:: bca `ppc cond_ok_ctr_not_1;
+    "bca32 cond_not_ctr_ok_1"     >:: bca `ppc cond_not_ctr_ok_1;
 
-    "bcl32 counter_unchanged "   >:: bcl `ppc counter_unchanged;
-    "bcl32 counter_decremented"  >:: bcl `ppc counter_decremented;
-    "bcl32 jmp_anyway"           >:: bcl `ppc jmp_anyway;
-    "bcl32 cond_ctr_ok_1"        >:: bcl `ppc cond_ctr_ok_1;
-    "bcl32 cond_ctr_ok_2"        >:: bcl `ppc cond_ctr_ok_2;
-    "bcl32 cond_ctr_ok_3"        >:: bcl `ppc cond_ctr_ok_3;
-    "bcl32 cond_ctr_ok_4"        >:: bcl `ppc cond_ctr_ok_4;
-    "bcl32 cond_ok_ctr_not_1"    >:: bcl `ppc cond_ok_ctr_not_1;
-    "bcl32 cond_not_ctr_ok_1"    >:: bcl `ppc cond_not_ctr_ok_1;
+    "bcl32 counter_unchanged "    >:: bcl `ppc counter_unchanged;
+    "bcl32 counter_decremented"   >:: bcl `ppc counter_decremented;
+    "bcl32 jmp_anyway"            >:: bcl `ppc jmp_anyway;
+    "bcl32 cond_ctr_ok_1"         >:: bcl `ppc cond_ctr_ok_1;
+    "bcl32 cond_ctr_ok_2"         >:: bcl `ppc cond_ctr_ok_2;
+    "bcl32 cond_ctr_ok_3"         >:: bcl `ppc cond_ctr_ok_3;
+    "bcl32 cond_ctr_ok_4"         >:: bcl `ppc cond_ctr_ok_4;
+    "bcl32 cond_ok_ctr_not_1"     >:: bcl `ppc cond_ok_ctr_not_1;
+    "bcl32 cond_not_ctr_ok_1"     >:: bcl `ppc cond_not_ctr_ok_1;
 
     "bcla32 counter_unchanged "   >:: bcla `ppc counter_unchanged;
     "bcla32 counter_decremented"  >:: bcla `ppc counter_decremented;
@@ -324,61 +351,63 @@ let suite  = "branch" >::: [
     "bclr32 cond_ok_ctr_not_1"    >:: bclr `ppc cond_ok_ctr_not_1;
     "bclr32 cond_not_ctr_ok_1"    >:: bclr `ppc cond_not_ctr_ok_1;
 
-    "bclrl32 counter_unchanged "   >:: bclrl `ppc counter_unchanged;
-    "bclrl32 counter_decremented"  >:: bclrl `ppc counter_decremented;
-    "bclrl32 jmp_anyway"           >:: bclrl `ppc jmp_anyway;
-    "bclrl32 cond_ctr_ok_1"        >:: bclrl `ppc cond_ctr_ok_1;
-    "bclrl32 cond_ctr_ok_2"        >:: bclrl `ppc cond_ctr_ok_2;
-    "bclrl32 cond_ctr_ok_3"        >:: bclrl `ppc cond_ctr_ok_3;
-    "bclrl32 cond_ctr_ok_4"        >:: bclrl `ppc cond_ctr_ok_4;
-    "bclrl32 cond_ok_ctr_not_1"    >:: bclrl `ppc cond_ok_ctr_not_1;
-    "bclrl32 cond_not_ctr_ok_1"    >:: bclrl `ppc cond_not_ctr_ok_1;
+    "bclrl32 counter_unchanged "  >:: bclrl `ppc counter_unchanged;
+    "bclrl32 counter_decremented" >:: bclrl `ppc counter_decremented;
+    "bclrl32 jmp_anyway"          >:: bclrl `ppc jmp_anyway;
+    "bclrl32 cond_ctr_ok_1"       >:: bclrl `ppc cond_ctr_ok_1;
+    "bclrl32 cond_ctr_ok_2"       >:: bclrl `ppc cond_ctr_ok_2;
+    "bclrl32 cond_ctr_ok_3"       >:: bclrl `ppc cond_ctr_ok_3;
+    "bclrl32 cond_ctr_ok_4"       >:: bclrl `ppc cond_ctr_ok_4;
+    "bclrl32 cond_ok_ctr_not_1"   >:: bclrl `ppc cond_ok_ctr_not_1;
+    "bclrl32 cond_not_ctr_ok_1"   >:: bclrl `ppc cond_not_ctr_ok_1;
 
-    "bdnz32 jmp"      >:: bdnz ~jmp:true `ppc ;
-    "bdnz32 no jmp"     >:: bdnz ~jmp:false `ppc ;
+    "bdnz32 jmp"                  >:: bdnz ~jmp:true `ppc;
+    "bdnz32 no jmp"               >:: bdnz ~jmp:false `ppc;
+    "bdnzlr32 jmp"                >:: bdnzlr ~jmp:true `ppc;
+    "bdnzlr32 no jmp"             >:: bdnzlr ~jmp:false `ppc;
 
-    "bcctr32 jmp_anyway"           >:: bcctr `ppc jmp_anyway;
-    "bcctr32 cond_ok"     >:: bcctr `ppc cond_ok;
-    "bcctr32 cond_not"    >:: bcctr `ppc cond_not;
+    "bcctr32 jmp_anyway"          >:: bcctr `ppc jmp_anyway;
+    "bcctr32 cond_ok"             >:: bcctr `ppc cond_ok;
+    "bcctr32 cond_not"            >:: bcctr `ppc cond_not;
 
-    "bcctrl32 jmp_anyway"           >:: bcctrl `ppc jmp_anyway;
-    "bcctrl32 cond_ok"     >:: bcctrl `ppc cond_ok;
-    "bcctrl32 cond_not"    >:: bcctrl `ppc cond_not;
+    "bcctrl32 jmp_anyway"         >:: bcctrl `ppc jmp_anyway;
+    "bcctrl32 cond_ok"            >:: bcctrl `ppc cond_ok;
+    "bcctrl32 cond_not"           >:: bcctrl `ppc cond_not;
 
-    "b64"                       >:: b `ppc64;
-    "ba64"                      >:: ba `ppc64;
-    "bl64"                      >:: bl `ppc64;
-    "bla64"                     >:: bla `ppc64;
+    "b64"                         >:: b `ppc64;
+    "ba64"                        >:: ba `ppc64;
+    "bl64"                        >:: bl `ppc64;
+    "bla64"                       >:: bla `ppc64;
 
-    "bc64 counter_unchanged "   >:: bc `ppc64 counter_unchanged;
-    "bc64 counter_decremented"  >:: bc `ppc64 counter_decremented;
-    "bc64 jmp_anyway"           >:: bc `ppc64 jmp_anyway;
-    "bc64 cond_ctr_ok_1"        >:: bc `ppc64 cond_ctr_ok_1;
-    "bc64 cond_ctr_ok_2"        >:: bc `ppc64 cond_ctr_ok_2;
-    "bc64 cond_ctr_ok_3"        >:: bc `ppc64 cond_ctr_ok_3;
-    "bc64 cond_ctr_ok_4"        >:: bc `ppc64 cond_ctr_ok_4;
-    "bc64 cond_ok_ctr_not_1"    >:: bc `ppc64 cond_ok_ctr_not_1;
-    "bc64 cond_not_ctr_ok_1"    >:: bc `ppc64 cond_not_ctr_ok_1;
+    "bc64 counter_unchanged "     >:: bc `ppc64 counter_unchanged;
+    "bc64 counter_decremented"    >:: bc `ppc64 counter_decremented;
+    "bc64 jmp_anyway"             >:: bc `ppc64 jmp_anyway;
+    "bc64 cond_ctr_ok_1"          >:: bc `ppc64 cond_ctr_ok_1;
+    "bc64 cond_ctr_ok_2"          >:: bc `ppc64 cond_ctr_ok_2;
+    "bc64 cond_ctr_ok_3"          >:: bc `ppc64 cond_ctr_ok_3;
+    "bc64 cond_ctr_ok_4"          >:: bc `ppc64 cond_ctr_ok_4;
+    "bc64 cond_ok_ctr_not_1"      >:: bc `ppc64 cond_ok_ctr_not_1;
+    "bc64 cond_not_ctr_ok_1"      >:: bc `ppc64 cond_not_ctr_ok_1;
 
-    "bca64 counter_unchanged "   >:: bca `ppc64 counter_unchanged;
-    "bca64 counter_decremented"  >:: bca `ppc64 counter_decremented;
-    "bca64 jmp_anyway"           >:: bca `ppc64 jmp_anyway;
-    "bca64 cond_ctr_ok_1"        >:: bca `ppc64 cond_ctr_ok_1;
-    "bca64 cond_ctr_ok_2"        >:: bca `ppc64 cond_ctr_ok_2;
-    "bca64 cond_ctr_ok_3"        >:: bca `ppc64 cond_ctr_ok_3;
-    "bca64 cond_ctr_ok_4"        >:: bca `ppc64 cond_ctr_ok_4;
-    "bca64 cond_ok_ctr_not_1"    >:: bca `ppc64 cond_ok_ctr_not_1;
-    "bca64 cond_not_ctr_ok_1"    >:: bca `ppc64 cond_not_ctr_ok_1;
+    "bca64 counter_unchanged "    >:: bca `ppc64 counter_unchanged;
+    "bca64 counter_decremented"   >:: bca `ppc64 counter_decremented;
+    "bca64 jmp_anyway"            >:: bca `ppc64 jmp_anyway;
+    "bca64 cond_ctr_ok_1"         >:: bca `ppc64 cond_ctr_ok_1;
+    "bca64 cond_ctr_ok_2"         >:: bca `ppc64 cond_ctr_ok_2;
+    "bca64 cond_ctr_ok_3"         >:: bca `ppc64 cond_ctr_ok_3;
+    "bca64 cond_ctr_ok_4"         >:: bca `ppc64 cond_ctr_ok_4;
+    "bca64 cond_ok_ctr_not_1"     >:: bca `ppc64 cond_ok_ctr_not_1;
+    "bca64 cond_not_ctr_ok_1"     >:: bca `ppc64 cond_not_ctr_ok_1;
 
-    "bcl64 counter_unchanged "   >:: bcl `ppc64 counter_unchanged;
-    "bcl64 counter_decremented"  >:: bcl `ppc64 counter_decremented;
-    "bcl64 jmp_anyway"           >:: bcl `ppc64 jmp_anyway;
-    "bcl64 cond_ctr_ok_1"        >:: bcl `ppc64 cond_ctr_ok_1;
-    "bcl64 cond_ctr_ok_2"        >:: bcl `ppc64 cond_ctr_ok_2;
-    "bcl64 cond_ctr_ok_3"        >:: bcl `ppc64 cond_ctr_ok_3;
-    "bcl64 cond_ctr_ok_4"        >:: bcl `ppc64 cond_ctr_ok_4;
-    "bcl64 cond_ok_ctr_not_1"    >:: bcl `ppc64 cond_ok_ctr_not_1;
-    "bcl64 cond_not_ctr_ok_1"    >:: bcl `ppc64 cond_not_ctr_ok_1;
+    "bcl64 counter_unchanged "    >:: bcl `ppc64 counter_unchanged;
+    "bcl64 counter_decremented"   >:: bcl `ppc64 counter_decremented;
+    "bcl64 jmp_anyway"            >:: bcl `ppc64 jmp_anyway;
+    "bcl64 cond_ctr_ok_1"         >:: bcl `ppc64 cond_ctr_ok_1;
+    "bcl64 cond_ctr_ok_2"         >:: bcl `ppc64 cond_ctr_ok_2;
+    "bcl64 cond_ctr_ok_3"         >:: bcl `ppc64 cond_ctr_ok_3;
+    "bcl64 cond_ctr_ok_4"         >:: bcl `ppc64 cond_ctr_ok_4;
+    "bcl64 cond_ok_ctr_not_1"     >:: bcl `ppc64 cond_ok_ctr_not_1;
+    "bcl64 cond_not_ctr_ok_1"     >:: bcl `ppc64 cond_not_ctr_ok_1;
 
     "bcla64 counter_unchanged "   >:: bcla `ppc64 counter_unchanged;
     "bcla64 counter_decremented"  >:: bcla `ppc64 counter_decremented;
@@ -400,25 +429,27 @@ let suite  = "branch" >::: [
     "bclr64 cond_ok_ctr_not_1"    >:: bclr `ppc64 cond_ok_ctr_not_1;
     "bclr64 cond_not_ctr_ok_1"    >:: bclr `ppc64 cond_not_ctr_ok_1;
 
-    "bclrl64 counter_unchanged "   >:: bclrl `ppc64 counter_unchanged;
-    "bclrl64 counter_decremented"  >:: bclrl `ppc64 counter_decremented;
-    "bclrl64 jmp_anyway"           >:: bclrl `ppc64 jmp_anyway;
-    "bclrl64 cond_ctr_ok_1"        >:: bclrl `ppc64 cond_ctr_ok_1;
-    "bclrl64 cond_ctr_ok_2"        >:: bclrl `ppc64 cond_ctr_ok_2;
-    "bclrl64 cond_ctr_ok_3"        >:: bclrl `ppc64 cond_ctr_ok_3;
-    "bclrl64 cond_ctr_ok_4"        >:: bclrl `ppc64 cond_ctr_ok_4;
-    "bclrl64 cond_ok_ctr_not_1"    >:: bclrl `ppc64 cond_ok_ctr_not_1;
-    "bclrl64 cond_not_ctr_ok_1"    >:: bclrl `ppc64 cond_not_ctr_ok_1;
+    "bclrl64 counter_unchanged "  >:: bclrl `ppc64 counter_unchanged;
+    "bclrl64 counter_decremented" >:: bclrl `ppc64 counter_decremented;
+    "bclrl64 jmp_anyway"          >:: bclrl `ppc64 jmp_anyway;
+    "bclrl64 cond_ctr_ok_1"       >:: bclrl `ppc64 cond_ctr_ok_1;
+    "bclrl64 cond_ctr_ok_2"       >:: bclrl `ppc64 cond_ctr_ok_2;
+    "bclrl64 cond_ctr_ok_3"       >:: bclrl `ppc64 cond_ctr_ok_3;
+    "bclrl64 cond_ctr_ok_4"       >:: bclrl `ppc64 cond_ctr_ok_4;
+    "bclrl64 cond_ok_ctr_not_1"   >:: bclrl `ppc64 cond_ok_ctr_not_1;
+    "bclrl64 cond_not_ctr_ok_1"   >:: bclrl `ppc64 cond_not_ctr_ok_1;
 
-    "bdnz64 jmp"      >:: bdnz ~jmp:true `ppc64;
-    "bdnz64 no jmp" >:: bdnz ~jmp:false `ppc64;
+    "bdnz64 jmp"                  >:: bdnz ~jmp:true `ppc64;
+    "bdnz64 no jmp"               >:: bdnz ~jmp:false `ppc64;
+    "bdnzlr64 jmp"                >:: bdnzlr ~jmp:true `ppc64;
+    "bdnzlr64 no jmp"             >:: bdnzlr ~jmp:false `ppc64;
 
-    "bcctr64 jmp_anyway"           >:: bcctr `ppc64 jmp_anyway;
-    "bcctr64 cond_ok"     >:: bcctr `ppc64 cond_ok;
-    "bcctr64 cond_not"    >:: bcctr `ppc64 cond_not;
+    "bcctr64 jmp_anyway"          >:: bcctr `ppc64 jmp_anyway;
+    "bcctr64 cond_ok"             >:: bcctr `ppc64 cond_ok;
+    "bcctr64 cond_not"            >:: bcctr `ppc64 cond_not;
 
-    "bcctrl64 jmp_anyway"           >:: bcctrl `ppc64 jmp_anyway;
-    "bcctrl64 cond_ok"     >:: bcctrl `ppc64 cond_ok;
-    "bcctrl64 cond_not"    >:: bcctrl `ppc64 cond_not;
+    "bcctrl64 jmp_anyway"         >:: bcctrl `ppc64 jmp_anyway;
+    "bcctrl64 cond_ok"            >:: bcctrl `ppc64 cond_ok;
+    "bcctrl64 cond_not"           >:: bcctrl `ppc64 cond_not;
 
   ]
