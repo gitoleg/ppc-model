@@ -234,7 +234,7 @@ let addme_dot addr_size rt ra =
     llvm doesn't recognize this instruction *)
 let addex rt ra rb = ppc_fail "unimplemented"
 
-(** Fixed-Point Arithmetic Instructions -
+(** Fixed-Point Arithmetic Instructions - Add to Zero extended
     Page 72 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 01 94   addze r1,r2

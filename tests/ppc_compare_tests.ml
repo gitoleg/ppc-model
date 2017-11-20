@@ -8,7 +8,7 @@ open Ppc_tests_helpers
 
 type expected = LT | GT | EQ
 
-let cr_field_num = 7
+let cr_field_num = 7  (** in IBM style, i.e. least significant byte  *)
 
 let print_bits lt gt eq =
   let str = function
@@ -82,7 +82,7 @@ let cmpd = cmp "cmpd" ~opt_opcode:0 1
 let cmplw = cmp "cmplw" ~opt_opcode:32 0
 let cmpld = cmp "cmpld" ~opt_opcode:32 1
 
-let suite = "fixpoint compare" >::: [
+let suite = "compare" >::: [
 
     "cmpwi32: lt"            >:: cmpwi 42L 44L LT `ppc;
     "cmpwi32: gt"            >:: cmpwi 44L 42L GT `ppc;
@@ -147,9 +147,6 @@ let suite = "fixpoint compare" >::: [
     "cmpld32: 64 operand, 2"  >:: cmpld 0xFBCDEFAB_00000042L 0x44L GT `ppc;
     "cmpld32: lt big"         >:: cmpld 42L 0xFFFFFFFFL LT `ppc;
     "cmpld32: gt big"         >:: cmpld 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc;
-
-
-
 
     "cmpwi64: lt"             >:: cmpwi 42L 44L LT `ppc64;
     "cmpwi64: gt"             >:: cmpwi 44L 42L GT `ppc64;

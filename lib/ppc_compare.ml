@@ -76,9 +76,6 @@ let cmp op_size bf ra rb =
     ];
   ] @ write_cr_field fn (Dsl.var c)
 
-
-
-
 (** Fix-point Compare Logical Immediate
     Page 86 of IBM Power ISATM Version 3.0 B
     examples:
