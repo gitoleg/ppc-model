@@ -62,10 +62,10 @@ module Hardware = struct
     List.fold range32 ~init:Int.Map.empty
       ~f:(fun bits i ->
           let bit = match i with
-            | 0 -> nf
-            | 1 -> pf
-            | 2 -> zf
-            | 3 -> so
+            | 31 -> nf
+            | 30 -> pf
+            | 29 -> zf
+            | 28 -> so
             | _ -> make_var_i (Type.imm 1) "CR" i in
           Int.Map.add bits ~key:i ~data:bit)
 
@@ -74,10 +74,11 @@ module Hardware = struct
     List.fold range64 ~init:Int.Map.empty
       ~f:(fun bits i ->
           let bit = match i with
-            | 33-> ov
-            | 34 -> ca
-            | 44 -> ov32
-            | 45 -> ca32
+            | 31 -> so
+            | 30 -> ov
+            | 29 -> ca
+            | 19 -> ov32
+            | 18 -> ca32
             | _ -> make_var_i (Type.imm 1) "XER" i in
           Int.Map.add bits ~key:i ~data:bit)
 
