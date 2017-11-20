@@ -100,7 +100,7 @@ let is_zero mode exp = match mode with
     | `r32 -> Bil.(extract_low_32 exp = int @@ Word.zero 32)
     | `r64 -> Bil.(exp = int @@ Word.zero 64)
 
-let write_result_bits addr_size res =
+let write_fixpoint_result addr_size res =
   Bil.[
     nf := is_negative addr_size (var res);
     pf := is_positive addr_size (var res);

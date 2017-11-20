@@ -139,7 +139,7 @@ let add rt ra rb =
   Dsl.[rt := var ra + var rb]
 
 let add_dot addr_size rt ra rb =
-  add rt ra rb @ write_result_bits addr_size (find_gpr rt)
+  add rt ra rb @ write_fixpoint_result addr_size (find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
     Page 69 of IBM Power ISATM Version 3.0 B
@@ -165,7 +165,7 @@ let addic addr_size rt ra imm =
     34 21 00 10    addic. r1, r1, 16
     37 de fd 28    addic. r30, r30, -728  *)
 let addic_dot addr_size rt ra imm =
-  addic addr_size rt ra imm @ write_result_bits addr_size (find_gpr rt)
+  addic addr_size rt ra imm @ write_fixpoint_result addr_size (find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
@@ -185,7 +185,7 @@ let addc addr_size rt ra rb =
   ]
 
 let addc_dot addr_size rt ra rb =
-  addc addr_size rt ra rb @ write_result_bits addr_size (find_gpr rt)
+  addc addr_size rt ra rb @ write_fixpoint_result addr_size (find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Extend
     Page 71 of IBM Power ISATM Version 3.0 B
@@ -205,7 +205,7 @@ let adde addr_size rt ra rb =
   ]
 
 let adde_dot addr_size rt ra rb =
-  adde addr_size rt ra rb @ write_result_bits addr_size (find_gpr rt)
+  adde addr_size rt ra rb @ write_fixpoint_result addr_size (find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add to Minus One Extend
     Page 71 of IBM Power ISATM Version 3.0 B
@@ -225,7 +225,7 @@ let addme addr_size rt ra =
   ]
 
 let addme_dot addr_size rt ra =
-  addme addr_size rt ra @ write_result_bits addr_size (find_gpr rt)
+  addme addr_size rt ra @ write_fixpoint_result addr_size (find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Extended using alternate carry bit
     Page 72 of IBM Power ISATM Version 3.0 B
@@ -251,7 +251,7 @@ let addze addr_size rt ra =
   ]
 
 let addze_dot addr_size rt ra =
-  addze addr_size rt ra @ write_result_bits addr_size (find_gpr rt)
+  addze addr_size rt ra @ write_fixpoint_result addr_size (find_gpr rt)
 
 type t = [
   | `ADD4

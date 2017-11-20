@@ -179,9 +179,9 @@ val is_positive : addr_size -> exp -> exp
     checks an [exp] for zero depending on address size *)
 val is_zero : addr_size -> exp -> exp
 
-(** [write_result_bits addr_size result] - writes three bits
+(** [write_fixpoint_result addr_size result] - writes three bits
     of condition register according to the [result] *)
-val write_result_bits : addr_size -> var -> stmt list
+val write_fixpoint_result : addr_size -> var -> stmt list
 
 (** [condition_register_bit] - returns a CR bit number [n].
     fail if bit not found  *)

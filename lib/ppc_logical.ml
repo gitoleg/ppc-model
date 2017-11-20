@@ -59,7 +59,7 @@ let and_ ra rs rb =
   ]
 
 let and_dot addr_size ra rs rb =
-  and_ ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  and_ ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point AND with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -75,7 +75,7 @@ let andc ra rs rb =
   ]
 
 let andc_dot addr_size ra rs rb =
-  andc ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  andc ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point OR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -118,7 +118,7 @@ let or_ ra rs rb =
   ]
 
 let or_dot addr_size ra rs rb =
-  or_ ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  or_ ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point OR with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -134,7 +134,7 @@ let orc ra rs rb =
   ]
 
 let orc_dot addr_size ra rs rb =
-  orc ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  orc ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point XOR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -178,7 +178,7 @@ let xor_ ra rs rb =
   ]
 
 let xor_dot addr_size ra rs rb =
-  xor_ ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  xor_ ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point NAND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -194,7 +194,7 @@ let nand ra rs rb =
   ]
 
 let nand_dot addr_size ra rs rb =
-  nand ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  nand ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point NOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -210,7 +210,7 @@ let nor ra rs rb =
   ]
 
 let nor_dot addr_size ra rs rb =
-  nor ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  nor ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point Equivalent
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -226,7 +226,7 @@ let eqv ra rs rb =
   ]
 
 let eqv_dot addr_size ra rs rb =
-  eqv ra rs rb @ write_result_bits addr_size (find_gpr ra)
+  eqv ra rs rb @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point Extend Sign Byte/Halfword/Word
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -257,7 +257,7 @@ let exts ra rs size =
   ]
 
 let exts_dot addr_size ra rs size =
-  exts ra rs size @ write_result_bits addr_size (find_gpr ra)
+  exts ra rs size @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point Count Leading Zeros Word/Doubleword
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -300,7 +300,7 @@ let cntlz ra rs size =
   init @ loop @ finish
 
 let cntlz_dot addr_size ra rs size =
-  cntlz ra rs size @ write_result_bits addr_size (find_gpr ra)
+  cntlz ra rs size @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point Count Trailing Zeros Word
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -340,7 +340,7 @@ let cnttz ra rs size =
   init @ loop @ finish
 
 let cnttz_dot addr_size ra rs size =
-  cnttz ra rs size @ write_result_bits addr_size (find_gpr ra)
+  cnttz ra rs size @ write_fixpoint_result addr_size (find_gpr ra)
 
 (** Fixed-point Compare Bytes
     Pages 92-98 of IBM Power ISATM Version 3.0 B
