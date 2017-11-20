@@ -187,5 +187,9 @@ val write_fixpoint_result : addr_size -> var -> stmt list
     fail if bit not found  *)
 val condition_register_bit : int -> var
 
+(** [condition_registr_field reg] - return a CR field number
+    from a register [reg] name. *)
+val condition_register_field : reg -> int
+
 (** [decrement_counter_register]  *)
 val decrement_counter_register : stmt

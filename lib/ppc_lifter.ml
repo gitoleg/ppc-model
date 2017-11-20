@@ -15,6 +15,7 @@ end
 let lifters : (module Lifter) list = [
   (module Ppc_add);
   (module Ppc_branch);
+  (module Ppc_compare);
   (module Ppc_load);
   (module Ppc_logical);
   (module Ppc_store);

@@ -86,3 +86,22 @@ let check_mem init bytes mem ~addr ~size expected ?(endian=BigEndian) arch ctxt 
    match load_word c mem addr endian size with
   | None -> assert_bool "word not found OR it's result not Imm" false
   | Some w -> assert_equal ~cmp:Word.equal w expected
+
+let concat_words ws = match ws with
+  | [] -> failwith "words list is empty!"
+  | w :: ws ->
+    List.fold ~init:w ~f:(fun ws w -> Word.concat ws w) ws
+
+(** [make_bytes ws] - returns a string representation of concated words [ws] *)
+let make_bytes ws =
+  let bytes = concat_words ws in
+  let bytes = Seq.to_list @@ Word.enum_chars bytes BigEndian in
+  String.of_char_list bytes
+
+let is_equal_words w = function
+  | None -> false
+  | Some w' -> Word.equal w w'
+
+let string_of_bytes bytes =
+  String.fold ~init:"" ~f:(fun acc b ->
+      sprintf "%s%02X " acc (Char.to_int b)) bytes

@@ -112,6 +112,17 @@ let condition_register_bit n =
   | Some b -> b
   | None -> ppc_fail "CR bit number %d does not exists" n
 
+let condition_register_field reg =
+  let name = Reg.name reg in
+  let x =
+    try
+      int_of_string (String.subo ~pos:2 ~len:1 name)
+    with _ ->
+      ppc_fail "can't extract a CR field number from %s" name in
+  if x >= 0 && x <= 7 then 7 - x
+  else
+    ppc_fail "Unexpected CR field number: %x (must be in range [0; 7])" x
+
 let decrement_counter_register =
   let one = Word.one ctr_bitwidth in
   Bil.(ctr := var ctr - int one)

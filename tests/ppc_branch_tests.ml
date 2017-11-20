@@ -10,10 +10,6 @@ let typecheck bytes arch ctxt =
   let bil = get_bil arch bytes in
   assert_bool "typecheck failed" (Result.is_ok bil)
 
-let is_equal_words w = function
-  | None -> false
-  | Some w' -> Word.equal w w'
-
 let check_pc name c addr =
   match c#pc with
   | Bil.Imm a ->
@@ -42,8 +38,7 @@ let b arch ctxt =
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =
-    Or_error.ok_exn @@
-    Word.extract ~hi:(bits - 1) ~lo:0 @@
+    extract ~hi:(bits - 1) ~lo:0 @@
     Word.(addr + (imm lsl Word.of_int ~width:bits 2)) in
   let c = eval ~addr [] bytes arch in
   check_pc "b" c expected
@@ -57,8 +52,7 @@ let ba arch ctxt =
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =
-    Or_error.ok_exn @@
-    Word.extract ~hi:(bits - 1) ~lo:0 @@
+    extract ~hi:(bits - 1) ~lo:0 @@
     Word.(imm lsl Word.of_int ~width:bits 2) in
   let c = eval ~addr [] bytes arch in
   check_pc "ba" c expected
@@ -77,8 +71,7 @@ let bl arch ctxt =
   let c = eval ~addr [] bytes arch in
   check_pc "bl" c expected;
   let next = Word.(of_int ~width:bits 4 + addr) in
-  let next = Or_error.ok_exn @@
-    Word.extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
+  let next = extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
   assert_bool "bl failed" @@ is_equal_words next (lookup_var c lr)
 
 let bla arch ctxt =
@@ -90,14 +83,12 @@ let bla arch ctxt =
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =
-    Or_error.ok_exn @@
-    Word.extract ~hi:(bits - 1) ~lo:0 @@
+    extract ~hi:(bits - 1) ~lo:0 @@
     Word.(imm lsl Word.of_int ~width:bits 2) in
   let c = eval ~addr [] bytes arch in
   check_pc "bla" c expected;
   let next = Word.(of_int ~width:bits 4 + addr) in
-  let next = Or_error.ok_exn @@
-    Word.extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
+  let next = extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
   assert_bool "bla failed" @@ is_equal_words next (lookup_var c lr)
 
 type bo = {
@@ -145,16 +136,6 @@ let cond_ok = make_bo  ~cond_reg0:0 ~expect_jump:true 0b00010
 (** cond: bo3 = 1; CR0 = 0;  *)
 let cond_not = make_bo ~cond_reg0:0 0b01010
 
-let concat_words ws = match ws with
-  | [] -> failwith "words list is empty!"
-  | w :: ws ->
-    List.fold ~init:w ~f:(fun ws w -> Word.concat ws w) ws
-
-let make_bytes ws =
-  let bytes = concat_words ws in
-  let bytes = Seq.to_list @@ Word.enum_chars bytes BigEndian in
-  String.of_char_list bytes
-
 let bcx name fin arch case (ctxt : test_ctxt) =
   let imm = 42 in
   let aa_is_set = fin land 2 <> 0 in
@@ -189,8 +170,7 @@ let bcx name fin arch case (ctxt : test_ctxt) =
       assert_bool (sprintf "%s failed" name) @@ is_equal_words x (lookup_var c ctr) in
   if lk_is_set then
     let next = Word.(of_int ~width:bits 4 + addr) in
-    let next = Or_error.ok_exn @@
-      Word.extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
+    let next = extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
     assert_bool (sprintf "%s failed to check LR value" name) @@ is_equal_words next (lookup_var c lr)
 
 let bc = bcx "bc" 0
