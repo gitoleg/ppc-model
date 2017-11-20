@@ -266,7 +266,7 @@ let bclrl = bcxrx "bclrl" 16 1 lr
 let bcctr = bcxrx "bcctr" 528 0 ctr
 let bcctrl = bcxrx "bcctrl" 528 1 ctr
 let bctar = bcxrx "bctar" 560 0 tar
-let bctar = bcxrx "bctarl" 560 1 tar
+let bctarl = bcxrx "bctarl" 560 1 tar
 
 let bdnzlr ~jmp arch  (ctxt : test_ctxt) =
   let bits = Size.in_bits @@ Arch.addr_size arch in

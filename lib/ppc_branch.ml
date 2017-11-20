@@ -57,10 +57,10 @@ let ba mem addr_size imm =
   Dsl.[ jmp (addr_of_exp addr_size (int jmp_addr)) ]
 
 let bl mem addr_size imm =
-   b mem addr_size imm  @ update_lr_register mem addr_size
+  b mem addr_size imm  @ update_lr_register mem addr_size
 
 let bla mem addr_size imm =
-   ba mem addr_size imm  @ update_lr_register mem addr_size
+  ba mem addr_size imm  @ update_lr_register mem addr_size
 
 (** [bo_field_bits bo] - returns an indexed list of bits of BO field  *)
 let bo_field_bits bo =
@@ -148,8 +148,8 @@ let bdnz mem addr_size  bd =
   ]
 
 (** Branch Instructions, Branch Conditional to Link Register
-     Page 37 of IBM Power ISATM Version 3.0 B
-     examples:
+    Page 38 of IBM Power ISATM Version 3.0 B
+    examples:
     4e 9f 00 20 	bclr	 20, 31
     4e 9f 00 21 	bclrl	 20, 31 *)
 let bclr mem addr_size  bo bi bh =
@@ -186,8 +186,8 @@ let bdnzlr mem addr_size =
   ]
 
 (** Branch Instructions, Branch Conditional to Count Register
-     Page 37 of IBM Power ISATM Version 3.0 B
-     examples:
+    Page 38 of IBM Power ISATM Version 3.0 B
+    examples:
     4d 5f 04 20    bcctr 10,31
     4d 5f 04 21    bcctrl 10,31 *)
 let bcctr mem addr_size  bo bi bh =
@@ -211,11 +211,11 @@ let bcctrl mem addr_size  bo bi bh =
   bcctr mem addr_size  bo bi bh @ update_lr_register mem addr_size
 
 (** Branch Instructions, Branch Conditional to Target Register
-     Page 37 of IBM Power ISATM Version 3.0 B
-     examples:
-    TODO: examples
-    4e 9f 00 20 	bclr	 20, 31
-    4e 9f 00 21 	bclrl	 20, 31 *)
+    Page 39 of IBM Power ISATM Version 3.0 B
+    examples:
+    4e 9f 04 60    bctar
+    4e 9f 04 61    bctarl
+    bctar insn aren't implemented ny llvm right now *)
 let bctar mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
   let cr_bit = condition_register_bit (get_cr_bit bi) in
@@ -266,28 +266,26 @@ type bc_reg = [
 
 type t = [ b | bc | bc_reg] [@@deriving sexp, enumerate]
 
+let string_of_opcode op = Sexp.to_string (sexp_of_t op)
+
 let lift opcode addr_size  endian mem ops =
   let open Op in
   match opcode, ops with
-  | `B,   [| Imm imm; |] -> b mem addr_size imm
-  | `BA,  [| Imm imm; |] -> ba mem addr_size imm
-  | `BL,  [| Imm imm; |] -> bl mem addr_size imm
-  | `BLA, [| Imm imm; |] -> bla mem addr_size imm
-  | `gBC,   [| Imm bo; Reg reg; Imm bd |] -> bc mem addr_size  bo reg bd
-  | `gBCA,  [| Imm bo; Reg reg; Imm bd |] -> bca mem addr_size  bo reg bd
-  | `gBCL,  [| Imm bo; Reg reg; Imm bd |] -> bcl mem addr_size  bo reg bd
-  | `gBCLA, [| Imm bo; Reg reg; Imm bd |] -> bcla mem addr_size  bo reg bd
-  | `BDNZ, [| Imm bd |]                                -> bdnz mem addr_size bd
-  | `gBCLR, [| Imm bo; Reg reg; Imm bd |] -> bclr mem addr_size  bo reg bd
-  | `gBCLRL,[| Imm bo; Reg reg; Imm bd |] -> bclrl mem addr_size  bo reg bd
-  | `gBCCTR, [| Imm bo; Reg reg; Imm bd |] -> bcctr mem addr_size  bo reg bd
-  | `gBCCTRL,[| Imm bo; Reg reg; Imm bd |] -> bcctrl mem addr_size  bo reg bd
-  | `BDNZLR, [| |]                                              -> bdnzlr mem addr_size
-  | `gBCTAR, [| Imm bo; Reg reg; Imm bd |] -> bctar mem addr_size  bo reg bd
-  | `gBCTARL,[| Imm bo; Reg reg; Imm bd |] -> bctarl mem addr_size  bo reg bd
-
-
- | opcode, _ ->
-    (* let opcode = Sexp.to_string (sexp_of_t opcode) in *)
-    (* ppc_fail "%s: unexpected operand set" opcode *)
-    ppc_fail "unexpected operand set"
+  | `B,       [| Imm imm; |] -> b   mem addr_size imm
+  | `BA,      [| Imm imm; |] -> ba  mem addr_size imm
+  | `BL,      [| Imm imm; |] -> bl  mem addr_size imm
+  | `BLA,     [| Imm imm; |] -> bla mem addr_size imm
+  | `gBC,     [| Imm bo; Reg reg; Imm bd |] -> bc     mem addr_size bo reg bd
+  | `gBCA,    [| Imm bo; Reg reg; Imm bd |] -> bca    mem addr_size bo reg bd
+  | `gBCL,    [| Imm bo; Reg reg; Imm bd |] -> bcl    mem addr_size bo reg bd
+  | `gBCLA,   [| Imm bo; Reg reg; Imm bd |] -> bcla   mem addr_size bo reg bd
+  | `BDNZ,    [| Imm bd |]                  -> bdnz   mem addr_size bd
+  | `gBCLR,   [| Imm bo; Reg reg; Imm bd |] -> bclr   mem addr_size bo reg bd
+  | `gBCLRL,  [| Imm bo; Reg reg; Imm bd |] -> bclrl  mem addr_size bo reg bd
+  | `gBCCTR,  [| Imm bo; Reg reg; Imm bd |] -> bcctr  mem addr_size bo reg bd
+  | `gBCCTRL, [| Imm bo; Reg reg; Imm bd |] -> bcctrl mem addr_size bo reg bd
+  | `BDNZLR,  [| |]                         -> bdnzlr mem addr_size
+  | `gBCTAR,  [| Imm bo; Reg reg; Imm bd |] -> bctar  mem addr_size bo reg bd
+  | `gBCTARL, [| Imm bo; Reg reg; Imm bd |] -> bctarl mem addr_size bo reg bd
+  | opcode, _ ->
+    ppc_fail "%s: unexpected operand set" (string_of_opcode opcode)
