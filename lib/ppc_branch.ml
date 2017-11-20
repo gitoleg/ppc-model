@@ -84,6 +84,8 @@ let with_decrement_counter bo code =
     decrement_counter_register :: code
   else code
 
+module I = Imm
+
 (** Branch Instructions, Branch Conditional
     Page 37 of IBM Power ISATM Version 3.0 B
     examples:
@@ -91,7 +93,7 @@ let with_decrement_counter bo code =
     42 9f 00 06  bca 20, 31, 4
     42 9f 00 05  bcl 20, 31, .+4
     42 9f 00 07  bcla 20, 31, 4   *)
-let bc mem addr_size endian bo bi bd =
+let bc mem addr_size  bo bi bd =
   let bo_bit = bo_bit bo in
   let bd = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
   let jmp_addr = Word.(bd + Memory.min_addr mem) in
@@ -110,7 +112,7 @@ let bc mem addr_size endian bo bi bd =
       ] [  ]
     ]
 
-let bca mem addr_size endian bo bi bd =
+let bca mem addr_size  bo bi bd =
   let bo_bit = bo_bit bo in
   let jmp_addr = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
   let cr_bit = condition_register_bit (get_cr_bit bi) in
@@ -128,18 +130,29 @@ let bca mem addr_size endian bo bi bd =
       ] [  ]
     ]
 
-let bcl mem addr_size endian bo bi bd =
-  bc mem addr_size endian bo bi bd  @ update_lr_register mem addr_size
+let bcl mem addr_size  bo bi bd =
+  bc mem addr_size  bo bi bd  @ update_lr_register mem addr_size
 
-let bcla mem addr_size endian bo bi bd =
-  bca mem addr_size endian bo bi bd  @ update_lr_register mem addr_size
+let bcla mem addr_size  bo bi bd =
+  bca mem addr_size  bo bi bd  @ update_lr_register mem addr_size
+
+(** bdnz  target = bc 16,0, target *)
+let bdnz mem addr_size  bd =
+  let bd = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
+  let jmp_addr = Word.(bd + Memory.min_addr mem) in
+  Dsl.[
+    decrement_counter_register;
+    if_ ( lnot (is_zero addr_size (var ctr))) [
+      jmp (addr_of_exp addr_size (int jmp_addr));
+    ] [  ]
+  ]
 
 (** Branch Instructions, Branch Conditional to Link Register
      Page 37 of IBM Power ISATM Version 3.0 B
      examples:
     4e 9f 00 20 	bclr	 20, 31
     4e 9f 00 21 	bclrl	 20, 31 *)
-let bclr mem addr_size endian bo bi bh =
+let bclr mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
   let cr_bit = condition_register_bit (get_cr_bit bi) in
   let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
@@ -159,15 +172,25 @@ let bclr mem addr_size endian bo bi bh =
       ] [  ];
     ]
 
-let bclrl mem addr_size endian bo bi bh =
-  bclr mem addr_size endian bo bi bh @ update_lr_register mem addr_size
+let bclrl mem addr_size  bo bi bh =
+  bclr mem addr_size  bo bi bh @ update_lr_register mem addr_size
+
+(** bdnzlr = bclr 16,0,0  *)
+let bdnzlr mem addr_size =
+  let zeros = Word.zero 2 in
+  Dsl.[
+    decrement_counter_register;
+    if_ (lnot (is_zero addr_size (var ctr))) [
+      jmp (addr_of_exp addr_size ~exp_size:66 (var lr ^ int zeros));
+    ] [  ];
+  ]
 
 (** Branch Instructions, Branch Conditional to Count Register
      Page 37 of IBM Power ISATM Version 3.0 B
      examples:
     4d 5f 04 20    bcctr 10,31
     4d 5f 04 21    bcctrl 10,31 *)
-let bcctr mem addr_size endian bo bi bh =
+let bcctr mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
   let cr_bit = condition_register_bit (get_cr_bit bi) in
   let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
@@ -184,8 +207,8 @@ let bcctr mem addr_size endian bo bi bh =
       ] [  ];
     ]
 
-let bcctrl mem addr_size endian bo bi bh =
-  bcctr mem addr_size endian bo bi bh @ update_lr_register mem addr_size
+let bcctrl mem addr_size  bo bi bh =
+  bcctr mem addr_size  bo bi bh @ update_lr_register mem addr_size
 
 (** Branch Instructions, Branch Conditional to Target Register
      Page 37 of IBM Power ISATM Version 3.0 B
@@ -193,7 +216,7 @@ let bcctrl mem addr_size endian bo bi bh =
     TODO: examples
     4e 9f 00 20 	bclr	 20, 31
     4e 9f 00 21 	bclrl	 20, 31 *)
-let bctar mem addr_size endian bo bi bh =
+let bctar mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
   let cr_bit = condition_register_bit (get_cr_bit bi) in
   let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
@@ -213,8 +236,8 @@ let bctar mem addr_size endian bo bi bh =
       ] [  ];
     ]
 
-let bctarl mem addr_size endian bo bi bh =
-  bctar mem addr_size endian bo bi bh @ update_lr_register mem addr_size
+let bctarl mem addr_size  bo bi bh =
+  bctar mem addr_size  bo bi bh @ update_lr_register mem addr_size
 
 type b = [
   | `B
@@ -228,6 +251,7 @@ type bc = [
   | `gBCA
   | `gBCL
   | `gBCLA
+  | `BDNZ
 ] [@@deriving sexp, enumerate]
 
 type bc_reg = [
@@ -237,27 +261,30 @@ type bc_reg = [
   | `gBCCTRL
   | `gBCTAR
   | `gBCTARL
+  | `BDNZLR
 ] [@@deriving sexp, enumerate]
 
 type t = [ b | bc | bc_reg] [@@deriving sexp, enumerate]
 
-let lift opcode addr_size endian mem ops =
+let lift opcode addr_size  endian mem ops =
   let open Op in
   match opcode, ops with
   | `B,   [| Imm imm; |] -> b mem addr_size imm
   | `BA,  [| Imm imm; |] -> ba mem addr_size imm
   | `BL,  [| Imm imm; |] -> bl mem addr_size imm
   | `BLA, [| Imm imm; |] -> bla mem addr_size imm
-  | `gBC,   [| Imm bo; Reg reg; Imm bd |] -> bc mem addr_size endian bo reg bd
-  | `gBCA,  [| Imm bo; Reg reg; Imm bd |] -> bca mem addr_size endian bo reg bd
-  | `gBCL,  [| Imm bo; Reg reg; Imm bd |] -> bcl mem addr_size endian bo reg bd
-  | `gBCLA, [| Imm bo; Reg reg; Imm bd |] -> bcla mem addr_size endian bo reg bd
- | `gBCLR, [| Imm bo; Reg reg; Imm bd |] -> bclr mem addr_size endian bo reg bd
- | `gBCLRL,[| Imm bo; Reg reg; Imm bd |] -> bclrl mem addr_size endian bo reg bd
-| `gBCCTR, [| Imm bo; Reg reg; Imm bd |] -> bcctr mem addr_size endian bo reg bd
- | `gBCCTRL,[| Imm bo; Reg reg; Imm bd |] -> bcctrl mem addr_size endian bo reg bd
-| `gBCTAR, [| Imm bo; Reg reg; Imm bd |] -> bctar mem addr_size endian bo reg bd
- | `gBCTARL,[| Imm bo; Reg reg; Imm bd |] -> bctarl mem addr_size endian bo reg bd
+  | `gBC,   [| Imm bo; Reg reg; Imm bd |] -> bc mem addr_size  bo reg bd
+  | `gBCA,  [| Imm bo; Reg reg; Imm bd |] -> bca mem addr_size  bo reg bd
+  | `gBCL,  [| Imm bo; Reg reg; Imm bd |] -> bcl mem addr_size  bo reg bd
+  | `gBCLA, [| Imm bo; Reg reg; Imm bd |] -> bcla mem addr_size  bo reg bd
+  | `BDNZ, [| Imm bd |]                                -> bdnz mem addr_size bd
+  | `gBCLR, [| Imm bo; Reg reg; Imm bd |] -> bclr mem addr_size  bo reg bd
+  | `gBCLRL,[| Imm bo; Reg reg; Imm bd |] -> bclrl mem addr_size  bo reg bd
+  | `gBCCTR, [| Imm bo; Reg reg; Imm bd |] -> bcctr mem addr_size  bo reg bd
+  | `gBCCTRL,[| Imm bo; Reg reg; Imm bd |] -> bcctrl mem addr_size  bo reg bd
+  | `BDNZLR, [| |]                                              -> bdnzlr mem addr_size
+  | `gBCTAR, [| Imm bo; Reg reg; Imm bd |] -> bctar mem addr_size  bo reg bd
+  | `gBCTARL,[| Imm bo; Reg reg; Imm bd |] -> bctarl mem addr_size  bo reg bd
 
 
  | opcode, _ ->

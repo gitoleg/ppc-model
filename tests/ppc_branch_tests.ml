@@ -145,7 +145,6 @@ let cond_ok = make_bo  ~cond_reg0:0 ~expect_jump:true 0b00010
 (** cond: bo3 = 1; CR0 = 0;  *)
 let cond_not = make_bo ~cond_reg0:0 0b01010
 
-
 let concat_words ws = match ws with
   | [] -> failwith "words list is empty!"
   | w :: ws ->
@@ -199,6 +198,30 @@ let bca = bcx "bca" 2
 let bcl = bcx "bcl" 1
 let bcla = bcx "bcla" 3
 
+let bdnz ~jmp arch  (ctxt : test_ctxt) =
+  let imm = 42 in
+  let bits = Size.in_bits @@ Arch.addr_size arch in
+  let opcode = Word.of_int ~width:6 16 in
+  let bo = Word.of_int ~width:5 0b10000 in
+  let bi = Word.of_int ~width:5 0 in
+  let bd = Word.of_int ~width:14 imm in
+  let fin = Word.of_int ~width:2 0 in
+  let bytes = make_bytes [opcode; bo; bi; bd; fin] in
+  let ctr_val =
+    if jmp then Word.of_int ~width:ctr_bitwidth 42
+    else Word.one ctr_bitwidth in
+  let init =  Bil.[ctr := int ctr_val] in
+  let addr = addr_of_arch arch in
+  let c = eval ~addr init bytes arch in
+  let imm = Word.of_int ~width:bits (imm lsl 2) in
+  if jmp then
+    let expected = Word.(addr + imm) in
+    check_pc "bdnz" c expected
+  else
+    check_jmp_absence "bdzf" c;
+  let x = Word.pred ctr_val in
+  assert_bool "bdnz cnt check failed" @@ is_equal_words x (lookup_var c ctr)
+
 let bcxrx name opt_opcode fin reg arch case (ctxt : test_ctxt) =
   let lk_is_set = fin land 1 <> 0 in
   let bits = Size.in_bits @@ Arch.addr_size arch in
@@ -244,8 +267,6 @@ let bcctr = bcxrx "bcctr" 528 0 ctr
 let bcctrl = bcxrx "bcctrl" 528 1 ctr
 let bctar = bcxrx "bctar" 560 0 tar
 let bctar = bcxrx "bctarl" 560 1 tar
-
-
 
 let suite  = "branch" >::: [
     "b32"                       >:: b `ppc;
@@ -312,6 +333,9 @@ let suite  = "branch" >::: [
     "bclrl32 cond_ctr_ok_4"        >:: bclrl `ppc cond_ctr_ok_4;
     "bclrl32 cond_ok_ctr_not_1"    >:: bclrl `ppc cond_ok_ctr_not_1;
     "bclrl32 cond_not_ctr_ok_1"    >:: bclrl `ppc cond_not_ctr_ok_1;
+
+    "bdnz32 jmp"      >:: bdnz ~jmp:true `ppc ;
+    "bdnz32 no jmp"     >:: bdnz ~jmp:false `ppc ;
 
     "bcctr32 jmp_anyway"           >:: bcctr `ppc jmp_anyway;
     "bcctr32 cond_ok"     >:: bcctr `ppc cond_ok;
@@ -385,6 +409,9 @@ let suite  = "branch" >::: [
     "bclrl64 cond_ctr_ok_4"        >:: bclrl `ppc64 cond_ctr_ok_4;
     "bclrl64 cond_ok_ctr_not_1"    >:: bclrl `ppc64 cond_ok_ctr_not_1;
     "bclrl64 cond_not_ctr_ok_1"    >:: bclrl `ppc64 cond_not_ctr_ok_1;
+
+    "bdnz64 jmp"      >:: bdnz ~jmp:true `ppc64;
+    "bdnz64 no jmp" >:: bdnz ~jmp:false `ppc64;
 
     "bcctr64 jmp_anyway"           >:: bcctr `ppc64 jmp_anyway;
     "bcctr64 cond_ok"     >:: bcctr `ppc64 cond_ok;
