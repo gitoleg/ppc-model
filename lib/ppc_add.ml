@@ -26,10 +26,9 @@
 
 open Core_kernel.Std
 open Bap.Std
-open Op
 
-open Ppc_model.Hardware
-open Ppc_rtl
+open Ppc_types
+open Hardware
 
 (** Extended mnemonics:
 
@@ -39,7 +38,6 @@ open Ppc_rtl
     subis rx,ry,value  = addis  rx, ry, -value
     subic rx,ry,value  = addic  rx, ry, -value
     subic. rx,ry,value = addic. rx, ry, -value *)
-
 let compute_ov32 x y result =
   let open Dsl in
   let r = extract 31 0 result in
@@ -63,8 +61,7 @@ let compute_ca mode x result =
   | `r64 -> Dsl.(result < x)
   | `r32 -> Dsl.(extract 31 0 result < extract 31 0 x)
 
-let compute_ca32 x result =
-  Dsl.(extract 31 0 result < extract 31 0 x)
+let compute_ca32 x result = Dsl.(extract 31 0 result < extract 31 0 x)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate
     Page 67 of IBM Power ISATM Version 3.0 B
@@ -73,24 +70,16 @@ let compute_ca32 x result =
     3b de fd 28     addi    r30,r30,-728
     38 20 00 10     addi    r1,0,16 (OR li r1, 16) *)
 let addi rt ra imm =
-  let rt = find_gpr rt in
+  let rt = Dsl.find_gpr rt in
   let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
-  match find_gpr_opt ra with
-  | None ->
-    Dsl.[
-      rt := cast signed gpr_bitwidth (int imm);
-    ]
-  | Some ra ->
-    Dsl.[
-      rt := var ra + cast signed gpr_bitwidth (int imm);
-    ]
+  match Dsl.find_gpr_opt ra with
+  | None -> Dsl.[ rt := cast signed gpr_bitwidth (int imm); ]
+  | Some ra -> Dsl.[ rt := var ra + cast signed gpr_bitwidth (int imm); ]
 
 let li rt imm =
-  let rt = find_gpr rt in
+  let rt = Dsl.find_gpr rt in
   let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
-  Dsl.[
-    rt := cast signed gpr_bitwidth (int imm);
-  ]
+  Dsl.[ rt := cast signed gpr_bitwidth (int imm); ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Shifted
     Page 67 of IBM Power ISATM Version 3.0 B
@@ -98,34 +87,28 @@ let li rt imm =
     3f de 00 02     addis   r30,r30,2
     3d 6b f0 00     addis   r11,r11,-4096 *)
 let addis rt ra imm =
-  let rt = find_gpr rt in
+  let rt = Dsl.find_gpr rt in
   let zero16 = Word.zero 16 in
   let imm =
     Word.of_int64 ~width:16 (Imm.to_int64 imm) in
-  match find_gpr_opt ra with
+  match Dsl.find_gpr_opt ra with
   | None ->
-    Dsl.[
-      rt := cast signed gpr_bitwidth (int imm ^ int zero16);
-    ]
+    Dsl.[ rt := cast signed gpr_bitwidth (int imm ^ int zero16); ]
   | Some ra ->
-    Dsl.[
-      rt := var ra + cast signed gpr_bitwidth (int imm ^ int zero16);
-    ]
+    Dsl.[ rt := var ra + cast signed gpr_bitwidth (int imm ^ int zero16); ]
 
 let lis rt imm =
-  let rt = find_gpr rt in
+  let rt = Dsl.find_gpr rt in
   let zero16 = Word.zero 16 in
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
-  Dsl.[
-    rt := cast signed gpr_bitwidth (int imm ^ int zero16);
-  ]
+  Dsl.[ rt := cast signed gpr_bitwidth (int imm ^ int zero16); ]
 
 (** Fixed-Point Arithmetic Instructions - Add PC Immediate Shifted
     Page 68 of IBM Power ISATM Version 3.0 B
     example:
     4c 22 00 04     addpcis r1,4
     llvm doesn't recognize this instruction  *)
-let addpcis rt imm = ppc_fail "unimplemented"
+let addpcis rt imm = Dsl.ppc_fail "unimplemented"
 
 (** Fixed-Point Arithmetic Instructions - Add
     Page 69 of IBM Power ISATM Version 3.0 B
@@ -133,13 +116,13 @@ let addpcis rt imm = ppc_fail "unimplemented"
     7d 62 5a 14 add   r11, r2, r11
     7d 62 5a 15 add.  r11, r2, r11 *)
 let add rt ra rb =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
   Dsl.[rt := var ra + var rb]
 
 let add_dot addr_size rt ra rb =
-  add rt ra rb @ write_fixpoint_result addr_size (find_gpr rt)
+  add rt ra rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
     Page 69 of IBM Power ISATM Version 3.0 B
@@ -147,17 +130,15 @@ let add_dot addr_size rt ra rb =
     30 21 00 10    addic r1, r1, 16
     33 de fd 28    addic r30, r30, -728  *)
 let addic addr_size rt ra imm =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
   let imm =
     Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
-  let tmp = Var.create ~fresh:true "tmp" (Type.imm gpr_bitwidth) in
-  Dsl.[
-    tmp := var ra;
+  let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
+  Dsl.[ tmp := var ra;
     rt := var ra + int imm;
     ca := compute_ca addr_size (var tmp) (var rt);
-    ca32 := compute_ca32 (var tmp) (var rt);
-  ]
+    ca32 := compute_ca32 (var tmp) (var rt); ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying and Record
     Page 69 of IBM Power ISATM Version 3.0 B
@@ -165,7 +146,7 @@ let addic addr_size rt ra imm =
     34 21 00 10    addic. r1, r1, 16
     37 de fd 28    addic. r30, r30, -728  *)
 let addic_dot addr_size rt ra imm =
-  addic addr_size rt ra imm @ write_fixpoint_result addr_size (find_gpr rt)
+  addic addr_size rt ra imm @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
@@ -173,19 +154,17 @@ let addic_dot addr_size rt ra imm =
     7d 62 58 14  addc   r11, r2, r11
     7d 62 58 15  addc.  r11, r2, r11 *)
 let addc addr_size rt ra rb =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  let tmp = Var.create ~fresh:true "tmp" (Type.imm gpr_bitwidth) in
-  Dsl.[
-    tmp := var ra;
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
+  let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
+  Dsl.[ tmp := var ra;
     rt := var ra + var rb;
     ca := compute_ca addr_size (var tmp) (var rt);
-    ca32 := compute_ca32 (var tmp) (var rt);
-  ]
+    ca32 := compute_ca32 (var tmp) (var rt); ]
 
 let addc_dot addr_size rt ra rb =
-  addc addr_size rt ra rb @ write_fixpoint_result addr_size (find_gpr rt)
+  addc addr_size rt ra rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Extend
     Page 71 of IBM Power ISATM Version 3.0 B
@@ -193,19 +172,17 @@ let addc_dot addr_size rt ra rb =
     7c 21 81 14  adde   r11, r2, r11
     7c 21 81 15  adde.  r11, r2, r11 *)
 let adde addr_size rt ra rb =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
-  let tmp = Var.create ~fresh:true "tmp" (Type.imm gpr_bitwidth) in
-  Dsl.[
-    tmp := var ra;
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
+  let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
+  Dsl.[ tmp := var ra;
     rt := var ra + var rb + cast unsigned gpr_bitwidth (var ca);
     ca := compute_ca addr_size (var tmp) (var rt);
-    ca32 := compute_ca32 (var tmp) (var rt);
-  ]
+    ca32 := compute_ca32 (var tmp) (var rt); ]
 
 let adde_dot addr_size rt ra rb =
-  adde addr_size rt ra rb @ write_fixpoint_result addr_size (find_gpr rt)
+  adde addr_size rt ra rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add to Minus One Extend
     Page 71 of IBM Power ISATM Version 3.0 B
@@ -213,26 +190,24 @@ let adde_dot addr_size rt ra rb =
     7c 22 01 d4  addme  r1,r2
     7c 22 01 d5  addme. r1,r2  *)
 let addme addr_size rt ra =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
   let one = Word.one gpr_bitwidth in
-  let tmp = Var.create ~fresh:true "tmp" (Type.imm gpr_bitwidth) in
-  Dsl.[
-    tmp := var ra;
+  let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
+  Dsl.[ tmp := var ra;
     rt := var ra + cast unsigned gpr_bitwidth (var ca) - int one;
     ca := compute_ca addr_size (var tmp) (var rt);
-    ca32 := compute_ca32 (var tmp) (var rt);
-  ]
+    ca32 := compute_ca32 (var tmp) (var rt);  ]
 
 let addme_dot addr_size rt ra =
-  addme addr_size rt ra @ write_fixpoint_result addr_size (find_gpr rt)
+  addme addr_size rt ra @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Extended using alternate carry bit
     Page 72 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 19 54   addex r1,r2,r3
     llvm doesn't recognize this instruction *)
-let addex rt ra rb = ppc_fail "unimplemented"
+let addex rt ra rb = Dsl.ppc_fail "unimplemented"
 
 (** Fixed-Point Arithmetic Instructions - Add to Zero extended
     Page 72 of IBM Power ISATM Version 3.0 B
@@ -240,18 +215,16 @@ let addex rt ra rb = ppc_fail "unimplemented"
     7c 22 01 94   addze r1,r2
     7c 22 01 95   addze. r1,r2 *)
 let addze addr_size rt ra =
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let tmp = Var.create ~fresh:true "tmp" (Type.imm gpr_bitwidth) in
-  Dsl.[
-    tmp := var ra;
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
+  Dsl.[ tmp := var ra;
     rt := var ra + cast unsigned gpr_bitwidth (var ca);
     ca := compute_ca addr_size (var tmp) (var rt);
-    ca32 := compute_ca32 (var tmp) (var rt);
-  ]
+    ca32 := compute_ca32 (var tmp) (var rt); ]
 
 let addze_dot addr_size rt ra =
-  addze addr_size rt ra @ write_fixpoint_result addr_size (find_gpr rt)
+  addze addr_size rt ra @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
 
 type t = [
   | `ADD4
@@ -294,4 +267,4 @@ let lift opcode addr_size endian mem ops = match opcode, ops with
   | `LA,     [| Reg rt; Imm imm; Reg ra |] -> addi rt ra imm
   | opcode, _ ->
     let opcode = Sexp.to_string (sexp_of_t opcode) in
-    ppc_fail "%s: unexpected operand set" opcode
+    Dsl.ppc_fail "%s: unexpected operand set" opcode

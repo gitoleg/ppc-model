@@ -2,11 +2,11 @@ open Core_kernel.Std
 open Bap.Std
 open Op
 
-open Ppc_model.Hardware
-open Ppc_rtl
+open Ppc_types
+open Hardware
 
 let addr_of_exp addr_size exp = match addr_size with
-  | `r32 -> extract_low_32 exp
+  | `r32 -> Dsl.low32 exp
   | `r64 -> exp
 
 (** Fixed-point Load Byte/Halfword/Word and Zero
@@ -17,13 +17,13 @@ let addr_of_exp addr_size exp = match addr_size with
     a1 3c 00 14 - lhz r9, 20(r28)
     83 eb ff fc - lwz r31, -4(r11) *)
 let lz addr_size endian size rt imm ra =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
   let bits = Size.in_bits addr_size in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + cast signed gpr_bitwidth (int imm));
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian size);
@@ -36,13 +36,13 @@ let lz addr_size endian size rt imm ra =
     7d 3d 52 2e   lhzx r9, r29, r10
     7d 3d 50 2e   lwzx r9, r29, r10  *)
 let lzx addr_size endian size rt ra rb =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
-  let rb = find_gpr rb in
+  let rb = Dsl.find_gpr rb in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + var rb);
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian size);
@@ -55,12 +55,12 @@ let lzx addr_size endian size rt ra rb =
     a5 3c 00 14  lhzu r9, 20(r28)
     85 3f ff fc  lwzu r9, -4(r31)  *)
 let lzu addr_size endian size rt imm ra =
-  if Reg.equal rt ra then ppc_fail "Invalid instruction lzu: same operands";
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
+  if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzu: same operands";
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
   let bits = Size.in_bits addr_size in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + cast signed gpr_bitwidth (int imm));
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian size);
@@ -74,12 +74,12 @@ let lzu addr_size endian size rt imm ra =
     7d 3d 52 6e  lhzux r9, r29, r10
     7d 3d 50 6e  lwzux r9, r29, r10  *)
 let lzux addr_size endian size rt ra rb =
-  if Reg.equal rt ra then ppc_fail "Invalid instruction lzux: same operands";
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
+  if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzux: same operands";
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + var rb);
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian size);
@@ -91,16 +91,16 @@ let lzux addr_size endian size rt ra rb =
     examples:
     a8 29 00 05    lha r1, 5(r9) *)
 let lha addr_size endian rt ra imm =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
   let addr_bits = Size.in_bits addr_size in
   let ones = Word.ones 48 in
   let zeros = Word.zero 48 in
-  let data = Var.create ~fresh:true "data" (Type.imm 16) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm addr_bits) in
+  let data = Dsl.fresh "data" (Type.imm 16) in
+  let ea = Dsl.fresh "ea" (Type.imm addr_bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + cast signed gpr_bitwidth (int imm));
     data := load addr_size ~addr:(var ea) endian `r16;
@@ -116,8 +116,8 @@ let lha addr_size endian rt ra imm =
     examples:
     eb eb 01 16    lwa r31, 276(r11) *)
 let lwa addr_size endian rt ra imm =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
   let imm =
@@ -126,8 +126,8 @@ let lwa addr_size endian rt ra imm =
   let addr_bits = Size.in_bits addr_size in
   let ones = Word.ones 32 in
   let zeros = Word.zero 32 in
-  let data = Var.create ~fresh:true "data" (Type.imm 32) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm addr_bits) in
+  let data = Dsl.fresh "data" (Type.imm 32) in
+  let ea = Dsl.fresh "ea" (Type.imm addr_bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + cast signed gpr_bitwidth (int imm));
     data := load addr_size ~addr:(var ea) endian `r32;
@@ -144,18 +144,18 @@ let lwa addr_size endian rt ra imm =
     7c 25 4a ae    lhax r1, r5, r9
     7c 25 4a aa    lwax r1, r5, r9  *)
 let lax addr_size endian size rt ra rb =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
-  let rb = find_gpr rb in
+  let rb = Dsl.find_gpr rb in
   let addr_bits = Size.in_bits addr_size in
   let data_bits = Size.in_bits size in
   let hbit = Size.in_bits size - 1 in
   let ones = Word.ones (gpr_bitwidth - data_bits) in
   let zeros = Word.zero (gpr_bitwidth - data_bits) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm addr_bits) in
-  let data = Var.create ~fresh:true "data" (Type.imm data_bits) in
+  let ea = Dsl.fresh "ea" (Type.imm addr_bits) in
+  let data = Dsl.fresh "data" (Type.imm data_bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + var rb);
     data := load addr_size ~addr:(var ea) endian size;
@@ -171,18 +171,18 @@ let lax addr_size endian size rt ra rb =
     examples:
     ac 29 00 05    lhau r1, 5(r9) *)
 let lhau addr_size endian rt ra imm =
-  if Reg.equal rt ra then ppc_fail "Invalid instruction lhau: same operands";
+  if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lhau: same operands";
   let size = `r16 in
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
   let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
   let addr_bits = Size.in_bits addr_size in
   let data_bits = Size.in_bits size in
   let hbit = Size.in_bits size - 1 in
   let ones = Word.ones (gpr_bitwidth - data_bits) in
   let zeros = Word.zero (gpr_bitwidth - data_bits) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm addr_bits) in
-  let data = Var.create ~fresh:true "data" (Type.imm data_bits) in
+  let ea = Dsl.fresh "ea" (Type.imm addr_bits) in
+  let data = Dsl.fresh "data" (Type.imm data_bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + cast signed gpr_bitwidth (int imm));
     data := load addr_size ~addr:(var ea) endian size;
@@ -200,17 +200,17 @@ let lhau addr_size endian rt ra imm =
     7c 25 4a ee    lhaux r1, r5, r9
     7c 25 4a ea    lwaux r1, r5, r9 *)
 let laux addr_size endian size rt ra rb =
-  if Reg.equal rt ra then ppc_fail "Invalid instruction lhaux: same operands";
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
+  if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lhaux: same operands";
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
   let addr_bits = Size.in_bits addr_size in
   let data_bits = Size.in_bits size in
   let hbit = Size.in_bits size - 1 in
   let ones = Word.ones (gpr_bitwidth - data_bits) in
   let zeros = Word.zero (gpr_bitwidth - data_bits) in
-  let ea = Var.create ~fresh:true "ea" (Type.imm addr_bits) in
-  let data = Var.create ~fresh:true "data" (Type.imm data_bits) in
+  let ea = Dsl.fresh "ea" (Type.imm addr_bits) in
+  let data = Dsl.fresh "data" (Type.imm data_bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + var rb);
     data := load addr_size ~addr:(var ea) endian size;
@@ -227,15 +227,15 @@ let laux addr_size endian size rt ra rb =
     examples:
     e8 29 00 08    ld r1, 8(r9) *)
 let ld addr_size endian rt ra imm =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
   let bits = Size.in_bits addr_size in
   let imm =
     let x = Imm.to_int64 imm in
     Word.of_int64 Int64.(x lsl 2)  in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + cast signed gpr_bitwidth (int imm));
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian `r64);
@@ -246,13 +246,13 @@ let ld addr_size endian rt ra imm =
     examples:
     7c 28 48 2a    ldx r1, r8, r9 *)
 let ldx addr_size endian rt ra rb =
-  let rt = find_gpr rt in
-  let ra = match find_gpr_opt ra with
+  let rt = Dsl.find_gpr rt in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
-  let rb = find_gpr rb in
+  let rb = Dsl.find_gpr rb in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + var rb);
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian `r64);
@@ -263,14 +263,14 @@ let ldx addr_size endian rt ra rb =
     examples:
     e8 29 00 09    ldu r1, 8(r9) *)
 let ldu addr_size endian rt ra imm =
-  if Reg.equal rt ra then ppc_fail "Invalid instruction ldu: same operands";
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
+  if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction ldu: same operands";
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
   let bits = Size.in_bits addr_size in
   let imm =
     let x = Imm.to_int64 imm in
     Word.of_int64 Int64.(x lsl 2)  in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + cast signed gpr_bitwidth (int imm));
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian `r64);
@@ -282,12 +282,12 @@ let ldu addr_size endian rt ra imm =
     examples:
     7c 28 48 6a    ldux r1, r8, r9 *)
 let ldux addr_size endian rt ra rb =
-  if Reg.equal rt ra then ppc_fail "Invalid instruction ldux: same operands";
-  let rt = find_gpr rt in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
+  if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction ldux: same operands";
+  let rt = Dsl.find_gpr rt in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + var rb);
     rt := cast unsigned gpr_bitwidth (load addr_size ~addr:(var ea) endian `r64);
@@ -372,4 +372,4 @@ let lift opcode mode endian mem ops =
   | `LDUX, [| Reg rt; Reg _; Reg ra; Reg rb; |] -> ldux mode endian rt ra rb
   | opcode, _ ->
     let opcode = Sexp.to_string (sexp_of_t opcode) in
-    ppc_fail "%s: unexpected operand set" opcode
+    Dsl.ppc_fail "%s: unexpected operand set" opcode

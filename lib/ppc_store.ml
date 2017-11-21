@@ -2,11 +2,11 @@ open Core_kernel.Std
 open Bap.Std
 open Op
 
-open Ppc_model.Hardware
-open Ppc_rtl
+open Ppc_types
+open Hardware
 
 let addr_of_exp addr_size exp = match addr_size with
-  | `r32 -> extract_low_32 exp
+  | `r32 -> Dsl.low32 exp
   | `r64 -> exp
 
 (** Fixed-point Store Byte/Halfword/Word
@@ -17,12 +17,12 @@ let addr_of_exp addr_size exp = match addr_size with
     b1 3c 01 6c     sth r9,364(r28)
     91 28 ff d4     stw r9,-44(r8) *)
 let st addr_size endian size rs imm ra =
-  let rs = find_gpr rs in
-  let ra = match find_gpr_opt ra with
+  let rs = Dsl.find_gpr rs in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + cast signed gpr_bitwidth (int imm));
@@ -37,13 +37,13 @@ let st addr_size endian size rs imm ra =
     7f b6 f9 2e     stwx    r29,r22,r31
     7c 28 49 2a     stdx    r1, r8, r9  *)
 let stx addr_size endian size rs ra rb =
-  let rs = find_gpr rs in
-  let ra = match find_gpr_opt ra with
+  let rs = Dsl.find_gpr rs in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
-  let rb = find_gpr rb in
+  let rb = Dsl.find_gpr rb in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + var rb);
     store addr_size ~addr:(var ea) endian size (var rs);
@@ -56,12 +56,12 @@ let stx addr_size endian size rs ra rb =
     b5 3d ff ff     sthu r9,-1(r29)
     94 21 ff f0     stwu r1,-16(r1)  *)
 let stu addr_size endian size rs imm ra =
-  if Reg.equal rs ra then ppc_fail "Invalid instruction szu: same operands";
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
+  if Reg.equal rs ra then Dsl.ppc_fail "Invalid instruction szu: same operands";
+  let rs = Dsl.find_gpr rs in
+  let ra = Dsl.find_gpr ra in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + cast signed gpr_bitwidth (int imm));
     store addr_size ~addr:(var ea) endian size (var rs);
@@ -76,12 +76,12 @@ let stu addr_size endian size rs imm ra =
     7d 41 49 6e     stwux r10,r1,r9
     7c 28 49 6a     stdux r1,r8,r9   *)
 let stux addr_size endian size rs ra rb =
-  if Reg.equal rs ra then ppc_fail "Invalid instruction szux: same operands";
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
-  let rb = find_gpr rb in
+  if Reg.equal rs ra then Dsl.ppc_fail "Invalid instruction szux: same operands";
+  let rs = Dsl.find_gpr rs in
+  let ra = Dsl.find_gpr ra in
+  let rb = Dsl.find_gpr rb in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + var rb);
     store addr_size ~addr:(var ea) endian size (var rs);
@@ -93,15 +93,15 @@ let stux addr_size endian size rs ra rb =
     examples:
     f8 29 00 08   std r1, 8(r9) *)
 let std addr_size endian rs imm ra =
-  let rs = find_gpr rs in
-  let ra = match find_gpr_opt ra with
+  let rs = Dsl.find_gpr rs in
+  let ra = match Dsl.find_gpr_opt ra with
     | None -> Dsl.int (Word.zero 64)
     | Some ra -> Dsl.var ra in
   let addr_bits = Size.in_bits addr_size in
   let imm =
     let x = Imm.to_int64 imm in
     Word.of_int64 Int64.(x lsl 2)  in
-  let ea = Var.create ~fresh:true "ea" (Type.imm addr_bits) in
+  let ea = Dsl.fresh "ea" (Type.imm addr_bits) in
   Dsl.[
     ea := addr_of_exp addr_size (ra + cast signed gpr_bitwidth (int imm));
     store addr_size ~addr:(var ea) endian `r64 (var rs);
@@ -112,13 +112,13 @@ let std addr_size endian rs imm ra =
     examples:
     f8 29 00 09   stdu r1, 8(r9) *)
 let stdu addr_size endian rs imm ra =
-  let rs = find_gpr rs in
-  let ra = find_gpr ra in
+  let rs = Dsl.find_gpr rs in
+  let ra = Dsl.find_gpr ra in
   let imm =
     let x = Imm.to_int64 imm in
     Word.of_int64 Int64.(x lsl 2)  in
   let bits = Size.in_bits addr_size in
-  let ea = Var.create ~fresh:true "ea" (Type.imm bits) in
+  let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
     ea := addr_of_exp addr_size (var ra + int imm);
     store addr_size ~addr:(var ea) endian `r64 (var rs);
@@ -175,4 +175,4 @@ let lift opcode addr_size endian mem ops =
   | `STDU,[| Reg _; Reg rs; Imm imm; Reg ra |] -> stdu addr_size endian rs imm ra
   | opcode, _ ->
     let opcode = Sexp.to_string (sexp_of_t opcode) in
-    ppc_fail "%s: unexpected operand set" opcode
+    Dsl.ppc_fail "%s: unexpected operand set" opcode

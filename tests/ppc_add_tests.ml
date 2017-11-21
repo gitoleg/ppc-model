@@ -2,7 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Ppc_model.Hardware
+open Ppc_types
+open Hardware
 open Ppc_tests_helpers
 
 let is_equal_words w = function

@@ -1,11 +1,11 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Ppc_model.Hardware
-open Ppc_rtl
+open Ppc_types
+open Hardware
 
 let addr_of_exp addr_size ?(exp_size=64) exp = match addr_size with
-  | `r32 -> extract_low_32 exp
+  | `r32 -> Dsl.low32 exp
   | `r64 ->
     if exp_size = 64 then exp
     else Dsl.(cast unsigned 64 exp)
@@ -17,25 +17,6 @@ let update_lr_register mem addr_size  =
   match addr_size with
   | `r32 -> Dsl.[lr := cast unsigned lr_bitwidth (int next)]
   | `r64 -> Dsl.[lr := int next]
-
-(** TODO:  That's weird!, so it's just a temporary solution *)
-let get_cr_bit reg =
-  let name = Reg.name reg in
-  let field_num = String.subo ~pos:2 ~len:1 name in
-  let field_num = int_of_string field_num in
-  let to_bit = Bool.to_int in
-  let bit_lt = to_bit @@ String.is_suffix ~suffix:"LT" name in
-  let bit_gt = to_bit @@ String.is_suffix ~suffix:"GT" name in
-  let bit_eq = to_bit @@ String.is_suffix ~suffix:"EQ" name in
-  let bit_un = to_bit @@ String.is_suffix ~suffix:"UN" name in
-  let bit_num = match bit_lt,bit_gt,bit_eq,bit_un with
-    | 1,_,_,_ -> 0
-    | _,1,_,_ -> 1
-    | _,_,1,_ -> 2
-    | _,_,_,1 -> 3
-    | _ -> ppc_fail "unexpected CR bit name %s" name in
-  let x = field_num * 4 + bit_num in
-  cr_bitwidth - x - 1
 
 (** Branch Instructions, Branch
     Page 37 of IBM Power ISATM Version 3.0 B
@@ -76,15 +57,17 @@ let bo_bit bo n =
   let bo = bo_field_bits bo in
   match List.nth bo n with
   | None ->
-    ppc_fail "requested BO field of branch insn with unexpected bit %d" n
+    Dsl.ppc_fail "requested BO field of branch insn with unexpected bit %d" n
   | Some (_,x) -> x
+
+let decrement_counter_register =
+  let one = Word.one ctr_bitwidth in
+  Dsl.(ctr := var ctr - int one)
 
 let with_decrement_counter bo code =
   if Word.is_zero (bo_bit bo 2) then
     decrement_counter_register :: code
   else code
-
-module I = Imm
 
 (** Branch Instructions, Branch Conditional
     Page 37 of IBM Power ISATM Version 3.0 B
@@ -93,20 +76,20 @@ module I = Imm
     42 9f 00 06  bca 20, 31, 4
     42 9f 00 05  bcl 20, 31, .+4
     42 9f 00 07  bcla 20, 31, 4   *)
-let bc mem addr_size  bo bi bd =
+let bc mem addr_size bo bi bd =
   let bo_bit = bo_bit bo in
   let bd = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
   let jmp_addr = Word.(bd + Memory.min_addr mem) in
-  let cr_bit = condition_register_bit (get_cr_bit bi) in
-  let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
-  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let crbit = Dsl.cr_bit bi in
+  let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
+  let cond_ok = Dsl.fresh"cond_ok" (Type.imm 1) in
   with_decrement_counter bo @@
   if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
     Dsl.[jmp (addr_of_exp addr_size (int jmp_addr));]
   else
     Dsl.[
       ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
-      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      cond_ok := var crbit lxor (lnot (int @@ bo_bit 3));
       if_ (var ctr_ok land var cond_ok) [
         jmp (addr_of_exp addr_size (int jmp_addr));
       ] [  ]
@@ -115,16 +98,16 @@ let bc mem addr_size  bo bi bd =
 let bca mem addr_size  bo bi bd =
   let bo_bit = bo_bit bo in
   let jmp_addr = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
-  let cr_bit = condition_register_bit (get_cr_bit bi) in
-  let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
-  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let crbit = Dsl.cr_bit bi in
+  let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
+  let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   with_decrement_counter bo @@
   if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
     Dsl.[jmp (addr_of_exp addr_size (int jmp_addr));]
   else
     Dsl.[
       ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
-      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      cond_ok := var crbit lxor (lnot (int @@ bo_bit 3));
       if_ (var ctr_ok land var cond_ok) [
         jmp (addr_of_exp addr_size (int jmp_addr));
       ] [  ]
@@ -154,9 +137,9 @@ let bdnz mem addr_size  bd =
     4e 9f 00 21 	bclrl	 20, 31 *)
 let bclr mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
-  let cr_bit = condition_register_bit (get_cr_bit bi) in
-  let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
-  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let crbit = Dsl.cr_bit bi in
+  let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
+  let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   let zeros = Word.zero 2 in
   with_decrement_counter bo @@
   if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
@@ -166,7 +149,7 @@ let bclr mem addr_size  bo bi bh =
   else
     Dsl.[
       ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
-      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      cond_ok := var crbit lxor (lnot (int @@ bo_bit 3));
       if_ (var ctr_ok land var cond_ok) [
         jmp (addr_of_exp addr_size ~exp_size:66 (var lr ^ int zeros));
       ] [  ];
@@ -192,8 +175,8 @@ let bdnzlr mem addr_size =
     4d 5f 04 21    bcctrl 10,31 *)
 let bcctr mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
-  let cr_bit = condition_register_bit (get_cr_bit bi) in
-  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let crbit = Dsl.cr_bit bi in
+  let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   let zeros = Word.zero 2 in
   if  Word.is_one (bo_bit 4) then
     Dsl.[
@@ -201,7 +184,7 @@ let bcctr mem addr_size  bo bi bh =
     ]
   else
     Dsl.[
-      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      cond_ok := var crbit lxor (lnot (int @@ bo_bit 3));
       if_ (var cond_ok) [
         jmp (addr_of_exp addr_size ~exp_size:66 (var ctr ^ int zeros));
       ] [  ];
@@ -218,9 +201,9 @@ let bcctrl mem addr_size  bo bi bh =
     bctar insn aren't implemented ny llvm right now *)
 let bctar mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
-  let cr_bit = condition_register_bit (get_cr_bit bi) in
-  let ctr_ok = Var.create ~fresh:true "ctr_ok" (Type.imm 1) in
-  let cond_ok = Var.create ~fresh:true "cond_ok" (Type.imm 1) in
+  let crbit = Dsl.cr_bit bi in
+  let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
+  let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   let zeros = Word.zero 2 in
   with_decrement_counter bo @@
   if Word.is_one (bo_bit 2) && Word.is_one (bo_bit 4) then
@@ -230,7 +213,7 @@ let bctar mem addr_size  bo bi bh =
   else
     Dsl.[
       ctr_ok := (lnot (is_zero addr_size (var ctr))) lxor (int @@ bo_bit 1);
-      cond_ok := var cr_bit lxor (lnot (int @@ bo_bit 3));
+      cond_ok := var crbit lxor (lnot (int @@ bo_bit 3));
       if_ (var ctr_ok land var cond_ok) [
         jmp (addr_of_exp addr_size ~exp_size:66 (var tar ^ int zeros));
       ] [  ];
@@ -288,4 +271,4 @@ let lift opcode addr_size  endian mem ops =
   | `gBCTAR,  [| Imm bo; Reg reg; Imm bd |] -> bctar  mem addr_size bo reg bd
   | `gBCTARL, [| Imm bo; Reg reg; Imm bd |] -> bctarl mem addr_size bo reg bd
   | opcode, _ ->
-    ppc_fail "%s: unexpected operand set" (string_of_opcode opcode)
+    Dsl.ppc_fail "%s: unexpected operand set" (string_of_opcode opcode)

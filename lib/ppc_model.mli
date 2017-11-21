@@ -37,7 +37,7 @@ module Hardware : sig
   val vr : Var.Set.t
 
   (** xer register bits *)
-  val xer : var Int.Map.t
+  val xer : var
 
   (** conditional register bits *)
   val cr : var Int.Map.t
@@ -51,15 +51,19 @@ module Hardware : sig
   (** target register  *)
   val tar : var
 
-  (** fixed preciion flags *)
+  (** condition register bits *)
+  val cr : var Int.Map.t
+
+  (** condition register fields *)
+  val cr_fields : (var * var * var * var) String.Map.t
+
+  (** fixed precision flags *)
   val so : var   (** summary overflow        *)
   val ca : var   (** carry flag              *)
   val ov : var   (** overflow flag           *)
   val ca32 : var (** carry out of 32 bits    *)
   val ov32 : var (** overflow of 32 bits     *)
-  val zf : var   (** the result is zero      *)
-  val nf : var   (** the result is negative  *)
-  val pf : var   (** the result is positive  *)
+
 end
 
 module PPC32 : sig

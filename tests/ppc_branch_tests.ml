@@ -2,8 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Ppc_model.Hardware
-open Ppc_rtl
+open Ppc_types
+open Hardware
 open Ppc_tests_helpers
 
 let typecheck bytes arch ctxt =
@@ -147,7 +147,7 @@ let bcx name fin arch case (ctxt : test_ctxt) =
   let bd = Word.of_int ~width:14 imm in
   let fin = Word.of_int ~width:2 fin in
   let bytes = make_bytes [opcode; bo; bi; bd; fin] in
-  let cr0 = condition_register_bit 0 in
+  let cr0 = Dsl.cr_bit' 31 in
   let init_cr = match case.cond_reg0 with
     | Some w -> Some Bil.(cr0 := int w)
     | None -> None in
@@ -214,7 +214,7 @@ let bcxrx name opt_opcode fin reg arch case (ctxt : test_ctxt) =
   let fin = Word.of_int ~width:1 fin in
   let insn = [opcode; bo; bi; no_matter; bh; opt_opcode; fin] in
   let bytes = make_bytes insn in
-  let cr0 = condition_register_bit 0 in
+  let cr0 = Dsl.cr_bit' 31 in
   let init_cr = match case.cond_reg0 with
     | Some w -> Some Bil.(cr0 := int w)
     | None -> None in

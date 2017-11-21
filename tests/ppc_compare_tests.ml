@@ -2,8 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Ppc_model.Hardware
-open Ppc_rtl
+open Ppc_types
+open Hardware
 open Ppc_tests_helpers
 
 type expected = LT | GT | EQ
@@ -17,9 +17,9 @@ let print_bits lt gt eq =
   printf "lt %s; gt %s; eq %s\n" (str lt) (str gt) (str eq)
 
 let check ctxt expected =
-  let cr_lt = condition_register_bit 3 in
-  let cr_gt = condition_register_bit 2 in
-  let cr_eq = condition_register_bit 1 in
+  let cr_lt = Dsl.cr_bit' 28 in
+  let cr_gt = Dsl.cr_bit' 29 in
+  let cr_eq = Dsl.cr_bit' 30 in
   let lt = lookup_var ctxt cr_lt in
   let gt = lookup_var ctxt cr_gt in
   let eq = lookup_var ctxt cr_eq in

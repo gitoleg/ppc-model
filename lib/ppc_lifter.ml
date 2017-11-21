@@ -1,8 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Ppc_model
-open Ppc_rtl
+open Ppc_types
 
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
@@ -41,7 +40,7 @@ let lift mode mem insn =
   let lift lifter =
     try
       lifter mode endian mem (Insn.ops insn) |>
-      bil_of_dsl |>
+      Dsl.bil_of_t |>
       Result.return
     with
       Failure str -> Error (Error.of_string str) in
@@ -50,12 +49,12 @@ let lift mode mem insn =
   | Some lifter -> lift lifter
 
 module T32 = struct
-  module CPU = PowerPC_32_cpu
+  module CPU = Model.PowerPC_32_cpu
   let lift = lift `r32
 end
 
 module T64 = struct
-  module CPU = PowerPC_64_cpu
+  module CPU = Model.PowerPC_64_cpu
   let lift = lift `r64
 end
 

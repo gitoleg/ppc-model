@@ -21,9 +21,9 @@ Library ppc_lifter
                   Ppc_load,
                   Ppc_logical,
                   Ppc_model,
-                  Ppc_rtl,
+                  Ppc_dsl,
                   Ppc_store,
-                  Ppc_sub
+                  Ppc_types
   CompiledObject: best
   Install:        true
 

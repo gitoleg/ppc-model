@@ -2,6 +2,11 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
+
+val nf : var
+val pf : var
+val zf : var
+
 (** [find_gpr name] - return a GPR with a [name] *)
 val find_gpr : string -> var
 

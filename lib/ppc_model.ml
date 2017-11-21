@@ -40,13 +40,13 @@ module Hardware = struct
   (** target register  *)
   let tar = Var.create "TAR" (Type.imm tar_bitwidth)
 
+  (** fixed point exception register  *)
+  let xer = Var.create "TAR" (Type.imm xer_bitwidth)
+
   (** fixed precision flags  *)
   let so = flag "SO" (** summary overflow *)
   let ca = flag "CA"
   let ov = flag "OV"
-  let zf = flag "ZF" (** the result is zero      *)
-  let nf = flag "NF" (** the result is negative  *)
-  let pf = flag "PF" (** the result is positive  *)
   let ca32 = flag "CA32" (** carry of low-order 32 bit result *)
   let ov32 = flag "OV32" (** overflow of low-order 32 bit result *)
 
@@ -57,36 +57,67 @@ module Hardware = struct
   let float_greater = flag "FG"   (** Floating-Point Equal or Zero    *)
   let float_unordered = flag "FU" (** Floating-Point Unordered or NaN *)
 
-  (** conditional register bits *)
+  (** condition register bits  *)
+  let cr0  = flag "CR7UN"
+  let cr1  = flag "CR7EQ"
+  let cr2  = flag "CR7GT"
+  let cr3  = flag "CR7LT"
+  let cr4  = flag "CR6UN"
+  let cr5  = flag "CR6EQ"
+  let cr6  = flag "CR6GT"
+  let cr7  = flag "CR6LT"
+  let cr8  = flag "CR5UN"
+  let cr9  = flag "CR5EQ"
+  let cr10 = flag "CR5GT"
+  let cr11 = flag "CR5LT"
+  let cr12 = flag "CR4UN"
+  let cr13 = flag "CR4EQ"
+  let cr14 = flag "CR4GT"
+  let cr15 = flag "CR4LT"
+  let cr16 = flag "CR3UN"
+  let cr17 = flag "CR3EQ"
+  let cr18 = flag "CR3GT"
+  let cr19 = flag "CR3LT"
+  let cr20 = flag "CR2UN"
+  let cr21 = flag "CR2EQ"
+  let cr22 = flag "CR2GT"
+  let cr23 = flag "CR2LT"
+  let cr24 = flag "CR1UN"
+  let cr25 = flag "CR1EQ"
+  let cr26 = flag "CR1GT"
+  let cr27 = flag "CR1LT"
+  let cr28 = flag "CR0UN"
+  let cr29 = flag "CR0EQ"
+  let cr30 = flag "CR0GT"
+  let cr31 = flag "CR0LT"
+
   let cr =
-    List.fold range32 ~init:Int.Map.empty
-      ~f:(fun bits i ->
-          let bit = match i with
-            | 31 -> nf
-            | 30 -> pf
-            | 29 -> zf
-            | 28 -> so
-            | _ -> make_var_i (Type.imm 1) "CR" i in
-          Int.Map.add bits ~key:i ~data:bit)
+    let bits = [
+      cr0;  cr1;  cr2;  cr3;  cr4;  cr5;  cr6;  cr7;
+      cr8;  cr9;  cr10; cr11; cr12; cr13; cr14; cr15;
+      cr16; cr17; cr18; cr19; cr20; cr21; cr22; cr23;
+      cr24; cr25; cr26; cr27; cr28; cr29; cr30; cr31; ] in
+    let _, bits =
+      List.fold bits ~init:(0,Int.Map.empty)
+        ~f:(fun (num, bits) bit ->
+            num + 1, Int.Map.add bits ~key:num ~data:bit) in
+    bits
 
-  (** fixed point exception register  *)
-  let xer =
-    List.fold range64 ~init:Int.Map.empty
-      ~f:(fun bits i ->
-          let bit = match i with
-            | 31 -> so
-            | 30 -> ov
-            | 29 -> ca
-            | 19 -> ov32
-            | 18 -> ca32
-            | _ -> make_var_i (Type.imm 1) "XER" i in
-          Int.Map.add bits ~key:i ~data:bit)
+  let cr_fields =
+    let fields = [
+      "CR0", (cr28, cr29, cr30, cr31);
+      "CR1", (cr24, cr25, cr26, cr27);
+      "CR2", (cr20, cr21, cr22, cr23);
+      "CR3", (cr16, cr17, cr18, cr19);
+      "CR4", (cr12, cr13, cr14, cr15);
+      "CR5", (cr8,  cr9,  cr10, cr11);
+      "CR6", (cr4,  cr5,  cr6,  cr7);
+      "CR7", (cr0,  cr1,  cr2,  cr3);
+    ] in
+    List.fold fields ~init:String.Map.empty ~f:(fun fs (name, fd) ->
+        String.Map.add fs name fd)
 
-  let flags = Var.Set.of_list [
-      so; ca; ov; zf; nf; pf; ca32; ov32;
-      float_c; float_less; float_equal;
-      float_greater; float_unordered
-    ]
+
 end
 
 module PPC32 = struct
@@ -100,13 +131,8 @@ module PPC64 = struct
 end
 
 module type PPC_cpu = sig
-  val gpr : Var.Set.t
+  include module type of Hardware
   val mem : var
-  val flags : Var.Set.t
-  val zf : var
-  val ca : var
-  val ov : var
-  val nf : var
 end
 
 module Make_cpu(P : PPC_cpu) : CPU = struct
@@ -115,6 +141,14 @@ module Make_cpu(P : PPC_cpu) : CPU = struct
   let sp = Var.Set.find_exn gpr ~f:(fun v -> Var.name v = "R1")
   let vf = ov
   let cf = ca
+  let nf = cr0
+  let zf = cr2
+
+  let flags = Var.Set.of_list [
+      so; ca; ov; cf; nf; zf; ca32; ov32;
+      float_c; float_less; float_equal;
+      float_greater; float_unordered
+    ]
 
   let is = Var.same
   let is_reg r = Set.mem gpr (Var.base r)
