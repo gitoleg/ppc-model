@@ -11,43 +11,43 @@ Plugins:      META (0.4), DevFiles (0.4)
 BuildTools:   ocamlbuild
 BuildDepends: ppx_jane, core_kernel, bap
 
-Library ppc_lifter
+Library powerpc_lifter
   Path:           lib
-  FindLibName:    ppc_lifter
-  Modules:        Ppc_add,
-                  Ppc_branch,
-                  Ppc_compare,
-                  Ppc_lifter,
-                  Ppc_load,
-                  Ppc_logical,
-                  Ppc_model,
-                  Ppc_dsl,
-                  Ppc_store,
-                  Ppc_types
+  FindLibName:    powerpc_lifter
+  Modules:        Powerpc_add,
+                  Powerpc_branch,
+                  Powerpc_compare,
+                  Powerpc_lifter,
+                  Powerpc_load,
+                  Powerpc_logical,
+                  Powerpc_model,
+                  Powerpc_dsl,
+                  Powerpc_store,
+                  Powerpc_types
   CompiledObject: best
   Install:        true
 
-Library ppc_tests
+Library powerpc_tests
   Path:           tests
-  FindLibName:    ppc_tests
+  FindLibName:    powerpc_tests
   Build$:         flag(tests)
   Install:        false
   CompiledObject: best
-  Modules:        Ppc_add_tests,
-                  Ppc_branch_tests,
-                  Ppc_compare_tests,
-                  Ppc_load_tests,
-                  Ppc_logical_tests,
-                  Ppc_store_tests,
-                  Ppc_tests_helpers
-  BuildDepends:   oUnit, ppc_lifter
+  Modules:        Powerpc_add_tests,
+                  Powerpc_branch_tests,
+                  Powerpc_compare_tests,
+                  Powerpc_load_tests,
+                  Powerpc_logical_tests,
+                  Powerpc_store_tests,
+                  Powerpc_tests_helpers
+  BuildDepends:   oUnit, powerpc_lifter
 
 Executable "ppc-run"
   Path:           src
-  MainIs:         ppc_run.ml
+  MainIs:         powerpc_run.ml
   CompiledObject: best
   Install:        true
-  BuildDepends:   bap.plugins, findlib.dynload, ppc_lifter, cmdliner
+  BuildDepends:   bap.plugins, findlib.dynload, powerpc_lifter, cmdliner
 
 Executable run_test
   Path:           tests
@@ -55,7 +55,7 @@ Executable run_test
   Install:        false
   Build$:         flag(tests)
   CompiledObject: best
-  BuildDepends:   bap.plugins, ppc_tests, oUnit, findlib.dynload
+  BuildDepends:   bap.plugins, powerpc_tests, oUnit, findlib.dynload
 
 Test ppc_test
   TestTools:      run_test

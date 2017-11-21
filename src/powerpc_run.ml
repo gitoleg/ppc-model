@@ -4,7 +4,7 @@ open Bap_plugins.Std
 
 module Dis = Disasm_expert.Basic
 
-module Lifter = Ppc_lifter
+module Lifter = Powerpc_lifter
 
 let () =
   match Plugins.load () |> Result.all with

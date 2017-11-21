@@ -4,7 +4,7 @@ open OUnit2
 
 module Dis = Disasm_expert.Basic
 
-open Ppc_types
+open Powerpc_types
 open Model
 
 let nf = Dsl.cr_bit 0

@@ -2,8 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Ppc_model.Hardware
-open Ppc_tests_helpers
+open Powerpc_model.Hardware
+open Powerpc_tests_helpers
 
 let is_equal_words w = function
   | None -> false

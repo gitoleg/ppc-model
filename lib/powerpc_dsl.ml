@@ -22,8 +22,8 @@ let concat = Bil.concat
 let if_ = Bil.if_
 let jmp = Bil.jmp
 
-open Ppc_model
-open Ppc_model.Hardware
+open Powerpc_model
+open Hardware
 
 let bil = ident
 

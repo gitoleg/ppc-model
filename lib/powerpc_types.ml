@@ -1,7 +1,7 @@
 open Bap.Std
 
-module Dsl = Ppc_dsl
-module Model = Ppc_model
+module Dsl = Powerpc_dsl
+module Model = Powerpc_model
 module Hardware = Model.Hardware
 
 type rtl = Dsl.rtl [@@deriving bin_io, compare, sexp]

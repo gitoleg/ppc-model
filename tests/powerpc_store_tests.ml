@@ -2,8 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Ppc_model
-open Ppc_tests_helpers
+open Powerpc_model
+open Powerpc_tests_helpers
 
 let env_of_arch = function
   | `ppc   -> PPC32.mem, 32

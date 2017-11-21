@@ -2,9 +2,9 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Ppc_types
+open Powerpc_types
 open Hardware
-open Ppc_tests_helpers
+open Powerpc_tests_helpers
 
 type expected = LT | GT | EQ
 

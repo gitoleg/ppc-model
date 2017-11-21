@@ -1,7 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Ppc_types
+open Powerpc_types
 open Hardware
 
 let addr_of_exp addr_size ?(exp_size=64) exp = match addr_size with

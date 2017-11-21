@@ -1,7 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Ppc_types
+open Powerpc_types
 open Hardware
 
 let sign_extend64 op_size exp = match op_size with

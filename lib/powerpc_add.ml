@@ -27,7 +27,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Ppc_types
+open Powerpc_types
 open Hardware
 
 (** Extended mnemonics:

@@ -1,7 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Ppc_types
+open Powerpc_types
 
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
@@ -12,12 +12,12 @@ module type Lifter = sig
 end
 
 let lifters : (module Lifter) list = [
-  (module Ppc_add);
-  (module Ppc_branch);
-  (module Ppc_compare);
-  (module Ppc_load);
-  (module Ppc_logical);
-  (module Ppc_store);
+  (module Powerpc_add);
+  (module Powerpc_branch);
+  (module Powerpc_compare);
+  (module Powerpc_load);
+  (module Powerpc_logical);
+  (module Powerpc_store);
 ]
 
 type ppc_lift = addr_size -> endian -> mem -> op array -> rtl list
