@@ -8,7 +8,7 @@ let endian = BigEndian
 
 module type Lifter = sig
   type t [@@deriving sexp, enumerate]
-  val lift : t -> addr_size -> endian -> mem -> op array -> dsl
+  val lift : t -> addr_size -> endian -> mem -> op array -> rtl list
 end
 
 let lifters : (module Lifter) list = [
@@ -20,7 +20,7 @@ let lifters : (module Lifter) list = [
   (module Ppc_store);
 ]
 
-type ppc_lift = addr_size -> endian -> mem -> op array -> dsl
+type ppc_lift = addr_size -> endian -> mem -> op array -> rtl list
 
 let lifts : ppc_lift String.Table.t = String.Table.create ()
 
@@ -40,10 +40,10 @@ let lift mode mem insn =
   let lift lifter =
     try
       lifter mode endian mem (Insn.ops insn) |>
-      Dsl.bil_of_t |>
+      Dsl.bil |>
       Result.return
     with
-      Failure str -> Error (Error.of_string str) in
+    | Failure str -> Error (Error.of_string str) in
   match String.Table.find lifts (Insn.name insn) with
   | None -> Or_error.errorf "unknown instruction %s" insn_name
   | Some lifter -> lift lifter

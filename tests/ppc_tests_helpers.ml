@@ -7,9 +7,9 @@ module Dis = Disasm_expert.Basic
 open Ppc_types
 open Model
 
-let nf = Dsl.cr_bit' 0
-let pf = Dsl.cr_bit' 1
-let zf = Dsl.cr_bit' 2
+let nf = Dsl.cr_bit 0
+let pf = Dsl.cr_bit 1
+let zf = Dsl.cr_bit 2
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>

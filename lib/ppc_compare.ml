@@ -30,7 +30,7 @@ let write_cr_field (lt,gt,eq,sb) exp =
     2f 89 ff ff     cmpwi cr7, r9, -1
     2f a9 ff ff     cmpdi cr7, r9, -1 *)
 let cmpi op_size bf ra si =
-  let ra = Dsl.find_gpr ra in
+  let ra = Dsl.find ra in
   let ra = sign_extend64 op_size (Dsl.var ra) in
   let fn = Dsl.cr_field bf in
   let si = Word.of_int64 (Imm.to_int64 si) in
@@ -53,8 +53,8 @@ let cmpi op_size bf ra si =
     7f 86 38 00     cmpw cr7, r6, r7
     7f a6 38 00     cmpd cr7, r6, r7 *)
 let cmp op_size bf ra rb =
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   let ra = sign_extend64 op_size (Dsl.var ra) in
   let rb = sign_extend64 op_size (Dsl.var rb) in
   let fn = Dsl.cr_field bf in
@@ -77,7 +77,7 @@ let cmp op_size bf ra rb =
     2b 89 00 01     cmplwi cr7, r9, 1
     2b a9 00 01     cmpldi cr7, r9, 1 *)
 let cmpli op_size bf ra si =
-  let ra = Dsl.find_gpr ra in
+  let ra = Dsl.find ra in
   let ra = unsign_extend64 op_size (Dsl.var ra) in
   let fn = Dsl.cr_field bf in
   let si = Word.of_int64 (Imm.to_int64 si) in
@@ -100,8 +100,8 @@ let cmpli op_size bf ra si =
     7f 86 38 40     cmplw cr7, r6, r7
     7f a6 38 40     cmpld cr7, r6, r7 *)
 let cmpl op_size bf ra rb =
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   let ra = unsign_extend64 op_size (Dsl.var ra) in
   let rb = unsign_extend64 op_size (Dsl.var rb) in
   let fn = Dsl.cr_field bf in

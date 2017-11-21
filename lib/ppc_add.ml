@@ -70,14 +70,15 @@ let compute_ca32 x result = Dsl.(extract 31 0 result < extract 31 0 x)
     3b de fd 28     addi    r30,r30,-728
     38 20 00 10     addi    r1,0,16 (OR li r1, 16) *)
 let addi rt ra imm =
-  let rt = Dsl.find_gpr rt in
+  let rt = Dsl.find rt in
   let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
-  match Dsl.find_gpr_opt ra with
-  | None -> Dsl.[ rt := cast signed gpr_bitwidth (int imm); ]
-  | Some ra -> Dsl.[ rt := var ra + cast signed gpr_bitwidth (int imm); ]
+  if Dsl.exists ra then
+    Dsl.[ rt := var (find ra) + cast signed gpr_bitwidth (int imm); ]
+  else
+    Dsl.[ rt := cast signed gpr_bitwidth (int imm); ]
 
 let li rt imm =
-  let rt = Dsl.find_gpr rt in
+  let rt = Dsl.find rt in
   let imm = Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
   Dsl.[ rt := cast signed gpr_bitwidth (int imm); ]
 
@@ -87,18 +88,17 @@ let li rt imm =
     3f de 00 02     addis   r30,r30,2
     3d 6b f0 00     addis   r11,r11,-4096 *)
 let addis rt ra imm =
-  let rt = Dsl.find_gpr rt in
+  let rt = Dsl.find rt in
   let zero16 = Word.zero 16 in
   let imm =
     Word.of_int64 ~width:16 (Imm.to_int64 imm) in
-  match Dsl.find_gpr_opt ra with
-  | None ->
+  if Dsl.exists ra then
+    Dsl.[ rt := var (find ra) + cast signed gpr_bitwidth (int imm ^ int zero16); ]
+  else
     Dsl.[ rt := cast signed gpr_bitwidth (int imm ^ int zero16); ]
-  | Some ra ->
-    Dsl.[ rt := var ra + cast signed gpr_bitwidth (int imm ^ int zero16); ]
 
 let lis rt imm =
-  let rt = Dsl.find_gpr rt in
+  let rt = Dsl.find rt in
   let zero16 = Word.zero 16 in
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   Dsl.[ rt := cast signed gpr_bitwidth (int imm ^ int zero16); ]
@@ -116,13 +116,20 @@ let addpcis rt imm = Dsl.ppc_fail "unimplemented"
     7d 62 5a 14 add   r11, r2, r11
     7d 62 5a 15 add.  r11, r2, r11 *)
 let add rt ra rb =
-  let rt = Dsl.find_gpr rt in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rt = Dsl.find rt in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[rt := var ra + var rb]
 
+let write_fixpoint_result addr_size res =
+  Dsl.[
+    cr_bit 0 := is_negative addr_size (var res);
+    cr_bit 1 := is_positive addr_size (var res);
+    cr_bit 2 := is_zero addr_size (var res);
+  ]
+
 let add_dot addr_size rt ra rb =
-  add rt ra rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
+  add rt ra rb @ write_fixpoint_result addr_size (Dsl.find rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
     Page 69 of IBM Power ISATM Version 3.0 B
@@ -130,8 +137,8 @@ let add_dot addr_size rt ra rb =
     30 21 00 10    addic r1, r1, 16
     33 de fd 28    addic r30, r30, -728  *)
 let addic addr_size rt ra imm =
-  let rt = Dsl.find_gpr rt in
-  let ra = Dsl.find_gpr ra in
+  let rt = Dsl.find rt in
+  let ra = Dsl.find ra in
   let imm =
     Word.of_int64 ~width:gpr_bitwidth (Imm.to_int64 imm) in
   let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
@@ -146,7 +153,7 @@ let addic addr_size rt ra imm =
     34 21 00 10    addic. r1, r1, 16
     37 de fd 28    addic. r30, r30, -728  *)
 let addic_dot addr_size rt ra imm =
-  addic addr_size rt ra imm @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
+  addic addr_size rt ra imm @ write_fixpoint_result addr_size (Dsl.find rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
@@ -154,9 +161,9 @@ let addic_dot addr_size rt ra imm =
     7d 62 58 14  addc   r11, r2, r11
     7d 62 58 15  addc.  r11, r2, r11 *)
 let addc addr_size rt ra rb =
-  let rt = Dsl.find_gpr rt in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rt = Dsl.find rt in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
   Dsl.[ tmp := var ra;
     rt := var ra + var rb;
@@ -164,7 +171,7 @@ let addc addr_size rt ra rb =
     ca32 := compute_ca32 (var tmp) (var rt); ]
 
 let addc_dot addr_size rt ra rb =
-  addc addr_size rt ra rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
+  addc addr_size rt ra rb @ write_fixpoint_result addr_size (Dsl.find rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Extend
     Page 71 of IBM Power ISATM Version 3.0 B
@@ -172,9 +179,9 @@ let addc_dot addr_size rt ra rb =
     7c 21 81 14  adde   r11, r2, r11
     7c 21 81 15  adde.  r11, r2, r11 *)
 let adde addr_size rt ra rb =
-  let rt = Dsl.find_gpr rt in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rt = Dsl.find rt in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
   Dsl.[ tmp := var ra;
     rt := var ra + var rb + cast unsigned gpr_bitwidth (var ca);
@@ -182,7 +189,7 @@ let adde addr_size rt ra rb =
     ca32 := compute_ca32 (var tmp) (var rt); ]
 
 let adde_dot addr_size rt ra rb =
-  adde addr_size rt ra rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
+  adde addr_size rt ra rb @ write_fixpoint_result addr_size (Dsl.find rt)
 
 (** Fixed-Point Arithmetic Instructions - Add to Minus One Extend
     Page 71 of IBM Power ISATM Version 3.0 B
@@ -190,8 +197,8 @@ let adde_dot addr_size rt ra rb =
     7c 22 01 d4  addme  r1,r2
     7c 22 01 d5  addme. r1,r2  *)
 let addme addr_size rt ra =
-  let rt = Dsl.find_gpr rt in
-  let ra = Dsl.find_gpr ra in
+  let rt = Dsl.find rt in
+  let ra = Dsl.find ra in
   let one = Word.one gpr_bitwidth in
   let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
   Dsl.[ tmp := var ra;
@@ -200,7 +207,7 @@ let addme addr_size rt ra =
     ca32 := compute_ca32 (var tmp) (var rt);  ]
 
 let addme_dot addr_size rt ra =
-  addme addr_size rt ra @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
+  addme addr_size rt ra @ write_fixpoint_result addr_size (Dsl.find rt)
 
 (** Fixed-Point Arithmetic Instructions - Add Extended using alternate carry bit
     Page 72 of IBM Power ISATM Version 3.0 B
@@ -215,8 +222,8 @@ let addex rt ra rb = Dsl.ppc_fail "unimplemented"
     7c 22 01 94   addze r1,r2
     7c 22 01 95   addze. r1,r2 *)
 let addze addr_size rt ra =
-  let rt = Dsl.find_gpr rt in
-  let ra = Dsl.find_gpr ra in
+  let rt = Dsl.find rt in
+  let ra = Dsl.find ra in
   let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
   Dsl.[ tmp := var ra;
     rt := var ra + cast unsigned gpr_bitwidth (var ca);
@@ -224,7 +231,7 @@ let addze addr_size rt ra =
     ca32 := compute_ca32 (var tmp) (var rt); ]
 
 let addze_dot addr_size rt ra =
-  addze addr_size rt ra @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr rt)
+  addze addr_size rt ra @ write_fixpoint_result addr_size (Dsl.find rt)
 
 type t = [
   | `ADD4

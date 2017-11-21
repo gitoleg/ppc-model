@@ -17,10 +17,9 @@ let addr_of_exp addr_size exp = match addr_size with
     b1 3c 01 6c     sth r9,364(r28)
     91 28 ff d4     stw r9,-44(r8) *)
 let st addr_size endian size rs imm ra =
-  let rs = Dsl.find_gpr rs in
-  let ra = match Dsl.find_gpr_opt ra with
-    | None -> Dsl.int (Word.zero 64)
-    | Some ra -> Dsl.var ra in
+  let rs = Dsl.find rs in
+  let ra = if Dsl.exists ra then Dsl.(var @@ find ra)
+    else Dsl.int (Word.zero 64) in
   let bits = Size.in_bits addr_size in
   let ea = Dsl.fresh "ea" (Type.imm bits) in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
@@ -37,11 +36,10 @@ let st addr_size endian size rs imm ra =
     7f b6 f9 2e     stwx    r29,r22,r31
     7c 28 49 2a     stdx    r1, r8, r9  *)
 let stx addr_size endian size rs ra rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = match Dsl.find_gpr_opt ra with
-    | None -> Dsl.int (Word.zero 64)
-    | Some ra -> Dsl.var ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = if Dsl.exists ra then Dsl.(var @@ find ra)
+    else Dsl.int (Word.zero 64) in
+  let rb = Dsl.find rb in
   let bits = Size.in_bits addr_size in
   let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
@@ -57,8 +55,8 @@ let stx addr_size endian size rs ra rb =
     94 21 ff f0     stwu r1,-16(r1)  *)
 let stu addr_size endian size rs imm ra =
   if Reg.equal rs ra then Dsl.ppc_fail "Invalid instruction szu: same operands";
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let imm = Word.of_int64 (Imm.to_int64 imm) in
   let bits = Size.in_bits addr_size in
   let ea = Dsl.fresh "ea" (Type.imm bits) in
@@ -77,9 +75,9 @@ let stu addr_size endian size rs imm ra =
     7c 28 49 6a     stdux r1,r8,r9   *)
 let stux addr_size endian size rs ra rb =
   if Reg.equal rs ra then Dsl.ppc_fail "Invalid instruction szux: same operands";
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   let bits = Size.in_bits addr_size in
   let ea = Dsl.fresh "ea" (Type.imm bits) in
   Dsl.[
@@ -93,10 +91,9 @@ let stux addr_size endian size rs ra rb =
     examples:
     f8 29 00 08   std r1, 8(r9) *)
 let std addr_size endian rs imm ra =
-  let rs = Dsl.find_gpr rs in
-  let ra = match Dsl.find_gpr_opt ra with
-    | None -> Dsl.int (Word.zero 64)
-    | Some ra -> Dsl.var ra in
+  let rs = Dsl.find rs in
+  let ra = if Dsl.exists ra then Dsl.(var @@ find ra)
+    else Dsl.int (Word.zero 64) in
   let addr_bits = Size.in_bits addr_size in
   let imm =
     let x = Imm.to_int64 imm in
@@ -112,8 +109,8 @@ let std addr_size endian rs imm ra =
     examples:
     f8 29 00 09   stdu r1, 8(r9) *)
 let stdu addr_size endian rs imm ra =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let imm =
     let x = Imm.to_int64 imm in
     Word.of_int64 Int64.(x lsl 2)  in

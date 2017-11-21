@@ -17,9 +17,9 @@ let print_bits lt gt eq =
   printf "lt %s; gt %s; eq %s\n" (str lt) (str gt) (str eq)
 
 let check ctxt expected =
-  let cr_lt = Dsl.cr_bit' 28 in
-  let cr_gt = Dsl.cr_bit' 29 in
-  let cr_eq = Dsl.cr_bit' 30 in
+  let cr_lt = Dsl.cr_bit 28 in
+  let cr_gt = Dsl.cr_bit 29 in
+  let cr_eq = Dsl.cr_bit 30 in
   let lt = lookup_var ctxt cr_lt in
   let gt = lookup_var ctxt cr_gt in
   let eq = lookup_var ctxt cr_eq in

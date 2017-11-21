@@ -17,28 +17,28 @@ open Hardware
     71 2a 00 20     andi.   r10,r9,32 *)
 let andi_dot addr_size ra rs imm =
   let zero48 = Word.zero 48 in
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   Dsl.[ ra := var rs land (int zero48 ^ int imm);
-    cr_bit' 0 := is_negative addr_size (var ra);
-    cr_bit' 1 := is_positive addr_size (var ra);
-    cr_bit' 2 := is_zero addr_size (var ra); ]
+    cr_bit 0 := is_negative addr_size (var ra);
+    cr_bit 1 := is_positive addr_size (var ra);
+    cr_bit 2 := is_zero addr_size (var ra); ]
 
 (** Fixed-point AND Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     75 2a 08 00     andis.  r10,r9,2048 *)
 let andis_dot addr_size ra rs ui =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let zero16 = Word.zero 16 in
   let zero32 = Word.zero 32 in
   let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
   Dsl.[ ra := var rs land (int zero32 ^ int ui ^ int zero16);
-    cr_bit' 0 := is_negative addr_size (var ra);
-    cr_bit' 1 := is_positive addr_size (var ra);
-    cr_bit' 2 := is_zero addr_size (var ra); ]
+    cr_bit 0 := is_negative addr_size (var ra);
+    cr_bit 1 := is_positive addr_size (var ra);
+    cr_bit 2 := is_zero addr_size (var ra); ]
 
 (** Fixed-point AND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -46,13 +46,20 @@ let andis_dot addr_size ra rs ui =
     7f 39 e8 38     and     r25,r25,r29
     7d 49 30 39     and.    r9,r10,r6 *)
 let and_ ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := var rs land var rb; ]
 
+let write_fixpoint_result addr_size res =
+  Dsl.[
+    cr_bit 0 := is_negative addr_size (var res);
+    cr_bit 1 := is_positive addr_size (var res);
+    cr_bit 2 := is_zero addr_size (var res);
+  ]
+
 let and_dot addr_size ra rs rb =
-  and_ ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  and_ ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point AND with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -60,13 +67,13 @@ let and_dot addr_size ra rs rb =
     7c ea 50 78     andc    r10,r7,r10
     7e 09 18 79     andc.   r9,r16,r3  *)
 let andc ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := var rs land (lnot (var rb)); ]
 
 let andc_dot addr_size ra rs rb =
-  andc ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  andc ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point OR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -74,8 +81,8 @@ let andc_dot addr_size ra rs rb =
     60 c6 51 c1     ori     r6,r6,20929 *)
 let ori ra rs imm =
   let zero48 = Word.zero 48 in
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   Dsl.[ ra := var rs lor (int zero48 ^ int imm); ]
 
@@ -84,8 +91,8 @@ let ori ra rs imm =
     examples:
     65 4a 00 10     oris    r10,r10,16 *)
 let oris ra rs ui =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let zero16 = Word.zero 16 in
   let zero32 = Word.zero 32 in
   let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
@@ -97,13 +104,13 @@ let oris ra rs ui =
     7f 38 c3 78     or      r24,r25,r24
     7d 0a 4b 79     or.     r10,r8,r9  *)
 let or_ ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := var rs lor var rb; ]
 
 let or_dot addr_size ra rs rb =
-  or_ ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  or_ ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point OR with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -111,13 +118,13 @@ let or_dot addr_size ra rs rb =
     7c 8a 53 38     orc     r10,r4,r10
     7c 8a 53 39     orc.    r10,r4,r10 *)
 let orc ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := var rs lor (lnot (var rb)); ]
 
 let orc_dot addr_size ra rs rb =
-  orc ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  orc ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point XOR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -125,8 +132,8 @@ let orc_dot addr_size ra rs rb =
     68 63 00 01     xori    r3,r3,1 *)
 let xori ra rs imm =
   let zero48 = Word.zero 48 in
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
   Dsl.[ ra := var rs lxor (int zero48 ^ int imm); ]
 
@@ -136,8 +143,8 @@ let xori ra rs imm =
     6d 2a 04 00     xoris   r10,r9,1024
  *)
 let xoris ra rs ui =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let zero16 = Word.zero 16 in
   let zero32 = Word.zero 32 in
   let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
@@ -149,13 +156,13 @@ let xoris ra rs ui =
     7c 6a 52 78     xor     r10,r3,r10
     7d 4a 4a 79     xor.    r10,r10,r9 *)
 let xor_ ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := var rs lxor var rb; ]
 
 let xor_dot addr_size ra rs rb =
-  xor_ ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  xor_ ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point NAND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -163,13 +170,13 @@ let xor_dot addr_size ra rs rb =
     7c 63 1b b8     nand    r3,r3,r3
     7c 63 1b b9     nand.   r3,r3,r3 *)
 let nand ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := lnot (var rs land var rb); ]
 
 let nand_dot addr_size ra rs rb =
-  nand ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  nand ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point NOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -177,13 +184,13 @@ let nand_dot addr_size ra rs rb =
     7d 09 48 f8     nor     r9,r8,r9
     7d 09 48 f9     nor.    r9,r8,r9  *)
 let nor ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := lnot (var rs lor var rb); ]
 
 let nor_dot addr_size ra rs rb =
-  nor ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  nor ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point Equivalent
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -191,13 +198,13 @@ let nor_dot addr_size ra rs rb =
     7d 09 4a 38     eqv     r9,r8,r9
     7d 09 4a 39     eqv.    r9,r8,r9 *)
 let eqv ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   Dsl.[ ra := lnot (var rs lxor (var rb)); ]
 
 let eqv_dot addr_size ra rs rb =
-  eqv ra rs rb @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  eqv ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point Extend Sign Byte/Halfword/Word
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -214,8 +221,8 @@ let exts ra rs size =
   let zero_tail = Word.zero bits in
   let zeros = Word.concat (Word.zero (gpr_bitwidth - bits)) zero_tail in
   let ones = Word.concat (Word.ones (gpr_bitwidth - bits)) zero_tail in
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let sign = Dsl.fresh "sign" (Type.imm 1) in
   Dsl.[ sign := extract sign_pos sign_pos (var rs);
     ra := cast unsigned gpr_bitwidth (extract sign_pos 0 (var rs));
@@ -227,7 +234,7 @@ let exts ra rs size =
   ]
 
 let exts_dot addr_size ra rs size =
-  exts ra rs size @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  exts ra rs size @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point Count Leading Zeros Word/Doubleword
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -237,8 +244,8 @@ let exts_dot addr_size ra rs size =
     7c 63 00 74     cntlzd   r3,r3
     7c 63 00 75     cntlzd.  r3,r3 *)
 let cntlz ra rs size =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let bits = Size.in_bits size in
   let high_bit = bits - 1 in
   let one = Word.one bits in
@@ -270,7 +277,7 @@ let cntlz ra rs size =
   init @ loop @ finish
 
 let cntlz_dot addr_size ra rs size =
-  cntlz ra rs size @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  cntlz ra rs size @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point Count Trailing Zeros Word
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -280,8 +287,8 @@ let cntlz_dot addr_size ra rs size =
     7c 63 04 74     cnttzd   r3,r3
     7c 63 04 75     cnttzd.  r3,r3 *)
 let cnttz ra rs size =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
   let bits = Size.in_bits size in
   let high_bit = bits - 1 in
   let one = Word.one bits in
@@ -310,16 +317,16 @@ let cnttz ra rs size =
   init @ loop @ finish
 
 let cnttz_dot addr_size ra rs size =
-  cnttz ra rs size @ Dsl.write_fixpoint_result addr_size (Dsl.find_gpr ra)
+  cnttz ra rs size @ write_fixpoint_result addr_size (Dsl.find ra)
 
 (** Fixed-point Compare Bytes
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 8a 53 f8   cmpb r10, r4, r10 *)
 let cmpb ra rs rb =
-  let rs = Dsl.find_gpr rs in
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
+  let rs = Dsl.find rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
   let byte = 8 in
   let rs_byte = Dsl.fresh "rs_byte" (Type.imm byte) in
   let rb_byte = Dsl.fresh "rb_byte" (Type.imm byte) in
@@ -358,8 +365,8 @@ let cmpb ra rs rb =
     7c 84 02 f4       popcntw r4, r4
     7c 84 03 f4       popcntd r4, r4 *)
 let popcnt ra rs size =
-  let ra = Dsl.find_gpr ra in
-  let rs = Dsl.find_gpr rs in
+  let ra = Dsl.find ra in
+  let rs = Dsl.find rs in
   let bits = Size.in_bits size in
   let steps = gpr_bitwidth / bits in
   let one = Word.one gpr_bitwidth in
@@ -414,9 +421,9 @@ let parity ra rs size = Dsl.ppc_fail "llvm doens't now about this insn"
     examples:
     7c a1 49 f8    bperm r1, r5, r9 *)
 let bpermd ra rs rb =
-  let ra = Dsl.find_gpr ra in
-  let rb = Dsl.find_gpr rb in
-  let rs = Dsl.find_gpr rs in
+  let ra = Dsl.find ra in
+  let rb = Dsl.find rb in
+  let rs = Dsl.find rs in
   let max_ind = Word.of_int ~width:8 64 in
   let index = Dsl.fresh "index" (Type.imm 8) in
   let iv = Dsl.fresh "iv" (Type.imm 8) in

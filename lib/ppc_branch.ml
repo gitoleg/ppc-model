@@ -80,7 +80,7 @@ let bc mem addr_size bo bi bd =
   let bo_bit = bo_bit bo in
   let bd = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
   let jmp_addr = Word.(bd + Memory.min_addr mem) in
-  let crbit = Dsl.cr_bit bi in
+  let crbit = Dsl.find bi in
   let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
   let cond_ok = Dsl.fresh"cond_ok" (Type.imm 1) in
   with_decrement_counter bo @@
@@ -98,7 +98,7 @@ let bc mem addr_size bo bi bd =
 let bca mem addr_size  bo bi bd =
   let bo_bit = bo_bit bo in
   let jmp_addr = Word.of_int64 Int64.(Imm.to_int64 bd lsl 2) in
-  let crbit = Dsl.cr_bit bi in
+  let crbit = Dsl.find bi in
   let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
   let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   with_decrement_counter bo @@
@@ -137,7 +137,7 @@ let bdnz mem addr_size  bd =
     4e 9f 00 21 	bclrl	 20, 31 *)
 let bclr mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
-  let crbit = Dsl.cr_bit bi in
+  let crbit = Dsl.find bi in
   let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
   let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   let zeros = Word.zero 2 in
@@ -175,7 +175,7 @@ let bdnzlr mem addr_size =
     4d 5f 04 21    bcctrl 10,31 *)
 let bcctr mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
-  let crbit = Dsl.cr_bit bi in
+  let crbit = Dsl.find bi in
   let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   let zeros = Word.zero 2 in
   if  Word.is_one (bo_bit 4) then
@@ -201,7 +201,7 @@ let bcctrl mem addr_size  bo bi bh =
     bctar insn aren't implemented ny llvm right now *)
 let bctar mem addr_size  bo bi bh =
   let bo_bit = bo_bit bo in
-  let crbit = Dsl.cr_bit bi in
+  let crbit = Dsl.find bi in
   let ctr_ok = Dsl.fresh "ctr_ok" (Type.imm 1) in
   let cond_ok = Dsl.fresh "cond_ok" (Type.imm 1) in
   let zeros = Word.zero 2 in
