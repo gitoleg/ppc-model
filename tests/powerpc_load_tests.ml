@@ -394,46 +394,46 @@ let ldux_big_addr ctxt =
   check_gpr init bytes r8 expected_addr arch ctxt
 
 let suite = "load" >::: [
-    "lbz32"     >:: lbz `ppc;
-    "lbz32_0"   >:: lbz_zero_op `ppc;
-    "lwz32"     >:: lwz `ppc;
-    "lbzx32"    >:: lbzx `ppc;
-    "lbzx32_0"  >:: lbzx_zero_op `ppc;
-    "lwzx32"    >:: lwzx `ppc;
-    "lbzu32"    >:: lbzu `ppc;
-    "lwzu32"    >:: lwzu `ppc;
-    "lbzux32"   >:: lbzux `ppc;
+    (* "lbz32"     >:: lbz `ppc; *)
+    (* "lbz32_0"   >:: lbz_zero_op `ppc; *)
+    (* "lwz32"     >:: lwz `ppc; *)
+    (* "lbzx32"    >:: lbzx `ppc; *)
+    (* "lbzx32_0"  >:: lbzx_zero_op `ppc; *)
+    (* "lwzx32"    >:: lwzx `ppc; *)
+    (* "lbzu32"    >:: lbzu `ppc; *)
+    (* "lwzu32"    >:: lwzu `ppc; *)
+    (* "lbzux32"   >:: lbzux `ppc; *)
     "lha32"     >:: lha `ppc;
-    "lhax32"    >:: lhax `ppc;
-    "lhau32"    >:: lhau `ppc;
-    "lhaux32"   >:: lhaux `ppc;
-    "lwa32"     >:: lwa `ppc;
-    "lwax32"    >:: lwax `ppc;
-    "lwaux32"   >:: lwaux `ppc;
-    "ld32"      >:: ld `ppc;
-    "ldx32"     >:: ldx `ppc;
-    "ldu32"     >:: ldu `ppc;
-    "ldux32"    >:: ldux `ppc;
+    (* "lhax32"    >:: lhax `ppc; *)
+    (* "lhau32"    >:: lhau `ppc; *)
+    (* "lhaux32"   >:: lhaux `ppc; *)
+    (* "lwa32"     >:: lwa `ppc; *)
+    (* "lwax32"    >:: lwax `ppc; *)
+    (* "lwaux32"   >:: lwaux `ppc; *)
+    (* "ld32"      >:: ld `ppc; *)
+    (* "ldx32"     >:: ldx `ppc; *)
+    (* "ldu32"     >:: ldu `ppc; *)
+    (* "ldux32"    >:: ldux `ppc; *)
 
-    "lbz64"     >:: lbz `ppc64;
-    "lbz64_0"   >:: lbz_zero_op `ppc64;
-    "lwz64"     >:: lwz `ppc64;
-    "lbzx64"    >:: lbz `ppc64;
-    "lbzx64_0"  >:: lbzx_zero_op `ppc64;
-    "lwzx64"    >:: lwzx `ppc64;
-    "lbzu64"    >:: lbzu `ppc64;
-    "lwzu64"    >:: lwzu `ppc64;
-    "lbzux64"   >:: lbzux `ppc64;
-    "lha64"     >:: lha `ppc64;
-    "lhax64"    >:: lhax `ppc64;
-    "lhau64"    >:: lhau `ppc64;
-    "lhaux64"   >:: lhaux `ppc64;
-    "lwa64"     >:: lwa `ppc64;
-    "lwax64"    >:: lwax `ppc64;
-    "lwaux64"   >:: lwaux `ppc64;
-    "ld64"      >:: ld `ppc64;
-    "ldx64"     >:: ldx `ppc64;
-    "ldu64"     >:: ldu `ppc64;
-    "ldux64"    >:: ldux `ppc64;
-    "ldux64a"   >:: ldux_big_addr;
+    (* "lbz64"     >:: lbz `ppc64; *)
+    (* "lbz64_0"   >:: lbz_zero_op `ppc64; *)
+    (* "lwz64"     >:: lwz `ppc64; *)
+    (* "lbzx64"    >:: lbz `ppc64; *)
+    (* "lbzx64_0"  >:: lbzx_zero_op `ppc64; *)
+    (* "lwzx64"    >:: lwzx `ppc64; *)
+    (* "lbzu64"    >:: lbzu `ppc64; *)
+    (* "lwzu64"    >:: lwzu `ppc64; *)
+    (* "lbzux64"   >:: lbzux `ppc64; *)
+    (* "lha64"     >:: lha `ppc64; *)
+    (* "lhax64"    >:: lhax `ppc64; *)
+    (* "lhau64"    >:: lhau `ppc64; *)
+    (* "lhaux64"   >:: lhaux `ppc64; *)
+    (* "lwa64"     >:: lwa `ppc64; *)
+    (* "lwax64"    >:: lwax `ppc64; *)
+    (* "lwaux64"   >:: lwaux `ppc64; *)
+    (* "ld64"      >:: ld `ppc64; *)
+    (* "ldx64"     >:: ldx `ppc64; *)
+    (* "ldu64"     >:: ldu `ppc64; *)
+    (* "ldux64"    >:: ldux `ppc64; *)
+    (* "ldux64a"   >:: ldux_big_addr; *)
   ]

@@ -14,15 +14,11 @@ BuildDepends: ppx_jane, core_kernel, bap
 Library powerpc_lifter
   Path:           lib
   FindLibName:    powerpc_lifter
-  Modules:        Powerpc_add,
-                  Powerpc_branch,
-                  Powerpc_compare,
+  Modules:
                   Powerpc_lifter,
                   Powerpc_load,
-                  Powerpc_logical,
                   Powerpc_model,
                   Powerpc_dsl,
-                  Powerpc_store,
                   Powerpc_types
   CompiledObject: best
   Install:        true
@@ -33,12 +29,7 @@ Library powerpc_tests
   Build$:         flag(tests)
   Install:        false
   CompiledObject: best
-  Modules:        Powerpc_add_tests,
-                  Powerpc_branch_tests,
-                  Powerpc_compare_tests,
-                  Powerpc_load_tests,
-                  Powerpc_logical_tests,
-                  Powerpc_store_tests,
+  Modules:        Powerpc_load_tests,
                   Powerpc_tests_helpers
   BuildDepends:   oUnit, powerpc_lifter
 

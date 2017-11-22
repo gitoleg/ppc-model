@@ -8,19 +8,14 @@ let endian = BigEndian
 
 module type Lifter = sig
   type t [@@deriving sexp, enumerate]
-  val lift : t -> addr_size -> endian -> mem -> op array -> rtl list
+  val lift : t -> cpu -> op array -> rtl list
 end
 
 let lifters : (module Lifter) list = [
-  (module Powerpc_add);
-  (module Powerpc_branch);
-  (module Powerpc_compare);
   (module Powerpc_load);
-  (module Powerpc_logical);
-  (module Powerpc_store);
 ]
 
-type ppc_lift = addr_size -> endian -> mem -> op array -> rtl list
+type ppc_lift = cpu -> op array -> rtl list
 
 let lifts : ppc_lift String.Table.t = String.Table.create ()
 
@@ -34,13 +29,14 @@ let register =
 let register insn lift =
   String.Table.change lifts insn (fun _ -> Some lift)
 
-let lift mode mem insn =
+let lift addr_size mem insn =
   let insn = Insn.of_basic insn in
   let insn_name = Insn.name insn in
+  let cpu = Dsl.make_cpu addr_size endian mem  in
   let lift lifter =
     try
-      lifter mode endian mem (Insn.ops insn) |>
-      Dsl.bil |>
+      lifter cpu (Insn.ops insn) |>
+      RTL.bil |>
       Result.return
     with
     | Failure str -> Error (Error.of_string str) in

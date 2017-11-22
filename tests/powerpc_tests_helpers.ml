@@ -7,9 +7,9 @@ module Dis = Disasm_expert.Basic
 open Powerpc_types
 open Model
 
-let nf = Dsl.cr_bit 0
-let pf = Dsl.cr_bit 1
-let zf = Dsl.cr_bit 2
+(* let nf = Dsl.cr_bit 0 *)
+(* let pf = Dsl.cr_bit 1 *)
+(* let zf = Dsl.cr_bit 2 *)
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>
@@ -66,7 +66,9 @@ let check_gpr ?addr init bytes var expected arch ctxt =
   let c = Stmt.eval (init @ bil) (new Bili.context) in
   match lookup_var c var with
   | None -> assert_bool "var not found OR it's result not Imm" false
-  | Some w -> assert_equal ~cmp:Word.equal w expected
+  | Some w ->
+    printf "got %s, expected %s\n" (Word.to_string w) (Word.to_string expected);
+    assert_equal ~cmp:Word.equal w expected
 
 (** [eval ?addr init_bil bytes arch] - evaluates bil, that is a concatenation
     of [init_bil] and code, obtained from lifting [bytes].
