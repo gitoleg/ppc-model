@@ -1,28 +1,27 @@
 open Core_kernel.Std
 open Bap.Std
 
-type s
+type sign
 type exp [@@deriving bin_io, compare, sexp]
 
-val imm : s -> op -> exp
-val reg : s -> op -> exp
-val var : s -> exp
-val const : s -> int  -> exp
-val signed : (s -> 'a) -> 'a
-val unsigned : (s -> 'a) -> 'a
+val imm : sign -> op -> exp
+val reg : sign -> op -> exp
+val var : sign -> exp
+val const : sign -> int  -> exp
+val signed : (sign -> 'a) -> 'a
+val unsigned : (sign -> 'a) -> 'a
 
 module RTL : sig
 
   type t [@@deriving bin_io, compare, sexp]
 
   (** [bil d] - returns a program in BIL language   *)
-  val bil : t list -> bil
+  val bil_of_rtl : t list -> bil
 
   module Infix : sig
-
     val (:=) : exp -> exp -> t
-    val (+) : exp -> exp -> exp
-    val (^) : exp -> exp -> exp
+    val (+)  : exp -> exp -> exp
+    val (^)  : exp -> exp -> exp
     val (lsl) : exp -> exp -> exp
   end
 
@@ -35,7 +34,7 @@ type rtl = RTL.t [@@deriving bin_io, compare, sexp]
 type cpu = {
   load   : exp -> size -> exp;
   store  : exp -> exp -> size -> rtl;
-  mem  : mem;
+  addr  : addr;
 }
 
 val byte : size
@@ -49,8 +48,8 @@ val halfword_t : typ
 val word_t : typ
 val doubleword_t : typ
 
-(* val zero : exp *)
-(* val one : exp *)
+val zero : exp
+val one : exp
 
 val make_cpu : addr_size -> endian -> mem -> cpu
 

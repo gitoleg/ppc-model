@@ -36,7 +36,7 @@ let lift addr_size mem insn =
   let lift lifter =
     try
       lifter cpu (Insn.ops insn) |>
-      RTL.bil |>
+      RTL.bil_of_rtl |>
       Result.return
     with
     | Failure str -> Error (Error.of_string str) in

@@ -5,10 +5,10 @@ open Regular.Std
 open Powerpc_model
 open Hardware
 
-type s = Signed | Unsigned  [@@deriving bin_io, compare, sexp]
+type sign = Signed | Unsigned  [@@deriving bin_io, compare, sexp]
 
 module Sign = struct
-  type t = s [@@deriving bin_io, compare, sexp]
+  type t = sign [@@deriving bin_io, compare, sexp]
   include Regular.Make(struct
       type nonrec t = t [@@deriving bin_io, compare, sexp]
       let module_name = Some ("Powerpc_dsl.Sign")
@@ -21,7 +21,7 @@ module Sign = struct
 end
 
 type exp = {
-  sign : s;
+  sign : sign;
   width : int;
   body : Bil.exp;
 } [@@deriving bin_io, compare, sexp]
@@ -101,8 +101,7 @@ module RTL = struct
   type cast  = Bil.cast  [@@deriving bin_io, compare, sexp]
   type binop = Bil.binop [@@deriving bin_io, compare, sexp]
   type unop  = Bil.unop  [@@deriving bin_io, compare, sexp]
-  type e   = Bil.exp   [@@deriving bin_io, compare, sexp]
-  type t = Bil.stmt  [@@deriving bin_io, compare, sexp]
+  type t = bil  [@@deriving bin_io, compare, sexp]
 
   let coerce x width sign =
     let body =
@@ -115,7 +114,7 @@ module RTL = struct
 
   let derive_sign s s' =
     if Sign.equal s s' then s
-      else Signed
+    else Signed
 
   let binop_with_coerce op lhs rhs =
     let sign = derive_sign lhs.sign rhs.sign in
@@ -128,7 +127,7 @@ module RTL = struct
     match lhs.body with
     | Bil.Var v ->
       let rhs = coerce rhs lhs.width lhs.sign in
-      Bil.(v := rhs.body)
+      Bil.[v := rhs.body]
     | _ -> ppc_fail "variable expected on left side of :="
 
   let plus lhs rhs =
@@ -140,8 +139,7 @@ module RTL = struct
     let body = Bil.(lhs.body ^ rhs.body) in
     { sign; width; body; }
 
-  let lshift lhs rhs =
-    binop_with_coerce Bil.lshift lhs rhs
+  let lshift lhs rhs = binop_with_coerce Bil.lshift lhs rhs
 
   module Infix = struct
     let (:=) = move
@@ -150,23 +148,12 @@ module RTL = struct
     let (lsl) = lshift
   end
 
-  let cast = Bil.cast
-  let var = Bil.var
-  let unsigned = Bil.unsigned
-  let signed = Bil.signed
-  let high = Bil.high
-  let low = Bil.low
-
   let int = Bil.int
   let extract = Bil.extract
-  let concat = Bil.concat
-  let if_ = Bil.if_
-  let jmp = Bil.jmp
-
-  let bil = ident
+  let var = Bil.var
+  let bil_of_rtl = List.concat
 
   include Infix
-
 end
 
 type rtl = RTL.t [@@deriving bin_io, compare, sexp]
@@ -174,22 +161,20 @@ type rtl = RTL.t [@@deriving bin_io, compare, sexp]
 type cpu = {
   load   : exp -> size -> exp;
   store  : exp -> exp -> size -> rtl;
-  mem  : mem;  (* * TODO: current insn addr is better *)
+  addr  : addr;
 }
 
 let byte = `r8
 let halfword = `r16
 let word = `r32
 let doubleword = `r64
-
 let bit_t = Type.imm 1
 let byte_t = Type.imm 8
 let halfword_t = Type.imm 16
 let word_t = Type.imm 32
 let doubleword_t = Type.imm 64
-
-let zero = RTL.int Word.b0
-let one = RTL.int Word.b1
+let zero = { sign = Unsigned; width = 1; body = Bil.int Word.b0 }
+let one  = { sign = Unsigned; width = 1; body = Bil.int Word.b1 }
 
 let load addr_size ~addr endian size = match addr_size with
   | `r32 -> Bil.(load ~mem:(var PPC32.mem) ~addr endian size)
@@ -204,18 +189,17 @@ let store addr_size ~addr data endian size =
 
 let make_cpu addr_size endian mem =
   let extract_addr a = match addr_size with
-    | `r32 -> RTL.extract 31 0 a
+    | `r32 -> Bil.extract 31 0 a
     | `r64 -> a in
   let load exp size =
     let addr = extract_addr exp.body in
     let width = Size.in_bits size in {
       sign = exp.sign;
       width;
-      body = RTL.(load addr_size ~addr endian size);
+      body = load addr_size ~addr endian size;
     } in
   let store addr data size =
     let addr = extract_addr addr.body in
-    store addr_size ~addr data.body endian size in
-  { load; store; mem }
-
-let low32 exp = RTL.extract 31 0 exp
+    [ store addr_size ~addr data.body endian size ] in
+  let addr = Memory.min_addr mem in
+  { load; store; addr; }
