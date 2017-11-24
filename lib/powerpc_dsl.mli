@@ -7,6 +7,7 @@ type exp [@@deriving bin_io, compare, sexp]
 val imm : s -> op -> exp
 val reg : s -> op -> exp
 val var : s -> exp
+val const : s -> int  -> exp
 val signed : (s -> 'a) -> 'a
 val unsigned : (s -> 'a) -> 'a
 
@@ -21,7 +22,8 @@ module RTL : sig
 
     val (:=) : exp -> exp -> t
     val (+) : exp -> exp -> exp
-
+    val (^) : exp -> exp -> exp
+    val (lsl) : exp -> exp -> exp
   end
 
   include module type of Infix
@@ -33,7 +35,7 @@ type rtl = RTL.t [@@deriving bin_io, compare, sexp]
 type cpu = {
   load   : exp -> size -> exp;
   store  : exp -> exp -> size -> rtl;
-  mem    : mem;
+  mem  : mem;
 }
 
 val byte : size

@@ -20,7 +20,11 @@ module Sign = struct
     end)
 end
 
-type exp = s * Bil.exp  [@@deriving bin_io, compare, sexp]
+type exp = {
+  sign : s;
+  width : int;
+  body : Bil.exp;
+} [@@deriving bin_io, compare, sexp]
 
 let ppc_fail format =
   let fail str = failwith (sprintf "PowerPC lifter fail: %s" str) in
@@ -63,23 +67,34 @@ let int_of_imm = function
 
 let imm sign op : exp =
   let imm = int_of_imm op in
-  sign, Bil.(int (Word.of_int ~width:64 imm))
+  let width = 64 in
+  { sign; width; body = Bil.(int (Word.of_int ~width imm)); }
 
 let signed f = f Signed
 let unsigned f = f Unsigned
 
 let var sign : exp =
-  sign,
-  Bil.var @@
-  Var.create ~fresh:true "tmp" (Type.Imm 64)
+  let width = 64 in {
+    sign;
+    width;
+    body = Bil.var (Var.create ~fresh:true "tmp" (Type.Imm width))
+  }
 
 let reg sign op = match op with
   | Op.Imm _ | Op.Fmm _ ->
     ppc_fail "reg operand expected"
   | Op.Reg x ->
     try
-      sign, Bil.var (find x)
-    with _ -> sign, Bil.int (Word.zero 64)
+      let v = find x in
+      let width = match Var.typ v with
+        | Type.Imm w -> w
+        | _ -> ppc_fail "register %s has unexpected type" (Var.name v)
+      in
+      { sign; width; body = Bil.var (find x) }
+    with _ -> { sign; width = 64; body = Bil.int (Word.zero 64) }
+
+let const sign value =
+  { sign; width = 64; body = Bil.int (Word.of_int ~width:64 value); }
 
 module RTL = struct
 
@@ -89,30 +104,50 @@ module RTL = struct
   type e   = Bil.exp   [@@deriving bin_io, compare, sexp]
   type t = Bil.stmt  [@@deriving bin_io, compare, sexp]
 
+  let coerce x width sign =
+    let body =
+      if sign = x.sign && width = x.width then x.body
+      else
+        match sign with
+        | Unsigned -> Bil.(cast unsigned width x.body)
+        | Signed -> Bil.(cast signed width x.body) in
+    { body; sign; width; }
+
+  let derive_sign s s' =
+    if Sign.equal s s' then s
+      else Signed
+
+  let binop_with_coerce op lhs rhs =
+    let sign = derive_sign lhs.sign rhs.sign in
+    let width = max lhs.width rhs.width in
+    let lhs = coerce lhs width sign in
+    let rhs = coerce rhs width sign in
+    { sign; width; body = Bil.(binop op lhs.body rhs.body)}
+
+  let move lhs rhs =
+    match lhs.body with
+    | Bil.Var v ->
+      let rhs = coerce rhs lhs.width lhs.sign in
+      Bil.(v := rhs.body)
+    | _ -> ppc_fail "variable expected on left side of :="
+
+  let plus lhs rhs =
+    binop_with_coerce Bil.plus lhs rhs
+
+  let concat lhs rhs =
+    let sign = derive_sign lhs.sign rhs.sign in
+    let width = lhs.width + rhs.width in
+    let body = Bil.(lhs.body ^ rhs.body) in
+    { sign; width; body; }
+
+  let lshift lhs rhs =
+    binop_with_coerce Bil.lshift lhs rhs
+
   module Infix = struct
-
-    let upcast ?(width=64) e = function
-      | Unsigned -> Bil.(cast unsigned width e)
-      | Signed -> Bil.(cast signed width e)
-
-    let (:=) = fun (ls,lhs) (rs,rhs) ->
-      match lhs with
-      | Bil.Var v ->
-        let width = match Var.typ v with
-          | Type.Imm w -> w
-          | _ -> ppc_fail "variable of unexpected type" in
-        Bil.(v := upcast ~width rhs ls)
-        (* if Sign.equal ls rs then *)
-        (*   Bil.(v := upcast ~width (upcast rhs rs) ls) *)
-        (* else *)
-        (*   ppc_fail "assignment %s to %s is deprecated" *)
-        (*     (Sign.to_string rs) (Sign.to_string ls) *)
-      | _ -> ppc_fail "variable expected on left side of :="
-
-    let (+) = fun lhs rhs ->
-      let upcast (s,e) = upcast e s in
-      Unsigned, Bil.(upcast lhs + upcast rhs)
-
+    let (:=) = move
+    let (+)  = plus
+    let (^)  = concat
+    let (lsl) = lshift
   end
 
   let cast = Bil.cast
@@ -139,7 +174,7 @@ type rtl = RTL.t [@@deriving bin_io, compare, sexp]
 type cpu = {
   load   : exp -> size -> exp;
   store  : exp -> exp -> size -> rtl;
-  mem    : mem;
+  mem  : mem;  (* * TODO: current insn addr is better *)
 }
 
 let byte = `r8
@@ -171,12 +206,16 @@ let make_cpu addr_size endian mem =
   let extract_addr a = match addr_size with
     | `r32 -> RTL.extract 31 0 a
     | `r64 -> a in
-  let load (x,addr) size =
-    let addr = extract_addr addr in
-    x, RTL.(load addr_size ~addr endian size) in
-  let store (_,addr) (_,data) size =
-    let addr = extract_addr addr in
-    store addr_size ~addr data endian size in
+  let load exp size =
+    let addr = extract_addr exp.body in
+    let width = Size.in_bits size in {
+      sign = exp.sign;
+      width;
+      body = RTL.(load addr_size ~addr endian size);
+    } in
+  let store addr data size =
+    let addr = extract_addr addr.body in
+    store addr_size ~addr data.body endian size in
   { load; store; mem }
 
 let low32 exp = RTL.extract 31 0 exp
