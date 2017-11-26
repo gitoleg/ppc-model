@@ -12,13 +12,16 @@ let env_of_arch = function
   | `ppc64 -> PPC64.mem, 64
   | _ -> failwith "ppc OR ppc64 arch only"
 
-let lbz arch ctxt =
-  let bytes = "\x89\x3c\x00\x14" in (** lbz r9, 20(r28) *)
+let lbz arch d_addr ctxt =
+  let byte1 = Word.of_int ~width:8 0x89 in
+  let byte2 = Word.of_int ~width:8 0x3c in
+  let bytes34 = Word.of_int ~width:16 d_addr in
+  let bytes = make_bytes [byte1; byte2; bytes34] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r28 = find_gpr "R28" in
   let addr = 0xABCDEF00 in
-  let ea = Word.of_int ~width:addr_size (addr + 20) in
+  let ea = Word.of_int ~width:addr_size (addr + d_addr) in
   let value = 0x42 in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
@@ -396,7 +399,8 @@ let ldux_big_addr ctxt =
   check_gpr init bytes r8 expected_addr arch ctxt
 
 let suite = "load" >::: [
-    "lbz32"     >:: lbz `ppc;
+    "lbz32 +imm"  >:: lbz `ppc 20;
+    "lbz32 -imm"  >:: lbz `ppc (-16);
     "lbz32_0"   >:: lbz_zero_op `ppc;
     "lwz32"     >:: lwz `ppc;
     "lbzx32"    >:: lbzx `ppc;
@@ -417,10 +421,10 @@ let suite = "load" >::: [
     "ldu32"     >:: ldu `ppc;
     "ldux32"    >:: ldux `ppc;
 
-    "lbz64"     >:: lbz `ppc64;
+    "lbz64"     >:: lbz `ppc64 20;
     "lbz64_0"   >:: lbz_zero_op `ppc64;
     "lwz64"     >:: lwz `ppc64;
-    "lbzx64"    >:: lbz `ppc64;
+    "lbzx64"    >:: lbzx `ppc64;
     "lbzx64_0"  >:: lbzx_zero_op `ppc64;
     "lwzx64"    >:: lwzx `ppc64;
     "lbzu64"    >:: lbzu `ppc64;

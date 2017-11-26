@@ -26,6 +26,8 @@ type exp = {
   body : Bil.exp;
 } [@@deriving bin_io, compare, sexp]
 
+type 'a p = sign -> 'a
+
 let ppc_fail format =
   let fail str = failwith (sprintf "PowerPC lifter fail: %s" str) in
   Printf.ksprintf fail format
@@ -65,7 +67,7 @@ let int_of_imm = function
     | Some x -> x
     | None -> ppc_fail "failed to convert imm operand to int"
 
-let imm sign op : exp =
+let imm sign op  =
   let imm = int_of_imm op in
   let width = 64 in
   { sign; width; body = Bil.(int (Word.of_int ~width imm)); }
@@ -73,7 +75,7 @@ let imm sign op : exp =
 let signed f = f Signed
 let unsigned f = f Unsigned
 
-let var sign : exp =
+let var sign  =
   let width = 64 in {
     sign;
     width;
@@ -93,7 +95,7 @@ let reg sign op = match op with
       { sign; width; body = Bil.var (find x) }
     with _ -> { sign; width = 64; body = Bil.int (Word.zero 64) }
 
-let const sign value =
+let int sign value =
   { sign; width = 64; body = Bil.int (Word.of_int ~width:64 value); }
 
 module RTL = struct

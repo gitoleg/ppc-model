@@ -16,7 +16,7 @@ open Hardware
 let lz cpu size ops =
   let rt = unsigned reg ops.(0) in
   let im = signed imm ops.(1) in
-  let ra = unsigned reg ops.(2) in
+  let ra = signed reg ops.(2) in
   RTL.[ rt := cpu.load (ra + im) size; ]
 
 (** Fixed-point Load Byte/Halfword/Word and Zero Indexed
@@ -41,7 +41,7 @@ let lzu cpu size ops =
   (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzu: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let im = signed imm ops.(2) in
-  let ra = unsigned reg ops.(3) in
+  let ra = signed reg ops.(3) in
   RTL.[
     rt := cpu.load (ra + im) size;
     ra := ra + im;
@@ -83,7 +83,7 @@ let lwa cpu ops =
   let rt = signed reg ops.(0) in
   let im = signed imm ops.(1) in
   let ra = signed reg ops.(2) in
-  let sh = signed const 2 in
+  let sh = signed int 2 in
   RTL.[
     rt := cpu.load (ra + (im lsl sh)) word;
   ]
@@ -138,7 +138,7 @@ let ld cpu size ops =
   let rt = unsigned reg ops.(0) in
   let im = signed imm ops.(1) in
   let ra = signed reg ops.(2) in
-  let sh = unsigned const 2 in
+  let sh = unsigned int 2 in
   RTL.[
     rt := cpu.load (ra + (im lsl sh))  doubleword;
   ]
@@ -164,7 +164,7 @@ let ldu cpu size ops =
   let rt = unsigned reg ops.(0) in
   let ra = signed reg ops.(1) in
   let im = unsigned imm ops.(2) in
-  let sh = unsigned const 2 in
+  let sh = unsigned int 2 in
   RTL.[
     rt := cpu.load (ra + (im lsl sh)) doubleword;
     ra := ra + (im lsl sh);
@@ -177,8 +177,8 @@ let ldu cpu size ops =
 let ldux cpu size ops =
   (* if Reg.equal rt ra then RTL.ppc_fail "Invalid instruction ldux: same operands"; *)
   let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(2) in
-  let rb = unsigned reg ops.(3) in
+  let ra = signed reg ops.(2) in
+  let rb = signed reg ops.(3) in
   RTL.[
     rt := cpu.load (ra + rb) doubleword;
     ra := ra + rb;

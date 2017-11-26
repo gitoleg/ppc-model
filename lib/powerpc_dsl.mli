@@ -1,15 +1,16 @@
 open Core_kernel.Std
 open Bap.Std
 
-type sign
 type exp [@@deriving bin_io, compare, sexp]
 
-val imm : sign -> op -> exp
-val reg : sign -> op -> exp
-val var : sign -> exp
-val const : sign -> int  -> exp
-val signed : (sign -> 'a) -> 'a
-val unsigned : (sign -> 'a) -> 'a
+type 'a p
+
+val imm : (op -> exp) p
+val reg : (op -> exp) p
+val var : exp p
+val int :  (int -> exp) p
+val signed : 'a p -> 'a
+val unsigned : 'a p -> 'a
 
 module RTL : sig
 
