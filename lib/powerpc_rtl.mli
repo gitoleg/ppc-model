@@ -10,9 +10,9 @@ type exp [@@deriving bin_io, compare, sexp]
 module Exp : sig
   type t = exp [@@deriving bin_io, compare, sexp]
 
-  val of_var  : ?signed:bool -> var -> exp
-  val of_vars : ?signed:bool -> var list -> exp
-  val of_word : ?signed:bool -> word -> exp
+  val of_var  : var -> exp
+  val of_vars : var list -> exp
+  val of_word : word -> exp
 
   val load : var -> exp -> endian -> size -> exp
   val extract : int -> int -> exp -> exp

@@ -72,25 +72,28 @@ module Exp = struct
     let (lsr) = rshift
   end
 
-  let of_var ?(signed=false) var =
-    let width = var_bitwidth var in
-    let sign = if signed then Signed else Unsigned in
-    { sign; width; body = Bil.var var; }
+  let var_bitwidth v =
+    match Var.typ v with
+    | Type.Imm w -> w
+    | _ ->
+      ppc_fail "variable %s doesn't has notion of bitwidth" (Var.name v)
 
-  let of_vars ?(signed=false) vars = match vars with
+  let of_var var =
+    let width = var_bitwidth var in
+    { sign = Unsigned; width; body = Bil.var var; }
+
+  let of_vars vars = match vars with
     | [] -> ppc_fail "can't constuct an expression from empty var list"
     | hd :: tl ->
       let width = List.fold vars ~init:0 ~f:(fun a x -> a + var_bitwidth x) in
       let body = List.fold vars ~init:(Bil.var hd)
           ~f:(fun a v -> Bil.(a ^ var v)) in
-      let sign = if signed then Signed else Unsigned in
-      { sign; width; body; }
+      { sign = Unsigned; width; body; }
 
-  let of_word ?(signed=false) w =
+  let of_word w =
     let width = Word.bitwidth w in
-    let sign = if signed then Signed else Unsigned in
     let body = Bil.int w in
-    {sign; width; body}
+    {sign = Unsigned; width; body}
 
   let load mem addr endian size =
     let width = Size.in_bits size in
@@ -123,7 +126,7 @@ let move lhs rhs =
   | Bil.Var v ->
     let rhs = coerce rhs lhs.width lhs.sign in
     Bil.[v := rhs.body]
-  | _ -> ppc_fail "variable expected on left side of :="
+  | _ -> ppc_fail "unexpected left side of :="
 
 
 module Infix = struct

@@ -44,7 +44,7 @@ let int_of_imm = function
 let imm signed op =
   let imm = int_of_imm op in
   let w = Word.of_int ~width:64 imm in
-  Exp.of_word ~signed w
+  Exp.of_word w
 
 let signed f = f true
 let unsigned f = f false
@@ -52,28 +52,30 @@ let unsigned f = f false
 let var signed =
   let width = 64 in
   let v = Var.create ~fresh:true "tmp" (Type.Imm width) in
-  Exp.of_var ~signed v
+  let e = Exp.of_var v in
+  if signed then Exp.signed e
+  else Exp.unsigned e
 
 let reg signed op = match op with
   | Op.Imm _ | Op.Fmm _ ->
     ppc_fail "reg operand expected"
   | Op.Reg x ->
-    try
-      let x = find x in
-      if signed then
-        Exp.signed x
-      else Exp.unsigned x
-    with _ ->
-      Exp.of_word ~signed (Word.zero 64)
+    let e =
+      try find x
+      with _ ->
+        Exp.of_word (Word.zero 64) in
+    if signed then Exp.signed e
+    else Exp.unsigned e
 
 let int signed value =
   let x = Word.of_int ~width:64 value in
-  Exp.of_word ~signed x
-
+  let e = Exp.of_word x in
+  if signed then Exp.signed e
+  else Exp.unsigned e
 
 type cpu = {
-  load   : exp -> size -> exp;
-  store  : exp -> exp -> size -> rtl;
+  load  : exp -> size -> exp;
+  store : exp -> exp -> size -> rtl;
   addr  : addr;
 }
 
@@ -89,9 +91,9 @@ let doubleword_t = Type.imm 64
 let zero = Exp.of_word Word.b0
 let one  = Exp.of_word Word.b1
 
-let low exp size =
+let low e size =
   let n = Size.in_bits size in
-  Exp.extract (n - 1) 0 exp
+  Exp.extract (n - 1) 0 e
 
 let make_cpu addr_size endian memory =
   let extract_addr a = match addr_size with
