@@ -8,9 +8,15 @@ open Powerpc_types
 open Model
 open Hardware
 
-(* let nf = Dsl.cr_bit 0 *)
-(* let pf = Dsl.cr_bit 1 *)
-(* let zf = Dsl.cr_bit 2 *)
+let var_exn x = match Exp.body x with
+  | Bil.Var v -> v
+  | _ -> failwith "variable not found"
+
+let nf = var_exn @@ Dsl.bit cr 0
+let pf = var_exn @@ Dsl.bit cr 1
+let zf = var_exn @@ Dsl.bit cr 2
+let ca = var_exn ca
+let ca32 = var_exn ca32
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>

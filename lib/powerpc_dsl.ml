@@ -23,7 +23,7 @@ let find_gpr reg =
       find name
     else None
 
-let find_cr_bit reg = String.Map.find cr (Reg.name reg)
+let find_cr_bit reg = String.Map.find crn (Reg.name reg)
 let find_cr_field reg = String.Map.find cr_fields (Reg.name reg)
 
 let reg_searches = [find_gpr; find_cr_bit; find_cr_field;]
@@ -110,3 +110,5 @@ let make_cpu addr_size endian memory =
     store mem addr data endian size in
   let addr = Memory.min_addr memory in
   { load; store; addr; }
+
+let bit exp n = Exp.extract n n exp

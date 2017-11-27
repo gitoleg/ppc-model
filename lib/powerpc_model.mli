@@ -53,11 +53,14 @@ module Hardware : sig
   (** target register  *)
   val tar : exp
 
+  (** condition register  *)
+  val cr : exp
+
   (** condition register bits *)
   val cri : exp Int.Map.t
 
   (** condition register bits *)
-  val cr : exp String.Map.t
+  val crn : exp String.Map.t
 
   (** condition register fields *)
   val cr_fields : exp String.Map.t

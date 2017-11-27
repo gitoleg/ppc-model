@@ -22,9 +22,11 @@ module Exp : sig
 
   module Infix : sig
     val (+)  : exp -> exp -> exp
+    val (-)  : exp -> exp -> exp
     val (^)  : exp -> exp -> exp
     val (<)  : exp -> exp -> exp
     val (>)  : exp -> exp -> exp
+    val (=)  : exp -> exp -> exp
     val (lsl) : exp -> exp -> exp
     val (lsr) : exp -> exp -> exp
   end

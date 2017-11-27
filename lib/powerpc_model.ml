@@ -25,6 +25,7 @@ let tar_bitwidth = 64
 
 module Hardware_var = struct
 
+  (** general purpose registers  *)
   let gpr = make_regs (Type.imm gpr_bitwidth) "R" range32
 
   (** floating point registers *)
@@ -93,14 +94,16 @@ module Hardware_var = struct
   let cr30 = flag "CR0GT"
   let cr31 = flag "CR0LT"
 
-  let cr =
-    let bits = [
-      cr0;  cr1;  cr2;  cr3;  cr4;  cr5;  cr6;  cr7;
-      cr8;  cr9;  cr10; cr11; cr12; cr13; cr14; cr15;
-      cr16; cr17; cr18; cr19; cr20; cr21; cr22; cr23;
-      cr24; cr25; cr26; cr27; cr28; cr29; cr30; cr31; ] in
+  let cr_bits = [
+    cr0;  cr1;  cr2;  cr3;  cr4;  cr5;  cr6;  cr7;
+    cr8;  cr9;  cr10; cr11; cr12; cr13; cr14; cr15;
+    cr16; cr17; cr18; cr19; cr20; cr21; cr22; cr23;
+    cr24; cr25; cr26; cr27; cr28; cr29; cr30; cr31;
+  ]
+
+  let cri =
     let _, bits =
-      List.fold bits ~init:(0,Int.Map.empty)
+      List.fold cr_bits ~init:(0,Int.Map.empty)
         ~f:(fun (num, bits) bit ->
             num + 1, Int.Map.add bits ~key:num ~data:bit) in
     bits
@@ -141,11 +144,13 @@ module Hardware = struct
   let ov  = Exp.of_var ov
   let ca32 = Exp.of_var ca32
   let ov32 = Exp.of_var ov32
-  let cri = Int.Map.map cr ~f:(fun v -> Exp.of_var v)
-  let cr =
-    Int.Map.fold cr ~init:String.Map.empty
+  let crn =
+    Int.Map.fold cri ~init:String.Map.empty
       ~f:(fun ~key ~data:var acc ->
          String.Map.add acc (Var.name var) (Exp.of_var var))
+  let cri = Int.Map.map cri ~f:(fun v -> Exp.of_var v)
+
+  let cr = Exp.of_vars cr_bits
 
 
   let cr_fields =

@@ -34,3 +34,5 @@ val one : exp
 val make_cpu : addr_size -> endian -> mem -> cpu
 
 val low : exp -> size -> exp
+
+val bit : exp -> int -> exp
