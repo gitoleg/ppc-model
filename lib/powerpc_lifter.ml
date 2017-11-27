@@ -12,6 +12,7 @@ module type Lifter = sig
 end
 
 let lifters : (module Lifter) list = [
+  (module Powerpc_add);
   (module Powerpc_load);
 ]
 

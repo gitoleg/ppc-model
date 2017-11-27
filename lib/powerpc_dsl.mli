@@ -12,9 +12,10 @@ val signed : 'a p -> 'a
 val unsigned : 'a p -> 'a
 
 type cpu = {
-  load   : exp -> size -> exp;
-  store  : exp -> exp -> size -> rtl;
+  load  : exp -> size -> exp;
+  store : exp -> exp -> size -> rtl;
   addr  : addr;
+  addr_size : addr_size;
 }
 
 val byte : size

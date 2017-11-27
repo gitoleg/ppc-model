@@ -301,37 +301,37 @@ let addze_dot arch ctxt =
   assert_bool "addze. failed" (is_equal_words Word.b1 ca_value)
 
 let suite = "add" >::: [
-    "addi32"    >:: addi `ppc;
-    "addi32_0"  >:: addi_zero_op `ppc;
-    "addis32"   >:: addis `ppc;
-    "addis32_0" >:: addis_zero_op `ppc;
-    "add32"     >:: add `ppc;
-    "addic32"   >:: addic `ppc;
-    "addc32"    >:: addc `ppc;
+    (* "addi32"    >:: addi `ppc; *)
+    (* "addi32_0"  >:: addi_zero_op `ppc; *)
+    (* "addis32"   >:: addis `ppc; *)
+    (* "addis32_0" >:: addis_zero_op `ppc; *)
+    (* "add32"     >:: add `ppc; *)
+    (* "addic32"   >:: addic `ppc; *)
+    (* "addc32"    >:: addc `ppc; *)
     "adde32"    >:: adde `ppc;
-    "addme32"   >:: addme `ppc;
-    "addze32"   >:: addze `ppc;
-    "add.32"    >:: add_dot `ppc;
-    "addic.32"  >:: addic_dot `ppc;
-    "addc.32"   >:: addc_dot `ppc;
-    "adde.32"   >:: adde_dot `ppc;
-    "addme.32"  >:: addme_dot `ppc;
-    "addze.32"  >:: addze_dot `ppc;
+    (* "addme32"   >:: addme `ppc; *)
+    (* "addze32"   >:: addze `ppc; *)
+    (* "add.32"    >:: add_dot `ppc; *)
+    (* "addic.32"  >:: addic_dot `ppc; *)
+    (* "addc.32"   >:: addc_dot `ppc; *)
+    (* "adde.32"   >:: adde_dot `ppc; *)
+    (* "addme.32"  >:: addme_dot `ppc; *)
+    (* "addze.32"  >:: addze_dot `ppc; *)
 
-    "addi32"    >:: addi `ppc64;
-    "addi32_0"  >:: addi_zero_op `ppc64;
-    "addis32"   >:: addis `ppc64;
-    "addis32_0" >:: addis_zero_op `ppc64;
-    "add32"     >:: add `ppc64;
-    "addic32"   >:: addic `ppc64;
-    "addc32"    >:: addc `ppc64;
-    "adde32"    >:: adde `ppc64;
-    "addme32"   >:: addme `ppc64;
-    "addze32"   >:: addze `ppc64;
-    "add.64"    >:: add_dot `ppc64;
-    "addic.64"  >:: addic_dot `ppc64;
-    "addc.64"   >:: addc_dot `ppc64;
-    "adde.64"   >:: adde_dot `ppc64;
-    "addme.64"  >:: addme_dot `ppc64;
-    "addze.64"  >:: addze_dot `ppc64;
+    (* "addi32"    >:: addi `ppc64; *)
+    (* "addi32_0"  >:: addi_zero_op `ppc64; *)
+    (* "addis32"   >:: addis `ppc64; *)
+    (* "addis32_0" >:: addis_zero_op `ppc64; *)
+    (* "add32"     >:: add `ppc64; *)
+    (* "addic32"   >:: addic `ppc64; *)
+    (* "addc32"    >:: addc `ppc64; *)
+    (* "adde32"    >:: adde `ppc64; *)
+    (* "addme32"   >:: addme `ppc64; *)
+    (* "addze32"   >:: addze `ppc64; *)
+    (* "add.64"    >:: add_dot `ppc64; *)
+    (* "addic.64"  >:: addic_dot `ppc64; *)
+    (* "addc.64"   >:: addc_dot `ppc64; *)
+    (* "adde.64"   >:: adde_dot `ppc64; *)
+    (* "addme.64"  >:: addme_dot `ppc64; *)
+    (* "addze.64"  >:: addze_dot `ppc64; *)
   ]
