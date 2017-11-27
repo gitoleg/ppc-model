@@ -19,7 +19,9 @@ Library powerpc_lifter
                   Powerpc_load,
                   Powerpc_model,
                   Powerpc_dsl,
-                  Powerpc_types
+                  Powerpc_rtl,
+                  Powerpc_types,
+                  Powerpc_utils
   CompiledObject: best
   Install:        true
 

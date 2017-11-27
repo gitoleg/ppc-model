@@ -6,6 +6,7 @@ module Dis = Disasm_expert.Basic
 
 open Powerpc_types
 open Model
+open Hardware
 
 (* let nf = Dsl.cr_bit 0 *)
 (* let pf = Dsl.cr_bit 1 *)
@@ -48,8 +49,10 @@ let lookup_var c var = match c#lookup var with
 
 (** [find_gpr name] - find a GPR by it's name *)
 let find_gpr name =
-  Var.Set.find_exn Hardware.gpr
-    ~f:(fun v -> String.equal (Var.name v) name)
+  let x = String.Map.find_exn gpr name in
+  match Exp.body x with
+  | Bil.Var v -> v
+  | _ -> failwith "found register is not a variable"
 
 let get_bil ?addr arch bytes =
   let mem,insn = get_insn ?addr arch bytes in
@@ -67,7 +70,11 @@ let check_gpr ?addr init bytes var expected arch ctxt =
   match lookup_var c var with
   | None -> assert_bool "var not found OR it's result not Imm" false
   | Some w ->
-    printf "got %s, expected %s\n" (Word.to_string w) (Word.to_string expected);
+    if not (Word.equal w expected) then
+      printf "\ncheck failed for %s: %s <> %s\n"
+        (Var.name var)
+        (Word.to_string expected)
+        (Word.to_string w);
     assert_equal ~cmp:Word.equal w expected
 
 (** [eval ?addr init_bil bytes arch] - evaluates bil, that is a concatenation

@@ -1,80 +1,80 @@
 open Core_kernel.Std
 open Bap.Std
 
+open Powerpc_rtl
+
+(** general purpose registers bitwidth *)
+val gpr_bitwidth : int
+
+(** floating point registers bitwidth *)
+val fpr_bitwidth : int
+
+(** vector registers bitwidth *)
+val vr_bitwidth  : int
+
+(** condition register bitwidth *)
+val cr_bitwidth  : int
+
+(** xer register bitwidth *)
+val xer_bitwidth : int
+
+(** link register bitwidth *)
+val lr_bitwidth  : int
+
+(** count register bitwidth *)
+val ctr_bitwidth : int
+
+(** target address register bitwidth *)
+val tar_bitwidth : int
+
 module Hardware : sig
 
-  (** general purpose registers bitwidth *)
-  val gpr_bitwidth : int
-
-  (** floating point registers bitwidth *)
-  val fpr_bitwidth : int
-
-  (** vector registers bitwidth *)
-  val vr_bitwidth  : int
-
-  (** condition register bitwidth *)
-  val cr_bitwidth  : int
-
-  (** xer register bitwidth *)
-  val xer_bitwidth : int
-
-  (** link register bitwidth *)
-  val lr_bitwidth  : int
-
-  (** count register bitwidth *)
-  val ctr_bitwidth : int
-
-  (** target address register bitwidth *)
-  val tar_bitwidth : int
-
   (** all general purpose registers *)
-  val gpr : Var.Set.t
+  val gpr : exp String.Map.t
 
   (** all floating point registers *)
-  val fpr : Var.Set.t
+  val fpr : exp String.Map.t
 
   (** all vector registers *)
-  val vr : Var.Set.t
+  val vr : exp String.Map.t
 
   (** xer register bits *)
-  val xer : var
+  val xer : exp
 
   (** conditional register bits *)
-  val cr : var Int.Map.t
+  val cr : exp Int.Map.t
 
   (** count register  *)
-  val ctr : var
+  val ctr : exp
 
   (** link register  *)
-  val lr : var
+  val lr : exp
 
   (** target register  *)
-  val tar : var
+  val tar : exp
 
   (** condition register bits *)
-  val cr : var Int.Map.t
+  val cri : exp Int.Map.t
+
+  (** condition register bits *)
+  val cr : exp String.Map.t
 
   (** condition register fields *)
-  val cr_fields : (var * var * var * var) String.Map.t
+  val cr_fields : exp String.Map.t
 
   (** fixed precision flags *)
-  val so : var   (** summary overflow        *)
-  val ca : var   (** carry flag              *)
-  val ov : var   (** overflow flag           *)
-  val ca32 : var (** carry out of 32 bits    *)
-  val ov32 : var (** overflow of 32 bits     *)
-
+  val so : exp   (** summary overflow        *)
+  val ca : exp   (** carry flag              *)
+  val ov : exp   (** overflow flag           *)
+  val ca32 : exp (** carry out of 32 bits    *)
+  val ov32 : exp (** overflow of 32 bits     *)
 end
 
-module PPC32 : sig
-  include module type of Hardware
-  val mem : var
-end
+(** 32-bit addressed memory *)
+val mem32 : var
 
-module PPC64 : sig
-  include module type of Hardware
-  val mem : var
-end
+(** 64-bit addressed memory *)
+val mem64 : var
 
 module PowerPC_32_cpu : CPU
 module PowerPC_64_cpu : CPU

@@ -8,8 +8,8 @@ open Powerpc_tests_helpers
 let endian = BigEndian
 
 let env_of_arch = function
-  | `ppc   -> PPC32.mem, 32
-  | `ppc64 -> PPC64.mem, 64
+  | `ppc   -> mem32, 32
+  | `ppc64 -> mem64, 64
   | _ -> failwith "ppc OR ppc64 arch only"
 
 let lbz arch d_addr ctxt =

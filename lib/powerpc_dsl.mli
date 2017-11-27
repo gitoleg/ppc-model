@@ -1,36 +1,15 @@
 open Core_kernel.Std
 open Bap.Std
-
-type exp [@@deriving bin_io, compare, sexp]
+open Powerpc_rtl
 
 type 'a p
 
 val imm : (op -> exp) p
 val reg : (op -> exp) p
 val var : exp p
-val int :  (int -> exp) p
+val int : (int -> exp) p
 val signed : 'a p -> 'a
 val unsigned : 'a p -> 'a
-
-module RTL : sig
-
-  type t [@@deriving bin_io, compare, sexp]
-
-  (** [bil d] - returns a program in BIL language   *)
-  val bil_of_rtl : t list -> bil
-
-  module Infix : sig
-    val (:=) : exp -> exp -> t
-    val (+)  : exp -> exp -> exp
-    val (^)  : exp -> exp -> exp
-    val (lsl) : exp -> exp -> exp
-  end
-
-  include module type of Infix
-
-end
-
-type rtl = RTL.t [@@deriving bin_io, compare, sexp]
 
 type cpu = {
   load   : exp -> size -> exp;
@@ -54,5 +33,4 @@ val one : exp
 
 val make_cpu : addr_size -> endian -> mem -> cpu
 
-(** [ppc_fail error_string] - raise a failure with [error_string] *)
-val ppc_fail : ('a, unit, string, 'b) format4 -> 'a
+val low : exp -> size -> exp

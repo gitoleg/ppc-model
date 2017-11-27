@@ -1,6 +1,8 @@
 open Core_kernel.Std
 open Bap.Std
 
+open Powerpc_rtl
+
 let range32 = List.range 0 32
 let range64 = List.range 0 64
 
@@ -12,16 +14,16 @@ let make_regs typ prefix range =
 
 let flag name = Var.create name (Type.imm 1)
 
-module Hardware = struct
+let gpr_bitwidth = 64
+let fpr_bitwidth = 64
+let vr_bitwidth  = 128
+let cr_bitwidth  = 32
+let xer_bitwidth = 64
+let lr_bitwidth  = 64
+let ctr_bitwidth = 64
+let tar_bitwidth = 64
 
-  let gpr_bitwidth = 64
-  let fpr_bitwidth = 64
-  let vr_bitwidth  = 128
-  let cr_bitwidth  = 32
-  let xer_bitwidth = 64
-  let lr_bitwidth  = 64
-  let ctr_bitwidth = 64
-  let tar_bitwidth = 64
+module Hardware_var = struct
 
   let gpr = make_regs (Type.imm gpr_bitwidth) "R" range32
 
@@ -117,21 +119,56 @@ module Hardware = struct
     List.fold fields ~init:String.Map.empty ~f:(fun fs (name, fd) ->
         String.Map.add fs name fd)
 
+end
+
+
+module Hardware = struct
+  open Hardware_var
+
+  let of_vars vars =
+    Set.fold vars ~init:String.Map.empty
+      ~f:(fun e v -> String.Map.add e (Var.name v) (Exp.of_var v))
+
+  let gpr = of_vars gpr
+  let fpr = of_vars fpr
+  let vr = of_vars vr
+  let xer = Exp.of_var xer
+  let ctr = Exp.of_var ctr
+  let lr  = Exp.of_var lr
+  let tar = Exp.of_var tar
+  let so  = Exp.of_var so
+  let ca  = Exp.of_var ca
+  let ov  = Exp.of_var ov
+  let ca32 = Exp.of_var ca32
+  let ov32 = Exp.of_var ov32
+  let cri = Int.Map.map cr ~f:(fun v -> Exp.of_var v)
+  let cr =
+    Int.Map.fold cr ~init:String.Map.empty
+      ~f:(fun ~key ~data:var acc ->
+         String.Map.add acc (Var.name var) (Exp.of_var var))
+
+
+  let cr_fields =
+    String.Map.map cr_fields ~f:(fun (b3,b2,b1,b0) -> Exp.of_vars [b3;b2;b1;b0])
 
 end
 
+let mem32 = Var.create "mem" (Type.mem `r32 `r8)
+let mem64 = Var.create "mem" (Type.mem `r64 `r8)
+
+
 module PPC32 = struct
-  include Hardware
-  let mem = Var.create "mem" (Type.mem `r32 `r8)
+  include Hardware_var
+  let mem = mem32
 end
 
 module PPC64 = struct
-  include Hardware
-  let mem = Var.create "mem" (Type.mem `r64 `r8)
+  include Hardware_var
+  let mem = mem64
 end
 
 module type PPC_cpu = sig
-  include module type of Hardware
+  include module type of Hardware_var
   val mem : var
 end
 

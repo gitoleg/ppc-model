@@ -1,11 +1,16 @@
 open Bap.Std
 
 module Dsl = Powerpc_dsl
-module RTL = Dsl.RTL
+module Exp = Powerpc_rtl.Exp
+module RTL = struct
+  include Powerpc_rtl
+  include Infix
+  include Exp.Infix
+end
 module Model = Powerpc_model
 module Hardware = Model.Hardware
 
-type rtl = Dsl.rtl [@@deriving bin_io, compare, sexp]
+type rtl = RTL.t [@@deriving bin_io, compare, sexp]
 type cpu = Dsl.cpu
 
 type operand = Op.t =
