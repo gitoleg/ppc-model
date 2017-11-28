@@ -103,9 +103,9 @@ let add ops =
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
   RTL.[
-    bit cr 0 := low res addr_size <$ zero;
-    bit cr 1 := low res addr_size >$ zero;
-    bit cr 2 := low res addr_size = zero;
+    nbit cr 0 := low res addr_size <$ zero;
+    nbit cr 1 := low res addr_size >$ zero;
+    nbit cr 2 := low res addr_size = zero;
   ]
 
 let add_dot addr_size ops =

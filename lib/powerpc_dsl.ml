@@ -76,7 +76,8 @@ let int signed value =
 type cpu = {
   load  : exp -> size -> exp;
   store : exp -> exp -> size -> rtl;
-  addr  : addr;
+  jmp   : exp -> rtl;
+  addr  : exp;
   addr_size : size;
 }
 
@@ -111,21 +112,25 @@ let make_cpu addr_size endian memory =
   let store addr data size =
     let addr = extract_addr addr in
     store mem addr data endian size in
-  let addr = Memory.min_addr memory in
+  let addr = Exp.of_word @@ Memory.min_addr memory in
   let addr_size : size = match addr_size with
     | `r32 -> `r32
     | `r64 -> `r64 in
-  { load; store; addr; addr_size;}
+  let jmp e = jmp (low e addr_size) in
+  { load; store; jmp; addr; addr_size; }
 
-let hbit e =
+let msb e =
   let h = Exp.width e - 1 in
   Exp.extract h h e
 
-let lbit e = Exp.extract 0 0 e
+let lsb e = Exp.extract 0 0 e
 
-let bit e n = Exp.extract n n e
+let nbit e n =
+  let x = Exp.width e - n - 1 in
+  Exp.extract x x e
 
-let byten e n =
+let nbyte e n =
+  let n = Exp.width e / 8 - n in
   let hi = (n + 1) * 8 - 1 in
   let lo = n * 8 in
   Exp.extract hi lo e

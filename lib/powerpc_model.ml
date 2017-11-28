@@ -101,9 +101,10 @@ module Hardware_var = struct
     cr24; cr25; cr26; cr27; cr28; cr29; cr30; cr31;
   ]
 
+
   let cri =
     let _, bits =
-      List.fold cr_bits ~init:(0,Int.Map.empty)
+      List.fold (List.rev cr_bits) ~init:(0,Int.Map.empty)
         ~f:(fun (num, bits) bit ->
             num + 1, Int.Map.add bits ~key:num ~data:bit) in
     bits
@@ -150,11 +151,10 @@ module Hardware = struct
          String.Map.add acc (Var.name var) (Exp.of_var var))
   let cri = Int.Map.map cri ~f:(fun v -> Exp.of_var v)
 
-  let cr = Exp.of_vars cr_bits
-
+  let cr = Exp.of_vars (List.rev cr_bits)
 
   let cr_fields =
-    String.Map.map cr_fields ~f:(fun (b3,b2,b1,b0) -> Exp.of_vars [b3;b2;b1;b0])
+    String.Map.map cr_fields ~f:(fun (b3,b2,b1,b0) -> Exp.of_vars [b0;b1;b2;b3])
 
 end
 

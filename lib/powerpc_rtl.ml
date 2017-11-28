@@ -113,7 +113,7 @@ module Exp = struct
   let of_vars vars = match vars with
     | [] -> ppc_fail "can't constuct an expression from empty var list"
     | v :: vars ->
-      let width = List.fold vars ~init:0 ~f:(fun a x -> a + var_bitwidth x) in
+      let width = List.fold (v::vars) ~init:0 ~f:(fun a x -> a + var_bitwidth x) in
       let vars = List.map ~f:(fun x -> Var x) vars in
       { sign = Unsigned; width; body = Concat (Var v, vars); }
 
@@ -176,6 +176,8 @@ let move lhs rhs =
     let rhs = Exp.cast rhs lhs.width lhs.sign in
     Bil.[v := of_body rhs.body]
   | _ -> ppc_fail "unexpected left side of :="
+
+let jmp exp = Bil.[ jmp (of_body exp.body)]
 
 module Infix = struct
   open Exp

@@ -29,6 +29,7 @@ val bil_of_t : t list -> bil
 
 val store : var -> exp -> exp -> endian -> size -> t
 val if_ : exp -> t list -> t list -> t
+val jmp : exp -> t
 
 module Infix : sig
   val (:=)  : exp -> exp -> t

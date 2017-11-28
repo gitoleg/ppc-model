@@ -13,6 +13,7 @@ end
 
 let lifters : (module Lifter) list = [
   (module Powerpc_add);
+  (module Powerpc_branch);
   (module Powerpc_load);
   (module Powerpc_logical);
   (module Powerpc_store);

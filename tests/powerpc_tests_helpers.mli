@@ -2,12 +2,16 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
+open Powerpc_types
 
 val nf : var
 val pf : var
 val zf : var
 val ca : var
 val ca32 : var
+val lr  : var
+val ctr : var
+val tar : var
 
 (** [find_gpr name] - return a GPR with a [name] *)
 val find_gpr : string -> var
@@ -50,3 +54,5 @@ val is_equal_words : word -> word option -> bool
 
 (** [string_of_bytes bytes] - returns a readable string from [bytes] *)
 val string_of_bytes : string -> string
+
+val bit : RTL.exp -> int -> var

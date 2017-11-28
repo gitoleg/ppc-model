@@ -23,9 +23,9 @@ let andi_dot addr_size ops =
   let im = unsigned imm ops.(2) in
   RTL.[
     ra := rs land im;
-    bit cr 0 := low ra addr_size <$ zero;
-    bit cr 1 := low ra addr_size >$ zero;
-    bit cr 2 := low ra addr_size = zero
+    nbit cr 0 := low ra addr_size <$ zero;
+    nbit cr 1 := low ra addr_size >$ zero;
+    nbit cr 2 := low ra addr_size = zero
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -39,9 +39,9 @@ let andis_dot addr_size ops =
   let sh = unsigned int 16 in
   RTL.[
     ra := rs land (im lsl sh);
-    bit cr 0 := low ra addr_size <$ zero;
-    bit cr 1 := low ra addr_size >$ zero;
-    bit cr 2 := low ra addr_size = zero;
+    nbit cr 0 := low ra addr_size <$ zero;
+    nbit cr 1 := low ra addr_size >$ zero;
+    nbit cr 2 := low ra addr_size = zero;
   ]
 
 (** Fixed-point AND
@@ -58,9 +58,9 @@ let and_ ops =
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
   RTL.[
-    bit cr 0 := low res addr_size <$ zero;
-    bit cr 1 := low res addr_size >$ zero;
-    bit cr 2 := low res addr_size = zero;
+    nbit cr 0 := low res addr_size <$ zero;
+    nbit cr 1 := low res addr_size >$ zero;
+    nbit cr 2 := low res addr_size = zero;
   ]
 
 let and_dot addr_size ops =
@@ -244,7 +244,7 @@ let cntlz ops size =
       has_no_ones := one;
     ] in
   let foreach_bit = RTL.[
-      if_ (has_no_ones land (hbit (low xv size) = zero)) [
+      if_ (has_no_ones land (msb (low xv size) = zero)) [
         cnt := cnt + one;
         xv := xv lsl one;
       ] [
@@ -278,7 +278,7 @@ let cnttz ops size =
       has_no_ones := one;
     ] in
   let foreach_bit = RTL.[
-      if_ (has_no_ones land (lbit xv = zero)) [
+      if_ (has_no_ones land (lsb xv = zero)) [
         cnt := cnt + one;
         xv := xv lsr one
       ] [
@@ -305,7 +305,7 @@ let cmpb ops =
   let foreach_byte index =
     let sh = unsigned int (index * 8) in
     RTL.[
-      if_ (byten rs index = byten rb index) [
+      if_ (nbyte rs index = nbyte rb index) [
         tm := tm lor (xb lsl sh);
       ] [ ]
     ] in
@@ -334,7 +334,7 @@ let popcnt ops size =
   let res = unsigned var in
   let foreach_bit reg index =
     RTL.[
-      if_ (bit reg index = one) [
+      if_ (nbit reg index = one) [
         cnt := cnt + one;
       ] [];
     ] in
@@ -397,7 +397,7 @@ let bpermd ops =
       iv := i;
       index := extract hi lo rs;
       if_ (index < max_ind) [
-        bit := lbit (rb lsr index);
+        bit := lsb (rb lsr index);
       ] [
         bit := zero;
       ];

@@ -10,11 +10,16 @@ Copyrights:   (C) 2016 Carnegie Mellon University
 Plugins:      META (0.4), DevFiles (0.4)
 BuildTools:   ocamlbuild
 BuildDepends: ppx_jane, core_kernel, bap
+AlphaFeatures: ocamlbuild_more_args
+XOCamlbuildExtraArgs: -j 8
+
+
 
 Library powerpc_lifter
   Path:           lib
   FindLibName:    powerpc_lifter
   Modules:        Powerpc_add,
+                  Powerpc_branch,
                   Powerpc_dsl,
                   Powerpc_lifter,
                   Powerpc_load,

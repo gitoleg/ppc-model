@@ -7,7 +7,8 @@ type 'a p
 type cpu = {
   load  : exp -> size -> exp;
   store : exp -> exp -> size -> rtl;
-  addr  : addr;
+  jmp   : exp -> rtl;
+  addr  : exp;
   addr_size : size;
 }
 
@@ -36,9 +37,16 @@ val one : exp
 
 val low : exp -> size -> exp
 
-val bit : exp -> int -> exp
-val byten : exp -> int -> exp
+(** [nbit e n] - extracts a bit with index [n] from [e].
+    Indexes are zero-based and started from most significant bit.  *)
+val nbit : exp -> int -> exp
 
-val hbit : exp -> exp
+(** [nbyte e n] - extracts a byte with index [n] from [e].
+    Indexes are zero based and started from most significant byte.  *)
+val nbyte : exp -> int -> exp
 
-val lbit : exp -> exp
+(** [msb e] - extracts the most significant bit from [e] *)
+val msb : exp -> exp
+
+(** [lsb e] - extracts the least significant bit from [e] *)
+val lsb : exp -> exp
