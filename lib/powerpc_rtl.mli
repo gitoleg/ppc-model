@@ -8,7 +8,6 @@ type rtl = t [@@deriving bin_io, compare, sexp]
 type exp [@@deriving bin_io, compare, sexp]
 
 module Exp : sig
-  type t = exp [@@deriving bin_io, compare, sexp]
 
   val of_var  : var -> exp
   val of_vars : var list -> exp
@@ -19,18 +18,9 @@ module Exp : sig
 
   val signed : exp -> exp
   val unsigned : exp -> exp
+  val width : exp -> int
 
-  module Infix : sig
-    val (+)  : exp -> exp -> exp
-    val (-)  : exp -> exp -> exp
-    val (^)  : exp -> exp -> exp
-    val (<)  : exp -> exp -> exp
-    val (>)  : exp -> exp -> exp
-    val (=)  : exp -> exp -> exp
-    val (lsl) : exp -> exp -> exp
-    val (lsr) : exp -> exp -> exp
-  end
-
+  (** for tests purposes only  *)
   val body : exp -> bap_exp
 end
 
@@ -38,7 +28,22 @@ end
 val bil_of_t : t list -> bil
 
 val store : var -> exp -> exp -> endian -> size -> t
+val if_ : exp -> t list -> t list -> t
 
 module Infix : sig
   val (:=)  : exp -> exp -> t
+  val (+)  : exp -> exp -> exp
+  val (-)  : exp -> exp -> exp
+  val (^)  : exp -> exp -> exp
+  val (<)  : exp -> exp -> exp
+  val (>)  : exp -> exp -> exp
+  val (<$) : exp -> exp -> exp
+  val (>$) : exp -> exp -> exp
+  val (=)  : exp -> exp -> exp
+  val (lsl)  : exp -> exp -> exp
+  val (lsr)  : exp -> exp -> exp
+  val (land) : exp -> exp -> exp
+  val (lor)  : exp -> exp -> exp
+  val (lxor) : exp -> exp -> exp
+  val lnot : exp -> exp
 end

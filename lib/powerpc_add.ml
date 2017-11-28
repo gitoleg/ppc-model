@@ -40,10 +40,9 @@ open Dsl
     subic rx,ry,value  = addic  rx, ry, -value
     subic. rx,ry,value = addic. rx, ry, -value *)
 
-let compute_ca mode x result =
-  match mode with
-  | `r64 -> RTL.(result < x)
-  | `r32 -> RTL.(low result word < low x word)
+(** TODO: rework those functions *)
+let compute_ca addr_size x result =
+  RTL.(low result addr_size < low x addr_size)
 
 let compute_ca32 x result = RTL.(low result word < low x word)
 
@@ -100,12 +99,9 @@ let add ops =
   let rb = signed reg ops.(2) in
   RTL.[rt := ra + rb]
 
-(** TODO think about addr size here  *)
+(** TODO think about addr size here.  *)
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
-  let addr_size : size = match addr_size with
-    | `r32 -> `r32
-    | `r64 -> `r64 in
   RTL.[
     bit cr 0 := low res addr_size <$ zero;
     bit cr 1 := low res addr_size >$ zero;
@@ -267,3 +263,4 @@ let lift opcode cpu ops =
   | opcode ->
     let opcode = Sexp.to_string (sexp_of_t opcode) in
     ppc_fail "%s: unexpected operand set" opcode
+(** TODO: error message should be different here  *)

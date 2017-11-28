@@ -8,7 +8,7 @@ module Hardware = Model.Hardware
 module RTL = struct
   include Powerpc_rtl
   include Infix
-  include Exp.Infix
+  include Exp
 end
 
 include Powerpc_utils

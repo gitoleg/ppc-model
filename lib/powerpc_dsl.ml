@@ -77,7 +77,7 @@ type cpu = {
   load  : exp -> size -> exp;
   store : exp -> exp -> size -> rtl;
   addr  : addr;
-  addr_size : addr_size;
+  addr_size : size;
 }
 
 let byte = `r8
@@ -96,6 +96,8 @@ let low e size =
   let n = Size.in_bits size in
   Exp.extract (n - 1) 0 e
 
+(** TODO: addr_size is weird
+    TODO: probably, it's not right place for this function *)
 let make_cpu addr_size endian memory =
   let extract_addr a = match addr_size with
     | `r32 -> low a word
@@ -110,6 +112,20 @@ let make_cpu addr_size endian memory =
     let addr = extract_addr addr in
     store mem addr data endian size in
   let addr = Memory.min_addr memory in
+  let addr_size : size = match addr_size with
+    | `r32 -> `r32
+    | `r64 -> `r64 in
   { load; store; addr; addr_size;}
 
-let bit exp n = Exp.extract n n exp
+let hbit e =
+  let h = Exp.width e - 1 in
+  Exp.extract h h e
+
+let lbit e = Exp.extract 0 0 e
+
+let bit e n = Exp.extract n n e
+
+let byten e n =
+  let hi = (n + 1) * 8 - 1 in
+  let lo = n * 8 in
+  Exp.extract hi lo e

@@ -14,12 +14,12 @@ BuildDepends: ppx_jane, core_kernel, bap
 Library powerpc_lifter
   Path:           lib
   FindLibName:    powerpc_lifter
-  Modules:
-                  Powerpc_lifter,
-                  Powerpc_add,
-                  Powerpc_load,
-                  Powerpc_model,
+  Modules:        Powerpc_add,
                   Powerpc_dsl,
+                  Powerpc_lifter,
+                  Powerpc_load,
+                  Powerpc_logical,
+                  Powerpc_model,
                   Powerpc_rtl,
                   Powerpc_types,
                   Powerpc_utils

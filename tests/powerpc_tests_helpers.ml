@@ -77,7 +77,7 @@ let check_gpr ?addr init bytes var expected arch ctxt =
   | None -> assert_bool "var not found OR it's result not Imm" false
   | Some w ->
     if not (Word.equal w expected) then
-      printf "\ncheck failed for %s: %s <> %s\n"
+      printf "\ncheck failed for %s: expected %s <> %s\n"
         (Var.name var)
         (Word.to_string expected)
         (Word.to_string w);

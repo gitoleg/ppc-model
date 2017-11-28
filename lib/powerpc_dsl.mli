@@ -4,19 +4,21 @@ open Powerpc_rtl
 
 type 'a p
 
+type cpu = {
+  load  : exp -> size -> exp;
+  store : exp -> exp -> size -> rtl;
+  addr  : addr;
+  addr_size : size;
+}
+
+val make_cpu : addr_size -> endian -> mem -> cpu
+
 val imm : (op -> exp) p
 val reg : (op -> exp) p
 val var : exp p
 val int : (int -> exp) p
 val signed : 'a p -> 'a
 val unsigned : 'a p -> 'a
-
-type cpu = {
-  load  : exp -> size -> exp;
-  store : exp -> exp -> size -> rtl;
-  addr  : addr;
-  addr_size : addr_size;
-}
 
 val byte : size
 val halfword : size
@@ -32,8 +34,11 @@ val doubleword_t : typ
 val zero : exp
 val one : exp
 
-val make_cpu : addr_size -> endian -> mem -> cpu
-
 val low : exp -> size -> exp
 
 val bit : exp -> int -> exp
+val byten : exp -> int -> exp
+
+val hbit : exp -> exp
+
+val lbit : exp -> exp

@@ -2,7 +2,9 @@ open Core_kernel.Std
 open Bap.Std
 
 open Powerpc_types
+open Model
 open Hardware
+open Dsl
 
 (** Extended mnemonics:
 
@@ -15,196 +17,195 @@ open Hardware
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     71 2a 00 20     andi.   r10,r9,32 *)
-let andi_dot addr_size ra rs imm =
-  let zero48 = Word.zero 48 in
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
-  Dsl.[ ra := var rs land (int zero48 ^ int imm);
-    cr_bit 0 := is_negative addr_size (var ra);
-    cr_bit 1 := is_positive addr_size (var ra);
-    cr_bit 2 := is_zero addr_size (var ra); ]
+let andi_dot addr_size ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let im = unsigned imm ops.(2) in
+  RTL.[
+    ra := rs land im;
+    bit cr 0 := low ra addr_size <$ zero;
+    bit cr 1 := low ra addr_size >$ zero;
+    bit cr 2 := low ra addr_size = zero
+  ]
 
 (** Fixed-point AND Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     75 2a 08 00     andis.  r10,r9,2048 *)
-let andis_dot addr_size ra rs ui =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let zero16 = Word.zero 16 in
-  let zero32 = Word.zero 32 in
-  let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
-  Dsl.[ ra := var rs land (int zero32 ^ int ui ^ int zero16);
-    cr_bit 0 := is_negative addr_size (var ra);
-    cr_bit 1 := is_positive addr_size (var ra);
-    cr_bit 2 := is_zero addr_size (var ra); ]
+let andis_dot addr_size ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let im = unsigned imm ops.(2) in
+  let sh = unsigned int 16 in
+  RTL.[
+    ra := rs land (im lsl sh);
+    bit cr 0 := low ra addr_size <$ zero;
+    bit cr 1 := low ra addr_size >$ zero;
+    bit cr 2 := low ra addr_size = zero;
+  ]
 
 (** Fixed-point AND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7f 39 e8 38     and     r25,r25,r29
     7d 49 30 39     and.    r9,r10,r6 *)
-let and_ ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := var rs land var rb; ]
+let and_ ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := rs land rb; ]
 
 let write_fixpoint_result addr_size res =
-  Dsl.[
-    cr_bit 0 := is_negative addr_size (var res);
-    cr_bit 1 := is_positive addr_size (var res);
-    cr_bit 2 := is_zero addr_size (var res);
+  let res = signed reg res in
+  RTL.[
+    bit cr 0 := low res addr_size <$ zero;
+    bit cr 1 := low res addr_size >$ zero;
+    bit cr 2 := low res addr_size = zero;
   ]
 
-let and_dot addr_size ra rs rb =
-  and_ ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let and_dot addr_size ops =
+  and_ ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point AND with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c ea 50 78     andc    r10,r7,r10
     7e 09 18 79     andc.   r9,r16,r3  *)
-let andc ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := var rs land (lnot (var rb)); ]
+let andc ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := rs land (lnot rb); ]
 
-let andc_dot addr_size ra rs rb =
-  andc ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let andc_dot addr_size ops =
+  andc ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point OR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     60 c6 51 c1     ori     r6,r6,20929 *)
-let ori ra rs imm =
-  let zero48 = Word.zero 48 in
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
-  Dsl.[ ra := var rs lor (int zero48 ^ int imm); ]
+let ori ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let im = unsigned imm ops.(2) in
+  RTL.[ ra := rs lor im; ]
 
 (** Fixed-point OR Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     65 4a 00 10     oris    r10,r10,16 *)
-let oris ra rs ui =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let zero16 = Word.zero 16 in
-  let zero32 = Word.zero 32 in
-  let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
-  Dsl.[ ra := var rs lor (int zero32 ^ int ui ^ int zero16); ]
+let oris ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let im = unsigned imm ops.(2) in
+  let sh = unsigned int 16 in
+  RTL.[ ra := rs lor (im lsl sh); ]
 
 (** Fixed-point OR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7f 38 c3 78     or      r24,r25,r24
     7d 0a 4b 79     or.     r10,r8,r9  *)
-let or_ ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := var rs lor var rb; ]
+let or_ ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := rs lor rb; ]
 
-let or_dot addr_size ra rs rb =
-  or_ ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let or_dot addr_size ops =
+  or_ ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point OR with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 8a 53 38     orc     r10,r4,r10
     7c 8a 53 39     orc.    r10,r4,r10 *)
-let orc ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := var rs lor (lnot (var rb)); ]
+let orc ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := rs lor (lnot rb); ]
 
-let orc_dot addr_size ra rs rb =
-  orc ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let orc_dot addr_size ops =
+  orc ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point XOR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     68 63 00 01     xori    r3,r3,1 *)
-let xori ra rs imm =
-  let zero48 = Word.zero 48 in
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let imm = Word.of_int64 ~width:16 (Imm.to_int64 imm) in
-  Dsl.[ ra := var rs lxor (int zero48 ^ int imm); ]
+let xori ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let im = unsigned imm ops.(2) in
+  RTL.[ ra := rs lxor im; ]
 
 (** Fixed-point XOR Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     6d 2a 04 00     xoris   r10,r9,1024
  *)
-let xoris ra rs ui =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let zero16 = Word.zero 16 in
-  let zero32 = Word.zero 32 in
-  let ui = Word.of_int64 ~width:16 (Imm.to_int64 ui) in
-  Dsl.[ ra := var rs lxor (int zero32 ^ int ui ^ int zero16); ]
+let xoris ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let im = unsigned imm ops.(2) in
+  let sh = unsigned int 16 in
+  RTL.[ ra := rs lxor (im lsl sh); ]
 
 (** Fixed-point XOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 6a 52 78     xor     r10,r3,r10
     7d 4a 4a 79     xor.    r10,r10,r9 *)
-let xor_ ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := var rs lxor var rb; ]
+let xor_ ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := rs lxor rb; ]
 
-let xor_dot addr_size ra rs rb =
-  xor_ ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let xor_dot addr_size ops =
+  xor_ ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point NAND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 63 1b b8     nand    r3,r3,r3
     7c 63 1b b9     nand.   r3,r3,r3 *)
-let nand ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := lnot (var rs land var rb); ]
+let nand ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := lnot (rs land rb); ]
 
-let nand_dot addr_size ra rs rb =
-  nand ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let nand_dot addr_size ops =
+  nand ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point NOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7d 09 48 f8     nor     r9,r8,r9
     7d 09 48 f9     nor.    r9,r8,r9  *)
-let nor ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := lnot (var rs lor var rb); ]
+let nor ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := lnot (rs lor rb); ]
 
-let nor_dot addr_size ra rs rb =
-  nor ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let nor_dot addr_size ops =
+  nor ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point Equivalent
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7d 09 4a 38     eqv     r9,r8,r9
     7d 09 4a 39     eqv.    r9,r8,r9 *)
-let eqv ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  Dsl.[ ra := lnot (var rs lxor (var rb)); ]
+let eqv ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[ ra := lnot (rs lxor rb); ]
 
-let eqv_dot addr_size ra rs rb =
-  eqv ra rs rb @ write_fixpoint_result addr_size (Dsl.find ra)
+let eqv_dot addr_size ops =
+  eqv ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point Extend Sign Byte/Halfword/Word
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -215,26 +216,13 @@ let eqv_dot addr_size ra rs rb =
     7d 25 07 35     extsh.  r5,r9
     7d 25 07 b4     extsw   r5,r9
     7d 25 07 b5     extsw.  r5,r9 *)
-let exts ra rs size =
-  let bits = Size.in_bits size in
-  let sign_pos = Size.in_bits size - 1 in
-  let zero_tail = Word.zero bits in
-  let zeros = Word.concat (Word.zero (gpr_bitwidth - bits)) zero_tail in
-  let ones = Word.concat (Word.ones (gpr_bitwidth - bits)) zero_tail in
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let sign = Dsl.fresh "sign" (Type.imm 1) in
-  Dsl.[ sign := extract sign_pos sign_pos (var rs);
-    ra := cast unsigned gpr_bitwidth (extract sign_pos 0 (var rs));
-    if_ (var sign) Dsl.[
-      ra := var ra lor (int ones)
-    ] Dsl.[
-      ra := var ra lor (int zeros)
-    ]
-  ]
+let exts ops size =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  RTL.[ ra := low rs size;]
 
-let exts_dot addr_size ra rs size =
-  exts ra rs size @ write_fixpoint_result addr_size (Dsl.find ra)
+let exts_dot addr_size ops size =
+  exts ops size @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point Count Leading Zeros Word/Doubleword
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -243,41 +231,32 @@ let exts_dot addr_size ra rs size =
     7c 63 00 35     cntlzw.  r3,r3
     7c 63 00 74     cntlzd   r3,r3
     7c 63 00 75     cntlzd.  r3,r3 *)
-let cntlz ra rs size =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
+let cntlz ops size =
   let bits = Size.in_bits size in
-  let high_bit = bits - 1 in
-  let one = Word.one bits in
-  let probe =
-    let one_ = Word.one bits in
-    let shift = Word.of_int ~width:bits (bits -1) in
-    Word.(one_ lsl shift) in
-  let zero = Word.zero bits in
-  let xv = Dsl.fresh "x" (Type.imm bits) in
-  let mask = Dsl.fresh "mask" (Type.imm bits) in
-  let cnt = Dsl.fresh "cnt" (Type.imm bits) in
-  let has_no_ones = Dsl.fresh "has_no_ones" (Type.imm 1) in
-  let init = Dsl.[
-      xv := extract high_bit 0 (var rs);
-      mask := int probe;
-      cnt := int zero;
-      has_no_ones := int Word.b1;
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let xv = unsigned var in
+  let cnt = unsigned var in
+  let has_no_ones = unsigned var in
+  let init = RTL.[
+      xv := low rs size;
+      cnt := zero;
+      has_no_ones := one;
     ] in
-  let foreach_bit = Dsl.[
-      if_ (var has_no_ones land ((var xv land var mask) = int zero)) [
-        cnt := var cnt + int one;
-        mask := var mask lsr int one;
+  let foreach_bit = RTL.[
+      if_ (has_no_ones land (hbit (low xv size) = zero)) [
+        cnt := cnt + one;
+        xv := xv lsl one;
       ] [
-        has_no_ones := int Word.b0;
+        has_no_ones := zero;
       ];
     ] in
   let loop = List.concat @@ List.init bits ~f:(fun _ -> foreach_bit) in
-  let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
+  let finish = RTL.[ra := cnt] in
   init @ loop @ finish
 
-let cntlz_dot addr_size ra rs size =
-  cntlz ra rs size @ write_fixpoint_result addr_size (Dsl.find ra)
+let cntlz_dot addr_size ops size =
+  cntlz ops size @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point Count Trailing Zeros Word
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -286,72 +265,53 @@ let cntlz_dot addr_size ra rs size =
     7c 63 04 35     cnttzw.  r3,r3
     7c 63 04 74     cnttzd   r3,r3
     7c 63 04 75     cnttzd.  r3,r3 *)
-let cnttz ra rs size =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
+let cnttz ops size =
   let bits = Size.in_bits size in
-  let high_bit = bits - 1 in
-  let one = Word.one bits in
-  let probe = Word.one bits in
-  let zero = Word.zero bits in
-  let xv = Dsl.fresh "x" (Type.imm bits) in
-  let mask = Dsl.fresh "mask" (Type.imm bits) in
-  let cnt = Dsl.fresh "cnt" (Type.imm bits) in
-  let has_no_ones = Dsl.fresh "has_no_ones" (Type.imm 1) in
-  let init = Dsl.[
-      xv := extract high_bit 0 (var rs);
-      mask := int probe;
-      cnt := int zero;
-      has_no_ones := int Word.b1;
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let xv = unsigned var in
+  let cnt = unsigned var in
+  let has_no_ones = unsigned var in
+  let init = RTL.[
+      xv := low rs size;
+      cnt := zero;
+      has_no_ones := one;
     ] in
-  let foreach_bit = Dsl.[
-      if_ (var has_no_ones land ((var xv land var mask) = int zero)) [
-        cnt := var cnt + int one;
-        mask := var mask lsl int one;
+  let foreach_bit = RTL.[
+      if_ (has_no_ones land (lbit xv = zero)) [
+        cnt := cnt + one;
+        xv := xv lsr one
       ] [
-        has_no_ones := int Word.b0;
+        has_no_ones := zero;
       ];
     ] in
   let loop = List.concat @@ List.init bits ~f:(fun _ -> foreach_bit) in
-  let finish = Dsl.[ra := cast unsigned gpr_bitwidth (var cnt)] in
+  let finish = RTL.[ra := cnt] in
   init @ loop @ finish
 
-let cnttz_dot addr_size ra rs size =
-  cnttz ra rs size @ write_fixpoint_result addr_size (Dsl.find ra)
+let cnttz_dot addr_size ops size =
+  cnttz ops size @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-point Compare Bytes
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 8a 53 f8   cmpb r10, r4, r10 *)
-let cmpb ra rs rb =
-  let rs = Dsl.find rs in
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  let byte = 8 in
-  let rs_byte = Dsl.fresh "rs_byte" (Type.imm byte) in
-  let rb_byte = Dsl.fresh "rb_byte" (Type.imm byte) in
-  let res = Dsl.fresh "res" (Type.imm gpr_bitwidth) in
-  let zero = Word.zero gpr_bitwidth in
-  let get_byte reg n =
-    let hi = (n + 1) * byte - 1 in
-    let lo = n * byte in
-    Dsl.extract hi lo (Dsl.var reg) in
-  let set_byte reg n value =
-    let shift = Word.of_int ~width:gpr_bitwidth (n * byte) in
-    let value = Word.of_int ~width:gpr_bitwidth value in
-    let value = Word.(value lsl shift) in
-    Dsl.(var reg lor int value) in
+let cmpb ops =
+  let ra = unsigned reg ops.(0) in
+  let rs = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let tm = unsigned var in
+  let xb = unsigned int 0xFF in
   let foreach_byte index =
-    Dsl.[
-      rs_byte := get_byte rs index;
-      rb_byte := get_byte rb index;
-      if_ (var rs_byte = var rb_byte) [
-        res := set_byte res index 0xFF
+    let sh = unsigned int (index * 8) in
+    RTL.[
+      if_ (byten rs index = byten rb index) [
+        tm := tm lor (xb lsl sh);
       ] [ ]
     ] in
-  let init = Dsl.[res := int zero ] in
-  let loop = List.concat (List.init 8 ~f:foreach_byte) in
-  let finish = Dsl.[ra := var res] in
+  let init = RTL.[tm := zero ] in
+  let loop = List.concat @@ List.init 8 ~f:foreach_byte in
+  let finish = RTL.[ra := tm] in
   List.concat [
     init;
     loop;
@@ -364,45 +324,42 @@ let cmpb ra rs rb =
     7c 84 00 f4       popcntb r4, r4 (not working in llvm)
     7c 84 02 f4       popcntw r4, r4
     7c 84 03 f4       popcntd r4, r4 *)
-let popcnt ra rs size =
-  let ra = Dsl.find ra in
-  let rs = Dsl.find rs in
+let popcnt ops size =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
   let bits = Size.in_bits size in
   let steps = gpr_bitwidth / bits in
-  let one = Word.one gpr_bitwidth in
-  let zero = Word.zero gpr_bitwidth in
-  let res = Dsl.fresh "res" (Type.imm gpr_bitwidth) in
-  let x = Dsl.fresh "x" (Type.imm bits) in
-  let cnt = Dsl.fresh "cnt" (Type.imm gpr_bitwidth) in
+  let cnt = unsigned var in
+  let tmp = unsigned var in
+  let res = unsigned var in
   let foreach_bit reg index =
-    let index = Word.of_int ~width:bits index in
-    Dsl.[
-      if_ (extract 0 0 (var reg lsr int index) = int Word.b1 ) [
-        cnt := var cnt + int one;
+    RTL.[
+      if_ (bit reg index = one) [
+        cnt := cnt + one;
       ] [];
     ] in
   let foreach_size index =
     let lo = index * bits in
     let hi = (index + 1) * bits - 1 in
-    let shift = Word.of_int ~width:gpr_bitwidth (index * bits) in
-    let init = Dsl.[
-      cnt := int zero;
-      x := extract hi lo (var rs);
+    let shift = unsigned int (index * bits) in
+    let init = RTL.[
+      cnt := zero;
+      tmp := extract hi lo rs;
     ] in
-    let loop = List.concat @@ List.init bits (foreach_bit x) in
-    let finish = Dsl.[
-      res := var res lor (var cnt lsl int shift);
+    let loop = List.concat @@ List.init bits (foreach_bit tmp) in
+    let finish = RTL.[
+      res := res lor (cnt lsl shift);
     ] in
     List.concat [
       init;
       loop;
       finish;
     ] in
-  let init = Dsl.[
-    res := int zero;
+  let init = RTL.[
+    res := zero;
   ] in
   let loop = List.concat @@ List.init steps ~f:foreach_size in
-  let finish = Dsl.[ra := var res] in
+  let finish = RTL.[ra := res] in
   List.concat [
     init;
     loop;
@@ -414,43 +371,41 @@ let popcnt ra rs size =
     examples:
     7c 84 01 74     prtyd r4, r4 (not working in llvm)
     7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
-let parity ra rs size = Dsl.ppc_fail "llvm doens't now about this insn"
+let parity ops size = ppc_fail "llvm doens't now about this insn"
 
 (** Fixed-point Bit Permute Doubleword
     Pages 100 of IBM Power ISATM Version 3.0 B
     examples:
     7c a1 49 f8    bperm r1, r5, r9 *)
-let bpermd ra rs rb =
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  let rs = Dsl.find rs in
-  let max_ind = Word.of_int ~width:8 64 in
-  let index = Dsl.fresh "index" (Type.imm 8) in
-  let iv = Dsl.fresh "iv" (Type.imm 8) in
-  let tmp = Dsl.fresh "tmp" (Type.imm gpr_bitwidth) in
-  let bit = Dsl.fresh "bit" (Type.imm 1) in
-  let zero_bit = Word.zero 1 in
-  let zero = Word.zero gpr_bitwidth in
-  let init = Dsl.[
-      tmp := int zero;
+let bpermd ops =
+  let ra = unsigned reg ops.(0) in
+  let rs = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let max_ind = unsigned int 64 in
+  let index = unsigned var in
+  let iv = unsigned var in
+  let tmp = unsigned var in
+  let bit = unsigned var in
+  let init = RTL.[
+      tmp := zero;
     ] in
   let foreach_byte i =
     let hi = (i + 1) * 8 - 1 in
     let lo = i * 8 in
-    let i = Word.of_int ~width:8 i in
-    Dsl.[
-      iv := int i;
-      index := extract hi lo (var rs);
-      if_ (var index < int max_ind) [
-        bit := extract 0 0 (var rb lsr var index);
+    let i = unsigned int i in
+    RTL.[
+      iv := i;
+      index := extract hi lo rs;
+      if_ (index < max_ind) [
+        bit := lbit (rb lsr index);
       ] [
-        bit := int zero_bit;
+        bit := zero;
       ];
-      tmp := var tmp lor ((cast unsigned gpr_bitwidth (var bit)) lsl var iv);
+      tmp := tmp lor (bit lsl iv);
     ] in
   let loop = List.concat @@ List.init 8 ~f:foreach_byte in
-  let finish = Dsl.[
-      ra := cast unsigned gpr_bitwidth (extract 7 0 (var tmp));
+  let finish = RTL.[
+      ra := low tmp byte;
     ] in
   List.concat [
     init;
@@ -524,49 +479,45 @@ type bperm = [ `BPERMD ] [@@deriving sexp,enumerate]
 
 type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | bperm ] [@@deriving sexp,enumerate]
 
-let lift t addr_size endian mem ops =
-  match t, ops with
-  | `ANDIo,   [| Reg ra; Reg rs; Imm ui |] -> andi_dot addr_size ra rs ui
-  | `ANDISo,  [| Reg ra; Reg rs; Imm ui |] -> andis_dot addr_size ra rs ui
-  | `AND,     [| Reg ra; Reg rs; Reg rb |] -> and_ ra rs rb
-  | `ANDo,    [| Reg ra; Reg rs; Reg rb |] -> and_dot addr_size ra rs rb
-  | `ANDC,    [| Reg ra; Reg rs; Reg rb |] -> andc ra rs rb
-  | `ANDCo,   [| Reg ra; Reg rs; Reg rb |] -> andc_dot addr_size ra rs rb
-  | `ORI,     [| Reg ra; Reg rs; Imm ui |] -> ori ra rs ui
-  | `ORIS,    [| Reg ra; Reg rs; Imm ui |] -> oris ra rs ui
-  | `OR,      [| Reg ra; Reg rs; Reg rb |] -> or_ ra rs rb
-  | `ORo,     [| Reg ra; Reg rs; Reg rb |] -> or_dot addr_size ra rs rb
-  | `ORC,     [| Reg ra; Reg rs; Reg rb |] -> orc ra rs rb
-  | `ORCo,    [| Reg ra; Reg rs; Reg rb |] -> orc_dot addr_size ra rs rb
-  | `XORI,    [| Reg ra; Reg rs; Imm ui |] -> xori ra rs ui
-  | `XORIS,   [| Reg ra; Reg rs; Imm ui |] -> xoris ra rs ui
-  | `XOR,     [| Reg ra; Reg rs; Reg rb |] -> xor_ ra rs rb
-  | `XORo,    [| Reg ra; Reg rs; Reg rb |] -> xor_dot addr_size ra rs rb
-  | `NAND,    [| Reg ra; Reg rs; Reg rb |] -> nand ra rs rb
-  | `NANDo,   [| Reg ra; Reg rs; Reg rb |] -> nand_dot addr_size ra rs rb
-  | `NOR,     [| Reg ra; Reg rs; Reg rb |] -> nor ra rs rb
-  | `NORo,    [| Reg ra; Reg rs; Reg rb |] -> nor_dot addr_size ra rs rb
-  | `EQV,     [| Reg ra; Reg rs; Reg rb |] -> eqv ra rs rb
-  | `EQVo,    [| Reg ra; Reg rs; Reg rb |] -> eqv_dot addr_size ra rs rb
-  | `EXTSB,   [| Reg ra; Reg rs; |] -> exts ra rs `r8
-  | `EXTSBo,  [| Reg ra; Reg rs; |] -> exts_dot addr_size ra rs `r8
-  | `EXTSH,   [| Reg ra; Reg rs; |] -> exts ra rs `r16
-  | `EXTSHo,  [| Reg ra; Reg rs; |] -> exts_dot addr_size ra rs `r16
-  | `EXTSW,   [| Reg ra; Reg rs; |] -> exts ra rs `r32
-  | `EXTSWo,  [| Reg ra; Reg rs; |] -> exts_dot addr_size ra rs `r32
-  | `CNTLZW,  [| Reg ra; Reg rs; |] -> cntlz rs ra `r32
-  | `CNTLZWo, [| Reg ra; Reg rs; |] -> cntlz_dot addr_size rs ra `r32
-  | `CNTLZD,  [| Reg ra; Reg rs; |] -> cntlz rs ra `r64
-  | `CNTLZDo, [| Reg ra; Reg rs; |] -> cntlz_dot addr_size rs ra `r64
-  | `CNTTZW,  [| Reg ra; Reg rs; |] -> cnttz rs ra `r32
-  | `CNTTZWo, [| Reg ra; Reg rs; |] -> cnttz_dot addr_size rs ra `r32
-  | `CNTTZD,  [| Reg ra; Reg rs; |] -> cnttz rs ra `r64
-  | `CNTTZDo, [| Reg ra; Reg rs; |] -> cnttz_dot addr_size rs ra `r64
-  | `CMPB,    [| Reg ra; Reg rs; Reg rb; |] -> cmpb ra rs rb
-  | `POPCNTW, [| Reg ra; Reg rs; |] -> popcnt ra rs `r32
-  | `POPCNTB, [| Reg ra; Reg rs; |] -> popcnt ra rs `r8
-  | `POPCNTD, [| Reg ra; Reg rs; |] -> popcnt ra rs `r64
-  | `BPERMD,  [| Reg ra; Reg rs; Reg rb |] -> bpermd ra rs rb
-  | opcode, _ ->
-    let opcode = Sexp.to_string (sexp_of_t opcode) in
-    Dsl.ppc_fail "%s: unexpected operand set" opcode
+let lift t cpu ops = match t with
+  | `ANDIo   -> andi_dot cpu.addr_size ops
+  | `ANDISo  -> andis_dot cpu.addr_size ops
+  | `AND     -> and_ ops
+  | `ANDo    -> and_dot cpu.addr_size ops
+  | `ANDC    -> andc ops
+  | `ANDCo   -> andc_dot cpu.addr_size ops
+  | `ORI     -> ori ops
+  | `ORIS    -> oris ops
+  | `OR      -> or_ ops
+  | `ORo     -> or_dot cpu.addr_size ops
+  | `ORC     -> orc ops
+  | `ORCo    -> orc_dot cpu.addr_size ops
+  | `XORI    -> xori ops
+  | `XORIS   -> xoris ops
+  | `XOR     -> xor_ ops
+  | `XORo    -> xor_dot cpu.addr_size ops
+  | `NAND    -> nand ops
+  | `NANDo   -> nand_dot cpu.addr_size ops
+  | `NOR     -> nor ops
+  | `NORo    -> nor_dot cpu.addr_size ops
+  | `EQV     -> eqv ops
+  | `EQVo    -> eqv_dot cpu.addr_size ops
+  | `EXTSB   -> exts ops `r8
+  | `EXTSBo  -> exts_dot cpu.addr_size ops `r8
+  | `EXTSH   -> exts ops `r16
+  | `EXTSHo  -> exts_dot cpu.addr_size ops `r16
+  | `EXTSW   -> exts ops `r32
+  | `EXTSWo  -> exts_dot cpu.addr_size ops `r32
+  | `CNTLZW  -> cntlz ops `r32
+  | `CNTLZWo -> cntlz_dot cpu.addr_size ops `r32
+  | `CNTLZD  -> cntlz ops `r64
+  | `CNTLZDo -> cntlz_dot cpu.addr_size ops `r64
+  | `CNTTZW  -> cnttz ops `r32
+  | `CNTTZWo -> cnttz_dot cpu.addr_size ops `r32
+  | `CNTTZD  -> cnttz ops `r64
+  | `CNTTZDo -> cnttz_dot cpu.addr_size ops `r64
+  | `CMPB    -> cmpb ops
+  | `POPCNTW -> popcnt ops `r32
+  | `POPCNTB -> popcnt ops `r8
+  | `POPCNTD -> popcnt ops `r64
+  | `BPERMD  -> bpermd ops

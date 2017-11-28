@@ -17,6 +17,8 @@ type body =
   | Concat of body * body list
   | Binop of binop * body * body
   | Extract of (int * int * body)
+  | Cast of (s * int * body)
+  | Unop of (unop * body)
 [@@deriving bin_io, compare, sexp]
 
 type exp = {
@@ -38,6 +40,9 @@ let rec of_body = function
     List.fold ~init:(of_body x) ~f:Bil.(^) xs
   | Binop (op, x, y) -> Bil.binop op (of_body x) (of_body y)
   | Extract (hi, lo, x) -> Bil.extract hi lo (of_body x)
+  | Cast (Signed, width, x) -> Bil.(cast signed width (of_body x))
+  | Cast (Unsigned, width, x) -> Bil.(cast unsigned width (of_body x))
+  | Unop (op, x) -> Bil.unop op (of_body x)
 
 let is_var = function
   | Var _ -> true
@@ -45,14 +50,18 @@ let is_var = function
 
 module Exp = struct
 
-  type t = exp [@@deriving bin_io, compare, sexp]
-
-  let coerce x width sign =
-    {x with width = width; sign = sign}
+  (** TODO: think again about signess + 1-bit values *)
+  let cast x width sign =
+    if x.width = 1 then
+      {width; sign=x.sign; body = Cast (x.sign, width, x.body)}
+    else
+      {width; sign; body = Cast (sign, width, x.body)}
 
   let derive_sign s s' = match s, s' with
     | Signed, _ | _, Signed -> Signed
     | _ -> Unsigned
+
+  let unop op x = { x with body = Unop (op, x.body)}
 
   let binop op lhs rhs =
     let sign = lhs.sign in
@@ -60,18 +69,18 @@ module Exp = struct
     let body = Binop(op, lhs.body, rhs.body) in
     {sign; width; body;}
 
-  let binop_with_coerce op lhs rhs =
+  let binop_with_cast op lhs rhs =
     let sign = derive_sign lhs.sign rhs.sign in
     let width = max lhs.width rhs.width in
-    let lhs = coerce lhs width sign in
-    let rhs = coerce rhs width sign in
+    let lhs = cast lhs width sign in
+    let rhs = cast rhs width sign in
     { sign; width; body = Binop (op, lhs.body, rhs.body); }
 
   let plus lhs rhs =
-    binop_with_coerce Bil.plus lhs rhs
+    binop_with_cast Bil.plus lhs rhs
 
   let minus lhs rhs =
-    binop_with_coerce Bil.minus lhs rhs
+    binop_with_cast Bil.minus lhs rhs
 
   let concat lhs rhs =
     let sign = derive_sign lhs.sign rhs.sign in
@@ -79,22 +88,17 @@ module Exp = struct
     let body = Concat (lhs.body, [rhs.body]) in
     { sign; width; body; }
 
-  let lt lhs rhs = binop_with_coerce Bil.lt lhs rhs
-  let gt lhs rhs = binop_with_coerce Bil.lt rhs lhs
-  let eq lhs rhs = binop_with_coerce Bil.eq rhs lhs
-  let lshift lhs rhs = binop Bil.lshift lhs rhs
-  let rshift lhs rhs = binop Bil.rshift lhs rhs
-
-  module Infix = struct
-    let (+)  = plus
-    let (-)  = minus
-    let (^)  = concat
-    let (<)  = lt
-    let (>)  = gt
-    let (=)  = eq
-    let (lsl) = lshift
-    let (lsr) = rshift
-  end
+  let lt x y = binop_with_cast Bil.lt x y
+  let gt x y = binop_with_cast Bil.lt y x
+  let eq x y = binop_with_cast Bil.eq y x
+  let slt x y = binop_with_cast Bil.slt x y
+  let sgt x y = binop_with_cast Bil.slt y x
+  let lshift x y = binop Bil.lshift x y
+  let rshift x y = binop Bil.rshift x y
+  let bit_and x y = binop_with_cast Bil.bit_and x y
+  let bit_xor x y = binop_with_cast Bil.bit_xor x y
+  let bit_or x y = binop_with_cast Bil.bit_or x y
+  let not x = unop Bil.not x
 
   let var_bitwidth v =
     match Var.typ v with
@@ -125,55 +129,69 @@ module Exp = struct
 
   let extract hi lo e =
     let width = hi - lo + 1 in
-    let sign = e.sign in
-    match e.body with
-    | Concat (x,xs) ->
-      if List.for_all (x::xs) ~f:is_var then
-        let vars = List.map ~f:(function
-            | Var v -> v
-            | _ -> ppc_fail "variable expected") (x::xs) in
-        let bounds,_ =
-          List.fold ~init:([],0)
-            ~f:(fun (acc,n) v ->
-                let len = var_bitwidth v in
-                (n + len - 1, n, v) :: acc, n + len) vars in
-        List.find
-          ~f:(fun (hi',lo',_) -> hi = hi' && lo = lo') bounds |> function
-        | Some (_,_,v) -> {sign; width; body = Var v}
-        | None -> {sign; width; body = Extract (hi,lo,e.body)}
-      else
-        {sign; width; body = Extract (hi,lo,e.body)}
-    | _ -> {sign; width; body = Extract (hi,lo,e.body)}
-
+    if width = e.width then e
+    else
+      let sign = e.sign in
+      match e.body with
+      | Concat (x,xs) ->
+        if List.for_all (x::xs) ~f:is_var then
+          let vars = List.map ~f:(function
+              | Var v -> v
+              | _ -> ppc_fail "variable expected") (x::xs) in
+          let bounds,_ =
+            List.fold ~init:([],0)
+              ~f:(fun (acc,n) v ->
+                  let len = var_bitwidth v in
+                  (n + len - 1, n, v) :: acc, n + len) vars in
+          List.find
+            ~f:(fun (hi',lo',_) -> hi = hi' && lo = lo') bounds |> function
+          | Some (_,_,v) -> {sign; width; body = Var v}
+          | None -> {sign; width; body = Extract (hi,lo,e.body)}
+        else
+          {sign; width; body = Extract (hi,lo,e.body)}
+      | _ -> {sign; width; body = Extract (hi,lo,e.body)}
 
   let signed e = {e with sign = Signed}
   let unsigned e = {e with sign = Unsigned}
-
+  let width e = e.width
   let body e = of_body e.body
 
 end
 
-open Exp
-
 let bil_of_t = List.concat
-
-let coerce x width sign =
-  if sign = x.sign && width = x.width then of_body x.body
-  else
-    match sign with
-    | Unsigned -> Bil.(cast unsigned width (of_body x.body))
-    | Signed -> Bil.(cast signed width (of_body x.body))
 
 let store mem addr data endian size =
   Bil.[mem := store (var mem) (of_body addr.body) (of_body data.body) endian size]
 
+let if_ probe then_ else_ =
+  let probe = Exp.cast probe 1 Unsigned in
+  let probe = of_body probe.body in
+  let then_ = bil_of_t then_ in
+  let else_ = bil_of_t else_ in
+  Bil.[ if_ probe then_ else_ ]
+
 let move lhs rhs =
   match lhs.body with
   | Var v ->
-    let rhs = coerce rhs lhs.width lhs.sign in
-    Bil.[v := rhs]
+    let rhs = Exp.cast rhs lhs.width lhs.sign in
+    Bil.[v := of_body rhs.body]
   | _ -> ppc_fail "unexpected left side of :="
 
 module Infix = struct
+  open Exp
   let (:=) = move
+  let (+)  = plus
+  let (-)  = minus
+  let (^)  = concat
+  let (<)  = lt
+  let (>)  = gt
+  let (<$) = slt
+  let (>$) = sgt
+  let (=)  = eq
+  let (lsl)  = lshift
+  let (lsr)  = rshift
+  let (land) = bit_and
+  let (lor)  = bit_or
+  let (lxor) = bit_xor
+  let (lnot) = not
 end
