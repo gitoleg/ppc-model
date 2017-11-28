@@ -106,7 +106,13 @@ let check_mem init bytes mem ~addr ~size expected ?(endian=BigEndian) arch ctxt 
   let c = Stmt.eval (init @ bil) (new Bili.context) in
    match load_word c mem addr endian size with
   | None -> assert_bool "word not found OR it's result not Imm" false
-  | Some w -> assert_equal ~cmp:Word.equal w expected
+  | Some w ->
+    if not (Word.equal w expected) then
+      printf "\ncheck failed for %s: expected %s <> %s\n"
+        (Addr.to_string addr)
+        (Word.to_string expected)
+        (Word.to_string w);
+    assert_equal ~cmp:Word.equal w expected
 
 let concat_words ws = match ws with
   | [] -> failwith "words list is empty!"

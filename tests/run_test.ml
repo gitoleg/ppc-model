@@ -13,9 +13,9 @@ let suite = "PPC" >::: [
     (* Powerpc_add_tests.suite; *)
     (* Powerpc_branch_tests.suite; *)
     (* Powerpc_compare_tests.suite; *)
-    Powerpc_logical_tests.suite;
+    (* Powerpc_logical_tests.suite; *)
     (* Powerpc_load_tests.suite; *)
-    (* Powerpc_store_tests.suite; *)
+    Powerpc_store_tests.suite;
   ]
 
 let () = run_test_tt_main suite

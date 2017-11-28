@@ -21,6 +21,7 @@ Library powerpc_lifter
                   Powerpc_logical,
                   Powerpc_model,
                   Powerpc_rtl,
+                  Powerpc_store,
                   Powerpc_types,
                   Powerpc_utils
   CompiledObject: best

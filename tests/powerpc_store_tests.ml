@@ -6,8 +6,8 @@ open Powerpc_model
 open Powerpc_tests_helpers
 
 let env_of_arch = function
-  | `ppc   -> PPC32.mem, 32
-  | `ppc64 -> PPC64.mem, 64
+  | `ppc   -> mem32, 32
+  | `ppc64 -> mem64, 64
   | _ -> failwith "ppc OR ppc64 arch only"
 
 let stb arch ctxt =
@@ -138,13 +138,13 @@ let stbux arch ctxt =
   let r9 = find_gpr "R9" in
   let r25 = find_gpr "R25" in
   let r31 = find_gpr "R31" in
-  let x = Word.of_int ~width:addr_size 0xABCD0000 in
-  let y = Word.of_int ~width:addr_size 0x0000EF42 in
-  let ea = Word.(x + y) in
+  let x = 0xABCD0000 in
+  let y = 0x0000EF42 in
+  let ea = Word.of_int ~width:addr_size (x + y) in
   let data = Word.of_int64 0xFFFFFFFFABCDEF42L in
   let init = Bil.[
-      r31 := int x;
-      r25 := int y;
+      r31 := int (Word.of_int ~width:64 x);
+      r25 := int (Word.of_int ~width:64 y);
       r9 := int data;
     ] in
   let expected = Word.of_int ~width:8 0x42 in
@@ -158,13 +158,13 @@ let stwux arch ctxt =
   let r1 = find_gpr "R1" in
   let r9 = find_gpr "R9" in
   let r10 = find_gpr "R10" in
-  let x = Word.of_int ~width:addr_size 0xABCD0000 in
-  let y = Word.of_int ~width:addr_size 0x00000001 in
-  let ea = Word.(x + y) in
+  let x = 0xABCD0000 in
+  let y = 0x00000001 in
+  let ea = Word.of_int ~width:addr_size (x + y) in
   let data = Word.of_int64 0xFFFFFFFFABCDEF42L in
   let init = Bil.[
-      r1 := int x;
-      r9 := int y;
+      r1 := int (Word.of_int ~width:64 x);
+      r9 := int (Word.of_int ~width:64 y);
       r10 := int data;
     ] in
   let expected = Word.of_int ~width:32 0xABCDEF42 in
@@ -230,14 +230,14 @@ let stdux arch ctxt =
   let r1 = find_gpr "R1" in
   let r8 = find_gpr "R8" in
   let r9 = find_gpr "R9" in
-  let x = Word.of_int ~width:addr_size 0xABCD0000 in
-  let y = Word.of_int ~width:addr_size 0x0000EF42 in
-  let ea = Word.(x + y) in
+  let x = 0xABCD0000 in
+  let y = 0x0000EF42 in
+  let ea = Word.of_int ~width:addr_size (x + y) in
   let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
   let init = Bil.[
       r1 := int data;
-      r8 := int x;
-      r9 := int y;
+      r8 := int (Word.of_int ~width:64 x);
+      r9 := int (Word.of_int ~width:64 y);
     ] in
   let expected = data in
   check_mem init bytes mem ~addr:ea ~size:`r64 expected arch ctxt;
