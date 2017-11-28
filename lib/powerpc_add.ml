@@ -100,12 +100,16 @@ let add ops =
   let rb = signed reg ops.(2) in
   RTL.[rt := ra + rb]
 
+(** TODO think about addr size here  *)
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
+  let addr_size : size = match addr_size with
+    | `r32 -> `r32
+    | `r64 -> `r64 in
   RTL.[
-    bit cr 0 := res < zero;
-    bit cr 1 := res > zero;
-    bit cr 2 := res = zero;
+    bit cr 0 := low res addr_size <$ zero;
+    bit cr 1 := low res addr_size >$ zero;
+    bit cr 2 := low res addr_size = zero;
   ]
 
 let add_dot addr_size ops =
