@@ -3,120 +3,107 @@ open Bap.Std
 
 open Powerpc_types
 open Hardware
+open Dsl
 
-let sign_extend64 op_size exp = match op_size with
-  | `r32 -> Dsl.(cast signed 64 (low32 exp))
-  | `r64 -> exp
-
-let unsign_extend64 op_size exp = match op_size with
-  | `r32 -> Dsl.(cast unsigned 64 (low32 exp))
-  | `r64 -> exp
-
-let lt_word = Word.of_int ~width:3 0b100
-let gt_word = Word.of_int ~width:3 0b010
-let eq_word = Word.of_int ~width:3 0b001
-
-let write_cr_field (lt,gt,eq,sb) exp =
-  Dsl.[
-    lt := extract 2 2 exp;
-    gt := extract 1 1 exp;
-    eq := extract 0 0 exp;
-    sb := var so;
-  ]
+let lt = unsigned int 4
+let gt = unsigned int 2
+let eq = unsigned int 1
 
 (** Fix-point Compare Immediate
     Page 85 of IBM Power ISATM Version 3.0 B
     examples:
     2f 89 ff ff     cmpwi cr7, r9, -1
     2f a9 ff ff     cmpdi cr7, r9, -1 *)
-let cmpi op_size bf ra si =
-  let ra = Dsl.find ra in
-  let ra = sign_extend64 op_size (Dsl.var ra) in
-  let fn = Dsl.cr_field bf in
-  let si = Word.of_int64 (Imm.to_int64 si) in
-  let c = Dsl.fresh "res" (Type.imm 3) in
-  Dsl.[
-    if_ (ra <$ int si) [
-      c := int lt_word;
+let cmpi size ops =
+  let bf = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let si = signed imm ops.(2) in
+  let tm = unsigned var in
+  RTL.[
+    if_ (low size ra <$ si) [
+      tm := lt;
     ] [
-      if_ (ra >$ int si) [
-        c := int gt_word;
+      if_ (low size ra >$ si) [
+        tm := gt;
       ] [
-        c := int eq_word;
+        tm := eq;
       ]
     ];
-  ] @ write_cr_field fn (Dsl.var c)
+    extract bf 0 2 := tm;
+    nbit bf 3 := so;
+  ]
 
 (** Fix-point Compare
     Page 85 of IBM Power ISATM Version 3.0 B
     examples:
     7f 86 38 00     cmpw cr7, r6, r7
     7f a6 38 00     cmpd cr7, r6, r7 *)
-let cmp op_size bf ra rb =
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  let ra = sign_extend64 op_size (Dsl.var ra) in
-  let rb = sign_extend64 op_size (Dsl.var rb) in
-  let fn = Dsl.cr_field bf in
-  let c = Dsl.fresh "res" (Type.imm 3) in
-  Dsl.[
-    if_ (ra <$ rb) [
-      c := int lt_word;
+let cmp size ops =
+  let bf = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let tm = unsigned var in
+  RTL.[
+    if_ (low size ra <$ low size rb) [
+      tm := lt;
     ] [
-      if_ (ra >$ rb) [
-        c := int gt_word;
+      if_ (low size ra >$ low size rb) [
+        tm := gt;
       ] [
-        c := int eq_word;
+        tm := eq;
       ]
     ];
-  ] @ write_cr_field fn (Dsl.var c)
+    extract bf 0 2 := tm;
+    nbit bf 3 := so;
+  ]
 
 (** Fix-point Compare Logical Immediate
     Page 86 of IBM Power ISATM Version 3.0 B
     examples:
     2b 89 00 01     cmplwi cr7, r9, 1
     2b a9 00 01     cmpldi cr7, r9, 1 *)
-let cmpli op_size bf ra si =
-  let ra = Dsl.find ra in
-  let ra = unsign_extend64 op_size (Dsl.var ra) in
-  let fn = Dsl.cr_field bf in
-  let si = Word.of_int64 (Imm.to_int64 si) in
-  let c = Dsl.fresh "res" (Type.imm 3) in
-  Dsl.[
-    if_ (ra < int si) [
-      c := int lt_word;
+let cmpli size ops =
+  let bf = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let ui = unsigned imm ops.(2) in
+  let tm = unsigned var in
+  RTL.[
+    if_ (low size ra < ui) [
+      tm := lt;
     ] [
-      if_ (ra > int si) [
-        c := int gt_word;
+      if_ (low size ra > ui) [
+        tm := gt;
       ] [
-        c := int eq_word;
+        tm := eq;
       ]
     ];
-  ] @ write_cr_field fn (Dsl.var c)
+    extract bf 0 2 := tm;
+    nbit bf 3 := so;
+  ]
 
 (** Fix-point Compare Logical
     Page 86 of IBM Power ISATM Version 3.0 B
     examples:
     7f 86 38 40     cmplw cr7, r6, r7
     7f a6 38 40     cmpld cr7, r6, r7 *)
-let cmpl op_size bf ra rb =
-  let ra = Dsl.find ra in
-  let rb = Dsl.find rb in
-  let ra = unsign_extend64 op_size (Dsl.var ra) in
-  let rb = unsign_extend64 op_size (Dsl.var rb) in
-  let fn = Dsl.cr_field bf in
-  let c = Dsl.fresh "res" (Type.imm 3) in
-  Dsl.[
-    if_ (ra < rb) [
-      c := int lt_word;
+let cmpl size ops =
+  let bf = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let tm = unsigned var in
+  RTL.[
+    if_ (low size ra < low size rb) [
+      tm := lt;
     ] [
-      if_ (ra > rb) [
-        c := int gt_word;
+      if_ (low size ra > low size rb) [
+        tm := gt;
       ] [
-        c := int eq_word;
+        tm := eq;
       ]
     ];
-  ] @ write_cr_field fn (Dsl.var c)
+    extract bf 0 2 := tm;
+    nbit bf 3 := so;
+  ]
 
 type t = [
   | `CMPWI
@@ -129,15 +116,14 @@ type t = [
   | `CMPLD
 ] [@@deriving sexp, enumerate]
 
-let lift opcode addr_size endian mem ops =
+let lift opcode cpu ops =
   let open Op in
-  match opcode, ops with
-  | `CMPWI, [| Reg bf; Reg ra; Imm si |] -> cmpi `r32 bf ra si
-  | `CMPDI, [| Reg bf; Reg ra; Imm si |] -> cmpi `r64 bf ra si
-  | `CMPW,  [| Reg bf; Reg ra; Reg rb |] -> cmp `r32 bf ra rb
-  | `CMPD,  [| Reg bf; Reg ra; Reg rb |] -> cmp `r64 bf ra rb
-  | `CMPLWI, [| Reg bf; Reg ra; Imm si |] -> cmpli `r32 bf ra si
-  | `CMPLDI, [| Reg bf; Reg ra; Imm si |] -> cmpli `r64 bf ra si
-  | `CMPLW,  [| Reg bf; Reg ra; Reg rb |] -> cmpl `r32 bf ra rb
-  | `CMPLD,  [| Reg bf; Reg ra; Reg rb |] -> cmpl `r64 bf ra rb
-  | _ -> failwith "unimplemented"
+  match opcode with
+  | `CMPWI  -> cmpi `r32 ops
+  | `CMPDI  -> cmpi `r64 ops
+  | `CMPW   -> cmp `r32 ops
+  | `CMPD   -> cmp `r64 ops
+  | `CMPLWI -> cmpli `r32 ops
+  | `CMPLDI -> cmpli `r64 ops
+  | `CMPLW  -> cmpl `r32 ops
+  | `CMPLD  -> cmpl `r64 ops

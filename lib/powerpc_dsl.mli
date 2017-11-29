@@ -35,7 +35,7 @@ val doubleword_t : typ
 val zero : exp
 val one : exp
 
-val low : exp -> size -> exp
+val low : size -> exp -> exp
 
 (** [nbit e n] - extracts a bit with index [n] from [e].
     Indexes are zero-based and started from most significant bit.  *)
@@ -50,3 +50,9 @@ val msb : exp -> exp
 
 (** [lsb e] - extracts the least significant bit from [e] *)
 val lsb : exp -> exp
+
+(** [extract e lx rx] extracts portion of [e] starting
+    at bit [lx] and ending at bit [rx], all bounds
+    are inclusive. Bits indexes start from the most
+    significant bit. *)
+val extract : exp -> int -> int -> exp

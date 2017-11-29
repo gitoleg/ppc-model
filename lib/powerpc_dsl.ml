@@ -93,7 +93,7 @@ let doubleword_t = Type.imm 64
 let zero = Exp.of_word Word.b0
 let one  = Exp.of_word Word.b1
 
-let low e size =
+let low size e =
   let n = Size.in_bits size in
   Exp.extract (n - 1) 0 e
 
@@ -101,7 +101,7 @@ let low e size =
     TODO: probably, it's not right place for this function *)
 let make_cpu addr_size endian memory =
   let extract_addr a = match addr_size with
-    | `r32 -> low a word
+    | `r32 -> low word a
     | `r64 -> a in
   let mem = match addr_size with
     | `r32 -> mem32
@@ -116,7 +116,7 @@ let make_cpu addr_size endian memory =
   let addr_size : size = match addr_size with
     | `r32 -> `r32
     | `r64 -> `r64 in
-  let jmp e = jmp (low e addr_size) in
+  let jmp e = jmp (low addr_size e) in
   { load; store; jmp; addr; addr_size; }
 
 let msb e =
@@ -133,4 +133,9 @@ let nbyte e n =
   let n = Exp.width e / 8 - n in
   let hi = (n + 1) * 8 - 1 in
   let lo = n * 8 in
+  Exp.extract hi lo e
+
+let extract e left right =
+  let hi = Exp.width e - left - 1 in
+  let lo = Exp.width e - right - 1 in
   Exp.extract hi lo e

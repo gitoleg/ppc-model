@@ -10,16 +10,16 @@ type expected = LT | GT | EQ
 
 let cr_field_num = 7  (** in IBM style, i.e. least significant byte  *)
 
-let print_bits lt gt eq =
+let print_bits lt gt eq un =
   let str = function
     | None -> "unknown"
     | Some x -> Word.to_string x in
-  printf "lt %s; gt %s; eq %s\n" (str lt) (str gt) (str eq)
+  printf "lt %s; gt %s; eq %s; un %s\n" (str lt) (str gt) (str eq) (str un)
 
 let check ctxt expected =
-  let cr_lt = Dsl.cr_bit 28 in
-  let cr_gt = Dsl.cr_bit 29 in
-  let cr_eq = Dsl.cr_bit 30 in
+  let cr_lt = bit cr 28 in
+  let cr_gt = bit cr 29 in
+  let cr_eq = bit cr 30 in
   let lt = lookup_var ctxt cr_lt in
   let gt = lookup_var ctxt cr_gt in
   let eq = lookup_var ctxt cr_eq in

@@ -131,10 +131,18 @@ module Exp = struct
             let hi = e.width - n - 1 in
             let lo = e.width - n - len in
             (hi, lo, v) :: acc, n + len) vars in
-    List.find
-      ~f:(fun (hi',lo',_) -> hi = hi' && lo = lo') bounds |> function
-    | Some (_,_,v) -> {sign=Unsigned; width; body = Vars (v,[])}
-    | None -> {sign = Unsigned; width; body = Extract (hi,lo,e.body)}
+    let bounds = List.rev bounds in
+    let has_hi = List.exists ~f:(fun (hi',_,_) -> hi = hi') bounds in
+    let has_lo = List.exists ~f:(fun (_,lo',_) -> lo = lo') bounds in
+    if has_hi && has_lo then
+      let vars = List.filter_map ~f:(fun (hi', lo', v) ->
+          if hi' <= hi && lo' >= lo then Some v
+          else None) bounds in
+      let v = List.hd_exn vars in
+      let vars = List.tl_exn vars in
+      {sign=e.sign; width; body = Vars (v,vars)}
+    else
+      {sign=e.sign; width; body = Extract (hi,lo,e.body)}
 
 let extract hi lo e =
     let width = hi - lo + 1 in
@@ -144,7 +152,7 @@ let extract hi lo e =
       | Vars (v,vars) when vars <> [] ->
         extract_of_vars e hi lo (v :: vars)
       | _ ->
-        { sign = Unsigned; width; body = Extract (hi,lo,e.body) }
+        { sign=e.sign; width; body = Extract (hi,lo,e.body) }
 
   let signed e = {e with sign = Signed}
   let unsigned e = {e with sign = Unsigned}
@@ -165,6 +173,13 @@ let if_ probe then_ else_ =
   let else_ = bil_of_t else_ in
   Bil.[ if_ probe then_ else_ ]
 
+let flatten_concat x y =
+  let rec loop acc x = match x with
+    | Concat (e, e') ->
+      loop [] e @ loop [] e'
+    | _ -> acc in
+  loop [] x @ loop [] y
+
 let move lhs rhs =
   match lhs.body with
   | Vars (v, []) ->
@@ -175,11 +190,11 @@ let move lhs rhs =
       | [] -> es
       | v :: vars ->
         let w = var_bitwidth v in
-        let hi = rhs.width - n - 1 in
-        let lo = rhs.width - n - w in
+        let hi = n + w - 1 in
+        let lo = n in
         let es = Bil.(v := extract hi lo (of_body rhs.body)) :: es in
         assign es (n + w) vars in
-    assign [] 0 (v::vars)
+    assign [] 0 (List.rev (v::vars))
   | _ -> ppc_fail "unexpected left side of :="
 
 let jmp exp = Bil.[ jmp (of_body exp.body)]

@@ -41,10 +41,10 @@ open Dsl
     subic. rx,ry,value = addic. rx, ry, -value *)
 
 (** TODO: rework those functions *)
-let compute_ca addr_size x result =
-  RTL.(low result addr_size < low x addr_size)
+let compute_ca size x result =
+  RTL.(low size result < low size x)
 
-let compute_ca32 x result = RTL.(low result word < low x word)
+let compute_ca32 x result = RTL.(low word result < low word x)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate
     Page 67 of IBM Power ISATM Version 3.0 B
@@ -103,9 +103,9 @@ let add ops =
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
   RTL.[
-    nbit cr 0 := low res addr_size <$ zero;
-    nbit cr 1 := low res addr_size >$ zero;
-    nbit cr 2 := low res addr_size = zero;
+    nbit cr 0 := low addr_size res <$ zero;
+    nbit cr 1 := low addr_size res >$ zero;
+    nbit cr 2 := low addr_size res = zero;
   ]
 
 let add_dot addr_size ops =

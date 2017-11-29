@@ -104,7 +104,7 @@ module Hardware_var = struct
 
   let cri =
     let _, bits =
-      List.fold (List.rev cr_bits) ~init:(0,Int.Map.empty)
+      List.fold cr_bits ~init:(0,Int.Map.empty)
         ~f:(fun (num, bits) bit ->
             num + 1, Int.Map.add bits ~key:num ~data:bit) in
     bits
