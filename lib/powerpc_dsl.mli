@@ -26,16 +26,22 @@ val halfword : size
 val word : size
 val doubleword : size
 
-val bit_t : typ
-val byte_t : typ
-val halfword_t : typ
-val word_t : typ
-val doubleword_t : typ
-
 val zero : exp
-val one : exp
+val one  : exp
 
+(** [low size e] - extracts low [size] bits from [e]  *)
 val low : size -> exp -> exp
+
+(** [high size e] - extracts high [size] bits from [e]  *)
+val high : size -> exp -> exp
+
+(** [first e n] - extracts first [n] bits from [e], starting from
+    the most significant bit *)
+val first : exp -> int -> exp
+
+(** [last e n] - extracts last [n] bits from [e], where the
+    last bit is the least significant bit *)
+val last : exp -> int -> exp
 
 (** [nbit e n] - extracts a bit with index [n] from [e].
     Indexes are zero-based and started from most significant bit.  *)

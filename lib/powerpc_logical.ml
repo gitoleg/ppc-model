@@ -23,9 +23,9 @@ let andi_dot addr_size ops =
   let im = unsigned imm ops.(2) in
   RTL.[
     ra := rs land im;
-    nbit cr 0 := low ra addr_size <$ zero;
-    nbit cr 1 := low ra addr_size >$ zero;
-    nbit cr 2 := low ra addr_size = zero
+    nbit cr 0 := low addr_size ra <$ zero;
+    nbit cr 1 := low addr_size ra >$ zero;
+    nbit cr 2 := low addr_size ra = zero
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -39,9 +39,9 @@ let andis_dot addr_size ops =
   let sh = unsigned int 16 in
   RTL.[
     ra := rs land (im lsl sh);
-    nbit cr 0 := low ra addr_size <$ zero;
-    nbit cr 1 := low ra addr_size >$ zero;
-    nbit cr 2 := low ra addr_size = zero;
+    nbit cr 0 := low addr_size ra <$ zero;
+    nbit cr 1 := low addr_size ra >$ zero;
+    nbit cr 2 := low addr_size ra = zero;
   ]
 
 (** Fixed-point AND
@@ -58,9 +58,9 @@ let and_ ops =
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
   RTL.[
-    nbit cr 0 := low res addr_size <$ zero;
-    nbit cr 1 := low res addr_size >$ zero;
-    nbit cr 2 := low res addr_size = zero;
+    nbit cr 0 := low addr_size res <$ zero;
+    nbit cr 1 := low addr_size res >$ zero;
+    nbit cr 2 := low addr_size res = zero;
   ]
 
 let and_dot addr_size ops =
@@ -219,7 +219,7 @@ let eqv_dot addr_size ops =
 let exts ops size =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
-  RTL.[ ra := low rs size;]
+  RTL.[ ra := low size rs;]
 
 let exts_dot addr_size ops size =
   exts ops size @ write_fixpoint_result addr_size ops.(0)
@@ -239,12 +239,12 @@ let cntlz ops size =
   let cnt = unsigned var in
   let has_no_ones = unsigned var in
   let init = RTL.[
-      xv := low rs size;
+      xv := low size rs;
       cnt := zero;
       has_no_ones := one;
     ] in
   let foreach_bit = RTL.[
-      if_ (has_no_ones land (msb (low xv size) = zero)) [
+      if_ (has_no_ones land (msb (low size xv) = zero)) [
         cnt := cnt + one;
         xv := xv lsl one;
       ] [
@@ -273,7 +273,7 @@ let cnttz ops size =
   let cnt = unsigned var in
   let has_no_ones = unsigned var in
   let init = RTL.[
-      xv := low rs size;
+      xv := low size rs;
       cnt := zero;
       has_no_ones := one;
     ] in
@@ -344,7 +344,7 @@ let popcnt ops size =
     let shift = unsigned int (index * bits) in
     let init = RTL.[
       cnt := zero;
-      tmp := extract hi lo rs;
+      (* tmp := extract hi lo rs; *)
     ] in
     let loop = List.concat @@ List.init bits (foreach_bit tmp) in
     let finish = RTL.[
@@ -395,7 +395,7 @@ let bpermd ops =
     let i = unsigned int i in
     RTL.[
       iv := i;
-      index := extract hi lo rs;
+      (* index := extract hi lo rs; *)
       if_ (index < max_ind) [
         bit := lsb (rb lsr index);
       ] [
@@ -405,7 +405,7 @@ let bpermd ops =
     ] in
   let loop = List.concat @@ List.init 8 ~f:foreach_byte in
   let finish = RTL.[
-      ra := low tmp byte;
+      ra := low byte tmp;
     ] in
   List.concat [
     init;

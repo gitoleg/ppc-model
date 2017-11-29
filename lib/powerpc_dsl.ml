@@ -97,6 +97,17 @@ let low size e =
   let n = Size.in_bits size in
   Exp.extract (n - 1) 0 e
 
+let high size e =
+  let n = Size.in_bits size in
+  let w = Exp.width e in
+  Exp.extract (w - 1) (w - n) e
+
+let last e bits = Exp.extract (bits - 1) 0 e
+
+let first e bits =
+  let w = Exp.width e in
+  Exp.extract (w - 1) (w - bits) e
+
 (** TODO: addr_size is weird
     TODO: probably, it's not right place for this function *)
 let make_cpu addr_size endian memory =
@@ -130,9 +141,9 @@ let nbit e n =
   Exp.extract x x e
 
 let nbyte e n =
-  let n = Exp.width e / 8 - n in
-  let hi = (n + 1) * 8 - 1 in
-  let lo = n * 8 in
+  let x = Exp.width e / 8 - n in
+  let hi = (x + 1) * 8 - 1 in
+  let lo = x * 8 in
   Exp.extract hi lo e
 
 let extract e left right =
