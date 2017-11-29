@@ -11,10 +11,10 @@ type binop = Bil.binop [@@deriving bin_io, compare, sexp]
 type unop  = Bil.unop  [@@deriving bin_io, compare, sexp]
 
 type body =
-  | Var of var
+  | Vars of var * var list
   | Word of word
   | Load of (var * body * endian * size)
-  | Concat of body * body list
+  | Concat of body * body
   | Binop of binop * body * body
   | Extract of (int * int * body)
   | Cast of (s * int * body)
@@ -31,22 +31,24 @@ type t = bil [@@deriving bin_io, compare, sexp]
 type rtl = t [@@deriving bin_io, compare, sexp]
 
 let rec of_body = function
-  | Var v -> Bil.var v
+  | Vars (v, []) -> Bil.var v
+  | Vars (v, vars) ->
+    List.fold vars ~init:(Bil.var v) ~f:(fun e v -> Bil.(e ^ var v))
   | Word w -> Bil.int w
   | Load (mem, addr, endian, size) ->
     Bil.(load (var mem) (of_body addr) endian size)
-  | Concat (x, xs) ->
-    let xs = List.map ~f:of_body xs in
-    List.fold ~init:(of_body x) ~f:Bil.(^) xs
+  | Concat (x, y) -> Bil.(of_body x ^ of_body y)
   | Binop (op, x, y) -> Bil.binop op (of_body x) (of_body y)
   | Extract (hi, lo, x) -> Bil.extract hi lo (of_body x)
   | Cast (Signed, width, x) -> Bil.(cast signed width (of_body x))
   | Cast (Unsigned, width, x) -> Bil.(cast unsigned width (of_body x))
   | Unop (op, x) -> Bil.unop op (of_body x)
 
-let is_var = function
-  | Var _ -> true
-  | _ -> false
+let var_bitwidth v =
+  match Var.typ v with
+  | Type.Imm w -> w
+  | _ ->
+    ppc_fail "variable %s doesn't has notion of bitwidth" (Var.name v)
 
 module Exp = struct
 
@@ -85,7 +87,7 @@ module Exp = struct
   let concat lhs rhs =
     let sign = derive_sign lhs.sign rhs.sign in
     let width = lhs.width + rhs.width in
-    let body = Concat (lhs.body, [rhs.body]) in
+    let body = Concat (lhs.body, rhs.body) in
     { sign; width; body; }
 
   let lt x y = binop_with_cast Bil.lt x y
@@ -100,22 +102,15 @@ module Exp = struct
   let bit_or x y = binop_with_cast Bil.bit_or x y
   let not x = unop Bil.not x
 
-  let var_bitwidth v =
-    match Var.typ v with
-    | Type.Imm w -> w
-    | _ ->
-      ppc_fail "variable %s doesn't has notion of bitwidth" (Var.name v)
-
   let of_var var =
     let width = var_bitwidth var in
-    { sign = Unsigned; width; body = Var var; }
+    { sign = Unsigned; width; body = Vars (var, []); }
 
   let of_vars vars = match vars with
     | [] -> ppc_fail "can't constuct an expression from empty var list"
     | v :: vars ->
       let width = List.fold (v::vars) ~init:0 ~f:(fun a x -> a + var_bitwidth x) in
-      let vars = List.map ~f:(fun x -> Var x) vars in
-      { sign = Unsigned; width; body = Concat (Var v, vars); }
+      { sign = Unsigned; width; body = Vars (v, vars); }
 
   let of_word w =
     let width = Word.bitwidth w in
@@ -127,29 +122,29 @@ module Exp = struct
     let body = Load (mem,addr.body,endian,size) in
     {sign; width; body;}
 
-  let extract hi lo e =
+  let extract_of_vars e hi lo vars =
+    let width = hi - lo + 1 in
+    let bounds,_ =
+      List.fold ~init:([],0)
+        ~f:(fun (acc,n) v ->
+            let len = var_bitwidth v in
+            let hi = e.width - n - 1 in
+            let lo = e.width - n - len in
+            (hi, lo, v) :: acc, n + len) vars in
+    List.find
+      ~f:(fun (hi',lo',_) -> hi = hi' && lo = lo') bounds |> function
+    | Some (_,_,v) -> {sign=Unsigned; width; body = Vars (v,[])}
+    | None -> {sign = Unsigned; width; body = Extract (hi,lo,e.body)}
+
+let extract hi lo e =
     let width = hi - lo + 1 in
     if width = e.width then e
     else
-      let sign = e.sign in
       match e.body with
-      | Concat (x,xs) ->
-        if List.for_all (x::xs) ~f:is_var then
-          let vars = List.map ~f:(function
-              | Var v -> v
-              | _ -> ppc_fail "variable expected") (x::xs) in
-          let bounds,_ =
-            List.fold ~init:([],0)
-              ~f:(fun (acc,n) v ->
-                  let len = var_bitwidth v in
-                  (n + len - 1, n, v) :: acc, n + len) vars in
-          List.find
-            ~f:(fun (hi',lo',_) -> hi = hi' && lo = lo') bounds |> function
-          | Some (_,_,v) -> {sign; width; body = Var v}
-          | None -> {sign; width; body = Extract (hi,lo,e.body)}
-        else
-          {sign; width; body = Extract (hi,lo,e.body)}
-      | _ -> {sign; width; body = Extract (hi,lo,e.body)}
+      | Vars (v,vars) when vars <> [] ->
+        extract_of_vars e hi lo (v :: vars)
+      | _ ->
+        { sign = Unsigned; width; body = Extract (hi,lo,e.body) }
 
   let signed e = {e with sign = Signed}
   let unsigned e = {e with sign = Unsigned}
@@ -172,9 +167,19 @@ let if_ probe then_ else_ =
 
 let move lhs rhs =
   match lhs.body with
-  | Var v ->
+  | Vars (v, []) ->
     let rhs = Exp.cast rhs lhs.width lhs.sign in
     Bil.[v := of_body rhs.body]
+  | Vars (v, vars) ->
+    let rec assign es n = function
+      | [] -> es
+      | v :: vars ->
+        let w = var_bitwidth v in
+        let hi = rhs.width - n - 1 in
+        let lo = rhs.width - n - w in
+        let es = Bil.(v := extract hi lo (of_body rhs.body)) :: es in
+        assign es (n + w) vars in
+    assign [] 0 (v::vars)
   | _ -> ppc_fail "unexpected left side of :="
 
 let jmp exp = Bil.[ jmp (of_body exp.body)]
