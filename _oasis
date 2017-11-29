@@ -20,6 +20,7 @@ Library powerpc_lifter
   FindLibName:    powerpc_lifter
   Modules:        Powerpc_add,
                   Powerpc_branch,
+                  Powerpc_compare,
                   Powerpc_dsl,
                   Powerpc_lifter,
                   Powerpc_load,

@@ -8,7 +8,7 @@ open Powerpc_types
 open Model
 open Hardware
 
-let var_exn x = match Exp.body x with
+let var_exn x = match Exp.bil_exp x with
   | Bil.Var v -> v
   | _ -> failwith "var_exn: not a variable"
 
@@ -60,7 +60,7 @@ let lookup_var c var = match c#lookup var with
 (** [find_gpr name] - find a GPR by it's name *)
 let find_gpr name =
   let x = String.Map.find_exn gpr name in
-  match Exp.body x with
+  match Exp.bil_exp x with
   | Bil.Var v -> v
   | _ -> failwith "found register is not a variable"
 
