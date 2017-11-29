@@ -3,7 +3,7 @@ open Bap.Std
 
 open Powerpc_utils
 
-type bap_exp = exp
+type bil_exp = exp
 
 type s = Signed | Unsigned [@@deriving bin_io, compare, sexp]
 
@@ -30,19 +30,19 @@ type exp = {
 type t = bil [@@deriving bin_io, compare, sexp]
 type rtl = t [@@deriving bin_io, compare, sexp]
 
-let rec of_body = function
+let rec bil_exp = function
   | Vars (v, []) -> Bil.var v
   | Vars (v, vars) ->
     List.fold vars ~init:(Bil.var v) ~f:(fun e v -> Bil.(e ^ var v))
   | Word w -> Bil.int w
   | Load (mem, addr, endian, size) ->
-    Bil.(load (var mem) (of_body addr) endian size)
-  | Concat (x, y) -> Bil.(of_body x ^ of_body y)
-  | Binop (op, x, y) -> Bil.binop op (of_body x) (of_body y)
-  | Extract (hi, lo, x) -> Bil.extract hi lo (of_body x)
-  | Cast (Signed, width, x) -> Bil.(cast signed width (of_body x))
-  | Cast (Unsigned, width, x) -> Bil.(cast unsigned width (of_body x))
-  | Unop (op, x) -> Bil.unop op (of_body x)
+    Bil.(load (var mem) (bil_exp addr) endian size)
+  | Concat (x, y) -> Bil.(bil_exp x ^ bil_exp y)
+  | Binop (op, x, y) -> Bil.binop op (bil_exp x) (bil_exp y)
+  | Extract (hi, lo, x) -> Bil.extract hi lo (bil_exp x)
+  | Cast (Signed, width, x) -> Bil.(cast signed width (bil_exp x))
+  | Cast (Unsigned, width, x) -> Bil.(cast unsigned width (bil_exp x))
+  | Unop (op, x) -> Bil.unop op (bil_exp x)
 
 let var_bitwidth v =
   match Var.typ v with
@@ -157,18 +157,18 @@ let extract hi lo e =
   let signed e = {e with sign = Signed}
   let unsigned e = {e with sign = Unsigned}
   let width e = e.width
-  let body e = of_body e.body
+  let bil_exp e = bil_exp e.body
 
 end
 
 let bil_of_t = List.concat
 
 let store mem addr data endian size =
-  Bil.[mem := store (var mem) (of_body addr.body) (of_body data.body) endian size]
+  Bil.[mem := store (var mem) (bil_exp addr.body) (bil_exp data.body) endian size]
 
 let if_ probe then_ else_ =
   let probe = Exp.cast probe 1 Unsigned in
-  let probe = of_body probe.body in
+  let probe = bil_exp probe.body in
   let then_ = bil_of_t then_ in
   let else_ = bil_of_t else_ in
   Bil.[ if_ probe then_ else_ ]
@@ -184,7 +184,7 @@ let move lhs rhs =
   match lhs.body with
   | Vars (v, []) ->
     let rhs = Exp.cast rhs lhs.width lhs.sign in
-    Bil.[v := of_body rhs.body]
+    Bil.[v := bil_exp rhs.body]
   | Vars (v, vars) ->
     let rec assign es n = function
       | [] -> es
@@ -192,12 +192,12 @@ let move lhs rhs =
         let w = var_bitwidth v in
         let hi = n + w - 1 in
         let lo = n in
-        let es = Bil.(v := extract hi lo (of_body rhs.body)) :: es in
+        let es = Bil.(v := extract hi lo (bil_exp rhs.body)) :: es in
         assign es (n + w) vars in
     assign [] 0 (List.rev (v::vars))
   | _ -> ppc_fail "unexpected left side of :="
 
-let jmp exp = Bil.[ jmp (of_body exp.body)]
+let jmp exp = Bil.[ jmp (bil_exp exp.body)]
 
 module Infix = struct
   open Exp

@@ -1,7 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-type bap_exp = exp
+type bil_exp = exp
 
 type t [@@deriving bin_io, compare, sexp]
 type rtl = t [@@deriving bin_io, compare, sexp]
@@ -20,8 +20,8 @@ module Exp : sig
   val unsigned : exp -> exp
   val width : exp -> int
 
-  (** for tests purposes only  *)
-  val body : exp -> bap_exp
+  val bil_exp : exp -> bil_exp
+
 end
 
 (** [bil_of_t d] - returns a program in BIL language   *)
@@ -38,13 +38,13 @@ module Infix : sig
   val (^)  : exp -> exp -> exp
   val (<)  : exp -> exp -> exp
   val (>)  : exp -> exp -> exp
+  val (=)  : exp -> exp -> exp
   val (<$) : exp -> exp -> exp
   val (>$) : exp -> exp -> exp
-  val (=)  : exp -> exp -> exp
   val (lsl)  : exp -> exp -> exp
   val (lsr)  : exp -> exp -> exp
-  val (land) : exp -> exp -> exp
   val (lor)  : exp -> exp -> exp
+  val (land) : exp -> exp -> exp
   val (lxor) : exp -> exp -> exp
   val lnot : exp -> exp
 end
