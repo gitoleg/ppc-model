@@ -27,9 +27,6 @@ type exp = {
   width : int;
 } [@@deriving bin_io, compare, sexp]
 
-type t = bil [@@deriving bin_io, compare, sexp]
-type rtl = t [@@deriving bin_io, compare, sexp]
-
 let rec bil_exp = function
   | Vars (v, []) -> Bil.var v
   | Vars (v, vars) ->
@@ -161,43 +158,21 @@ let extract hi lo e =
 
 end
 
-let bil_of_t = List.concat
+type t =
+  | Move of exp * exp
+  | Jmp of exp
+  | Store of var * exp * exp * endian * size
+  | If of exp * t list * t list
+[@@deriving bin_io, compare, sexp]
 
-let store mem addr data endian size =
-  Bil.[mem := store (var mem) (bil_exp addr.body) (bil_exp data.body) endian size]
+type rtl = t [@@deriving bin_io, compare, sexp]
 
-let if_ probe then_ else_ =
-  let probe = Exp.cast probe 1 Unsigned in
-  let probe = bil_exp probe.body in
-  let then_ = bil_of_t then_ in
-  let else_ = bil_of_t else_ in
-  Bil.[ if_ probe then_ else_ ]
+let store mem addr data endian size : t =
+  Store (mem, addr, data, endian, size)
 
-let flatten_concat x y =
-  let rec loop acc x = match x with
-    | Concat (e, e') ->
-      loop [] e @ loop [] e'
-    | _ -> acc in
-  loop [] x @ loop [] y
-
-let move lhs rhs =
-  match lhs.body with
-  | Vars (v, []) ->
-    let rhs = Exp.cast rhs lhs.width lhs.sign in
-    Bil.[v := bil_exp rhs.body]
-  | Vars (v, vars) ->
-    let rec assign es n = function
-      | [] -> es
-      | v :: vars ->
-        let w = var_bitwidth v in
-        let hi = n + w - 1 in
-        let lo = n in
-        let es = Bil.(v := extract hi lo (bil_exp rhs.body)) :: es in
-        assign es (n + w) vars in
-    assign [] 0 (List.rev (v::vars))
-  | _ -> ppc_fail "unexpected left side of :="
-
-let jmp exp = Bil.[ jmp (bil_exp exp.body)]
+let jmp addr : t = Jmp addr
+let move x y : t = Move (x,y)
+let if_ cond then_ else_ = If (cond, then_, else_)
 
 module Infix = struct
   open Exp
@@ -217,3 +192,48 @@ module Infix = struct
   let (lxor) = bit_xor
   let (lnot) = not
 end
+
+module Translate = struct
+
+  let store mem addr data endian size =
+    Bil.[mem := store (var mem) (bil_exp addr.body) (bil_exp data.body) endian size]
+
+  let if_ probe then_ else_ =
+    let probe = Exp.cast probe 1 Unsigned in
+    let probe = bil_exp probe.body in
+    Bil.[ if_ probe then_ else_ ]
+
+  let move lhs rhs =
+    match lhs.body with
+    | Vars (v, []) ->
+      let rhs = Exp.cast rhs lhs.width lhs.sign in
+      Bil.[v := bil_exp rhs.body]
+    | Vars (v, vars) ->
+      let rec assign es n = function
+        | [] -> es
+        | v :: vars ->
+          let w = var_bitwidth v in
+          let hi = n + w - 1 in
+          let lo = n in
+          let es = Bil.(v := extract hi lo (bil_exp rhs.body)) :: es in
+          assign es (n + w) vars in
+      assign [] 0 (List.rev (v::vars))
+    | _ -> ppc_fail "unexpected left side of :="
+
+  let jmp exp = Bil.[ jmp (bil_exp exp.body)]
+
+  let rec stmt_to_bil = function
+    | Move (x,y) -> move x y
+    | Store (mem, addr, data, endian, size) ->
+      store mem addr data endian size
+    | Jmp a -> jmp a
+    | If (cond, then_, else_) ->
+      let then_ = to_bil then_ in
+      let else_ = to_bil else_ in
+      if_ cond then_ else_
+  and
+    to_bil stmts =
+    List.concat (List.map ~f:stmt_to_bil stmts)
+end
+
+let bil_of_t = Translate.to_bil

@@ -22,10 +22,9 @@ module Exp : sig
 
   val bil_exp : exp -> bil_exp
 
-end
+  (* val tmp : unit -> exp *)
 
-(** [bil_of_t d] - returns a program in BIL language   *)
-val bil_of_t : t list -> bil
+end
 
 val store : var -> exp -> exp -> endian -> size -> t
 val if_ : exp -> t list -> t list -> t
@@ -48,3 +47,7 @@ module Infix : sig
   val (lxor) : exp -> exp -> exp
   val lnot : exp -> exp
 end
+
+
+(** [bil_of_t d] - returns a program in BIL language   *)
+val bil_of_t : t list -> bil
