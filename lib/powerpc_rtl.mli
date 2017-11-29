@@ -3,9 +3,13 @@ open Bap.Std
 
 type bil_exp = exp
 
-type t [@@deriving bin_io, compare, sexp]
-type rtl = t [@@deriving bin_io, compare, sexp]
-type exp [@@deriving bin_io, compare, sexp]
+(* type t [@@deriving bin_io, compare, sexp] *)
+(* type rtl = t [@@deriving bin_io, compare, sexp] *)
+(* type exp [@@deriving bin_io, compare, sexp] *)
+
+type t
+type rtl = t
+type exp
 
 module Exp : sig
 
@@ -22,7 +26,9 @@ module Exp : sig
 
   val bil_exp : exp -> bil_exp
 
-  (* val tmp : unit -> exp *)
+  val tmp : unit -> exp
+
+  val apply : (exp -> exp) -> exp -> exp
 
 end
 

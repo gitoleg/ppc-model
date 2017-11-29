@@ -160,7 +160,8 @@ let bcx name fin arch case (ctxt : test_ctxt) =
   let init_ctr = match case.ctr_before with
     | Some x -> Some Bil.(ctr := int x)
     | None -> None in
-  let init = List.filter_map ~f:ident [init_cr; init_ctr] in
+  (* let init = List.filter_map ~f:ident [init_cr; init_ctr] in *)
+  let init = [ ] in
   let addr = addr_of_arch arch in
   let c = eval ~addr init bytes arch in
   if case.expect_jump then

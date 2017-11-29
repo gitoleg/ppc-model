@@ -12,5 +12,5 @@ end
 
 include Powerpc_utils
 
-type rtl = RTL.t [@@deriving bin_io, compare, sexp]
+type rtl = RTL.t
 type cpu = Dsl.cpu

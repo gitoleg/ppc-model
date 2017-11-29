@@ -137,8 +137,14 @@ let msb e =
 let lsb e = Exp.extract 0 0 e
 
 let nbit e n =
-  let x = Exp.width e - n - 1 in
-  Exp.extract x x e
+  let f e =
+    let x = Exp.width e - n - 1 in
+    Exp.extract x x e in
+  Exp.apply f e
+
+(* let nbit e n = *)
+(*   let x = Exp.width e - n - 1 in *)
+(*   Exp.extract x x e *)
 
 let nbyte e n =
   let x = Exp.width e / 8 - n in

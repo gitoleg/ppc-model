@@ -1,6 +1,5 @@
 open Core_kernel.Std
 open Bap.Std
-
 open Powerpc_utils
 
 type bil_exp = exp
@@ -21,11 +20,41 @@ type body =
   | Unop of (unop * body)
 [@@deriving bin_io, compare, sexp]
 
-type exp = {
+type meta = {
   body : body;
   sign : s;
   width : int;
 } [@@deriving bin_io, compare, sexp]
+
+type exp_kind =
+  | Meta of meta
+  | Tmp of int64
+[@@deriving bin_io, compare, sexp]
+
+type exp = unit -> exp_kind
+
+module Tmp = struct
+  type t = int64
+
+  let state = ref 0L
+  let bindings : (int64, meta) Hashtbl.t = Int64.Table.create ()
+
+  let bind x m = Hashtbl.change bindings x ~f:(fun _ -> Some m)
+  let mem x = Hashtbl.mem bindings x
+  let get x = Hashtbl.find bindings x
+  let incr_state () = Int64.incr state
+
+  let get_exn x = match get x with
+    | None ->
+      printf "not bound %Ld\n" x;
+      ppc_fail "attempting to use tmp expression before assignment to it"
+    | Some e -> e
+
+  let create () =
+    let x = !state in
+    incr_state ();
+    Tmp x
+end
 
 let rec bil_exp = function
   | Vars (v, []) -> Bil.var v
@@ -47,7 +76,7 @@ let var_bitwidth v =
   | _ ->
     ppc_fail "variable %s doesn't has notion of bitwidth" (Var.name v)
 
-module Exp = struct
+module Meta = struct
 
   (** TODO: think again about signess + 1-bit values *)
   let cast x width sign =
@@ -141,7 +170,7 @@ module Exp = struct
     else
       {sign=e.sign; width; body = Extract (hi,lo,e.body)}
 
-let extract hi lo e =
+  let extract hi lo e =
     let width = hi - lo + 1 in
     if width = e.width then e
     else
@@ -154,8 +183,100 @@ let extract hi lo e =
   let signed e = {e with sign = Signed}
   let unsigned e = {e with sign = Unsigned}
   let width e = e.width
-  let bil_exp e = bil_exp e.body
+  let body e = e.body
+  let sign e = e.sign
+end
 
+module Exp = struct
+
+  let tmp () =
+    printf "creating temp\n";
+    Tmp.create
+
+  let get_meta e = match e () with
+    | Meta m -> m
+    | Tmp x ->
+      printf "get meta ?!\n %!";
+      let r = Tmp.get_exn x in
+      printf "got meta !!!!\n %!";
+      r
+
+  let update_exp e f =
+    match e () with
+    | Meta m -> Meta (f m)
+    | Tmp x ->
+      let m = Tmp.get_exn x in
+      Tmp.bind x (f m);
+      Tmp x
+
+  let cast e width sign =
+    fun () ->
+      printf "cast\n%!";
+      let r = Meta (Meta.cast (get_meta e) width sign) in
+      printf "cast is ok\n%!";
+      r
+
+  let of_var v () = Meta (Meta.of_var v)
+  let of_vars vs () = Meta (Meta.of_vars vs)
+  let of_word w () = Meta (Meta.of_word w)
+
+  let load var e endian size : exp =
+    fun () -> Meta (Meta.load var (get_meta e) endian size)
+
+  let extract hi lo e : exp =
+    fun () ->
+      printf "extract!\n%!";
+      let _x = get_meta e in
+      printf "ok\n%!";
+      Meta (Meta.extract hi lo (get_meta e))
+
+  let signed e : exp = fun () -> update_exp e Meta.signed
+  let unsigned e : exp = fun () -> update_exp e Meta.unsigned
+  let width e =
+    printf "width\n%!";
+    let r = Meta.width (get_meta e) in
+    printf "width ok\n%!";
+    r
+  let body e =
+    printf "body\n%!";
+    Meta.body (get_meta e)
+  let sign e =
+    printf "sign\n%!";
+    Meta.sign (get_meta e)
+
+  let unop op e =
+    fun () ->
+      printf "unnop\n%!";
+      Meta (op (get_meta e))
+
+  let binop op x y : exp =
+    fun () ->
+      printf "binop\n%!";
+      let lhs = get_meta x in
+      let rhs = get_meta y in
+      Meta (op lhs rhs)
+
+  let plus = binop Meta.plus
+  let minus = binop Meta.minus
+  let concat = binop Meta.concat
+  let lt = binop Meta.lt
+  let gt = binop Meta.gt
+  let eq = binop Meta.eq
+  let slt = binop Meta.slt
+  let sgt = binop Meta.sgt
+  let lshift = binop Meta.lshift
+  let rshift = binop Meta.rshift
+  let bit_or = binop Meta.bit_or
+  let bit_and = binop Meta.bit_and
+  let bit_xor = binop Meta.bit_xor
+  let not = unop Meta.not
+
+  let apply f x =
+    fun () -> f x ()
+
+  let bil_exp x =
+    printf "bil_exp\n%!";
+    bil_exp (Meta.body (get_meta x))
 end
 
 type t =
@@ -163,9 +284,8 @@ type t =
   | Jmp of exp
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
-[@@deriving bin_io, compare, sexp]
 
-type rtl = t [@@deriving bin_io, compare, sexp]
+type rtl = t
 
 let store mem addr data endian size : t =
   Store (mem, addr, data, endian, size)
@@ -176,7 +296,7 @@ let if_ cond then_ else_ = If (cond, then_, else_)
 
 module Infix = struct
   open Exp
-  let (:=) = move
+  let (:=)  = move
   let (+)  = plus
   let (-)  = minus
   let (^)  = concat
@@ -194,33 +314,51 @@ module Infix = struct
 end
 
 module Translate = struct
-
   let store mem addr data endian size =
-    Bil.[mem := store (var mem) (bil_exp addr.body) (bil_exp data.body) endian size]
+    let addr = Exp.bil_exp addr in
+    let data = Exp.bil_exp data in
+    Bil.[mem := store (var mem) addr data endian size]
 
   let if_ probe then_ else_ =
     let probe = Exp.cast probe 1 Unsigned in
-    let probe = bil_exp probe.body in
+    let probe = bil_exp (Exp.body probe) in
     Bil.[ if_ probe then_ else_ ]
 
-  let move lhs rhs =
-    match lhs.body with
-    | Vars (v, []) ->
-      let rhs = Exp.cast rhs lhs.width lhs.sign in
-      Bil.[v := bil_exp rhs.body]
-    | Vars (v, vars) ->
-      let rec assign es n = function
-        | [] -> es
-        | v :: vars ->
-          let w = var_bitwidth v in
-          let hi = n + w - 1 in
-          let lo = n in
-          let es = Bil.(v := extract hi lo (bil_exp rhs.body)) :: es in
-          assign es (n + w) vars in
-      assign [] 0 (List.rev (v::vars))
-    | _ -> ppc_fail "unexpected left side of :="
+  let rec move lhs rhs =
+    printf "move\n%!";
+    match lhs () with
+    | Tmp x ->
+      printf "move #1\n";
+      let m = match Tmp.get x with
+        | None ->
+          let width = Exp.width rhs in
+          let v = Var.create ~fresh:true "tmp" (Type.imm width) in
+          let m = Meta.of_var v in
+          let m = Meta.{m with sign = Exp.sign rhs} in
+          Tmp.bind x m;
+          printf "%Ld is bound, var width is %d\n" x width;
+          m
+        | Some v -> v in
+      move (fun () -> Meta m) rhs
+    | Meta m ->
+      printf "move #2\n";
+      match Meta.body m with
+      | Vars (v, []) ->
+        let rhs = Exp.(cast rhs (width lhs) (sign lhs)) in
+        Bil.[v := bil_exp (Exp.body rhs)]
+      | Vars (v, vars) ->
+        let rec assign es n = function
+          | [] -> es
+          | v :: vars ->
+            let w = var_bitwidth v in
+            let hi = n + w - 1 in
+            let lo = n in
+            let es = Bil.(v := extract hi lo (bil_exp (Exp.body rhs))) :: es in
+            assign es (n + w) vars in
+        assign [] 0 (List.rev (v::vars))
+      | _ -> ppc_fail "unexpected left side of :="
 
-  let jmp exp = Bil.[ jmp (bil_exp exp.body)]
+  let jmp exp = Bil.[ jmp (Exp.bil_exp exp)]
 
   let rec stmt_to_bil = function
     | Move (x,y) -> move x y
@@ -233,7 +371,9 @@ module Translate = struct
       if_ cond then_ else_
   and
     to_bil stmts =
+    printf "to bil\n%!";
     List.concat (List.map ~f:stmt_to_bil stmts)
+
 end
 
 let bil_of_t = Translate.to_bil

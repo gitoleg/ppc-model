@@ -57,7 +57,6 @@ let bo_bit bo n =
     ppc_fail "requested BO field of branch insn with unexpected bit %d" n
   | Some (_,x) -> x
 
-
 (** Branch Instructions, Branch Conditional
     Page 37 of IBM Power ISATM Version 3.0 B
     examples:
@@ -66,29 +65,34 @@ let bo_bit bo n =
     42 9f 00 05  bcl 20, 31, .+4
     42 9f 00 07  bcla 20, 31, 4   *)
 let bc cpu ops =
+  printf "branch insn!\n";
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
   let bd = unsigned imm ops.(2) in
   let sh = unsigned int 2 in
   let ctr_ok = unsigned var in
   let cond_ok = unsigned var in
-  let temp = unsigned int 42 in
+  let x = Exp.tmp () in
+  let y = unsigned var in
   RTL.[
-    if_ (nbit bo 2 = zero) [
-      ctr := ctr - one;
-    ] [];
-    if_ ((nbit bo 2 = one) land (nbit bo 0 = one)) [
-      cpu.jmp (cpu.addr + (bd lsl sh));
-    ] [
-      ctr_ok := (lnot (ctr = zero)) lxor (nbit bo 3);
-      cond_ok := bi lxor (lnot (nbit bo 1));
-      if_ (ctr_ok land cond_ok) [
-        cpu.jmp (cpu.addr + (bd lsl sh));
-      ] [
-        cpu.jmp temp;
-      ]
-    ]
+    x := last bo 5;
+    y := x;
+
+    (* if_ (nbit bo 2 = zero) [ *)
+    (*   ctr := ctr - one; *)
+    (* ] []; *)
+    (* if_ ((nbit x 2 = one) land (nbit x 0 = one)) [ *)
+    (*   cpu.jmp (cpu.addr + (bd lsl sh)); *)
+    (* ] [ *)
+    (*   ctr_ok := (lnot (ctr = zero)) lxor (nbit bo 3); *)
+    (*   cond_ok := bi lxor (lnot (nbit bo 1)); *)
+    (*   if_ (ctr_ok land cond_ok) [ *)
+    (*     cpu.jmp (cpu.addr + (bd lsl sh)); *)
+    (*   ] [ ] *)
+    (* ] *)
   ]
+
+
 
 (* let bca mem addr_size  bo bi bd = *)
 (*   let bo_bit = bo_bit bo in *)
