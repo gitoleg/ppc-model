@@ -138,7 +138,7 @@ let nbit e n =
 
 let nbyte e n =
   let f e width =
-    let x = width / 8 - n in
+    let x = width / 8 - n - 1 in
     let hi = (x + 1) * 8 - 1 in
     let lo = x * 8 in
     Exp.extract hi lo e in
@@ -146,7 +146,19 @@ let nbyte e n =
 
 let extract e left right =
   let f e width =
-    let hi = width - left - 1 in
-    let lo = width - right - 1 in
-    Exp.extract hi lo e in
+    let target_width = right - left + 1 in
+    if width >= target_width then
+      let hi = width - left - 1 in
+      let lo = width - right - 1 in
+      Exp.extract hi lo e
+    else
+      Exp.extract (target_width - 1) 0 e in
   Exp.with_width f e
+
+let loop times init f fin =
+  let loop = List.concat @@ List.init times ~f in
+  List.concat [
+    init;
+    loop;
+    fin;
+  ]

@@ -233,18 +233,18 @@ let exts_dot addr_size ops size =
     7c 63 00 75     cntlzd.  r3,r3 *)
 let cntlz ops size =
   let bits = Size.in_bits size in
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
+  let ra = unsigned reg ops.(0) in
+  let rs = unsigned reg ops.(1) in
   let xv = unsigned var in
   let cnt = unsigned var in
   let has_no_ones = unsigned var in
   let init = RTL.[
       xv := low size rs;
-      cnt := zero;
+      cnt := extract zero 0 15;
       has_no_ones := one;
     ] in
   let foreach_bit = RTL.[
-      if_ (has_no_ones land (msb (low size xv) = zero)) [
+      if_ (has_no_ones land (msb xv = zero)) [
         cnt := cnt + one;
         xv := xv lsl one;
       ] [
@@ -274,7 +274,7 @@ let cnttz ops size =
   let has_no_ones = unsigned var in
   let init = RTL.[
       xv := low size rs;
-      cnt := zero;
+      cnt := extract zero 0 15;
       has_no_ones := one;
     ] in
   let foreach_bit = RTL.[
@@ -306,7 +306,8 @@ let cmpb ops =
     let sh = unsigned int (index * 8) in
     RTL.[
       if_ (nbyte rs index = nbyte rb index) [
-        tm := tm lor (xb lsl sh);
+        nbyte tm index := xb
+        (* tm := tm lor (xb lsl sh); *)
       ] [ ]
     ] in
   let init = RTL.[tm := zero ] in
@@ -395,7 +396,7 @@ let bpermd ops =
     let i = unsigned int i in
     RTL.[
       iv := i;
-      (* index := extract hi lo rs; *)
+      index := extract rs lo hi;
       if_ (index < max_ind) [
         bit := lsb (rb lsr index);
       ] [

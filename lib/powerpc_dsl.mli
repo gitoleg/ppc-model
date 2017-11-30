@@ -62,3 +62,6 @@ val lsb : exp -> exp
     are inclusive. Bits indexes start from the most
     significant bit. *)
 val extract : exp -> int -> int -> exp
+
+
+val loop : int -> rtl list -> (int -> rtl list) -> rtl list -> rtl list

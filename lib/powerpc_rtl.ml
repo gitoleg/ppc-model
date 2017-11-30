@@ -26,12 +26,12 @@ type meta = {
   width : int;
 } [@@deriving bin_io, compare, sexp]
 
-type exp_kind =
+type exp_typ =
   | Meta of meta
   | Tmp of int64
 [@@deriving bin_io, compare, sexp]
 
-type exp = unit -> exp_kind
+type exp = unit -> exp_typ
 
 module Tmp = struct
   type t = int64
@@ -337,6 +337,13 @@ module Translate = struct
             let es = Bil.(v := extract hi lo (bil_exp (Exp.body rhs))) :: es in
             assign es (n + w) vars in
         assign [] 0 (List.rev (v::vars))
+      | Extract (hi, lo, x) ->
+        (let shift = Exp.of_word (Word.of_int ~width:32 lo) in
+         let rhs = Infix.(rhs lsl shift) in
+         let rhs = Infix.(lhs lor Exp.extract hi lo rhs) in
+         match x with
+         | Vars (v,[]) -> Bil.[v := bil_exp (Exp.body rhs)]
+         | _ -> ppc_fail "unexpected left side of :=")
       | _ -> ppc_fail "unexpected left side of :="
 
   let jmp exp = Bil.[ jmp (Exp.bil_exp exp)]
