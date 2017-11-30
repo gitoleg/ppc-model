@@ -49,15 +49,10 @@ let imm signed op =
 let signed f = f true
 let unsigned f = f false
 
-(** TODO: don't forget to fix this  *)
 let var signed =
-  (* let width = 64 in *)
-  (* let v = Var.create ~fresh:true "tmp" (Type.Imm width) in *)
-  (* let e = Exp.of_var v in *)
-  Exp.tmp ()
-  (* let e = Exp.tmp () in *)
-  (* if signed then Exp.signed e *)
-  (* else Exp.unsigned e *)
+  let e = Exp.tmp () in
+  if signed then Exp.signed e
+  else Exp.unsigned e
 
 let reg signed op = match op with
   | Op.Imm _ | Op.Fmm _ ->
@@ -96,20 +91,14 @@ let doubleword_t = Type.imm 64
 let zero = Exp.of_word Word.b0
 let one  = Exp.of_word Word.b1
 
-let low size e =
-  let n = Size.in_bits size in
-  Exp.extract (n - 1) 0 e
-
-let high size e =
-  let n = Size.in_bits size in
-  let w = Exp.width e in
-  Exp.extract (w - 1) (w - n) e
+let first e bits =
+  let f e w =
+    Exp.extract (w - 1) (w - bits) e in
+  Exp.with_width f e
 
 let last e bits = Exp.extract (bits - 1) 0 e
-
-let first e bits =
-  let w = Exp.width e in
-  Exp.extract (w - 1) (w - bits) e
+let high size e = first e (Size.in_bits size)
+let low size e = last e (Size.in_bits size)
 
 (** TODO: addr_size is weird
     TODO: probably, it's not right place for this function *)
@@ -134,29 +123,30 @@ let make_cpu addr_size endian memory =
   { load; store; jmp; addr; addr_size; }
 
 let msb e =
-  let h = Exp.width e - 1 in
-  Exp.extract h h e
+  let f e w =
+    let h = w - 1 in
+    Exp.extract h h e in
+  Exp.with_width f e
 
 let lsb e = Exp.extract 0 0 e
 
-(** TODO: don't forget to think about those functions with extract  *)
 let nbit e n =
-  let f e =
-    let x = Exp.width e - n - 1 in
+  let f e width =
+    let x = width - n - 1 in
     Exp.extract x x e in
-  Exp.apply f e
-
-(* let nbit e n = *)
-(*   let x = Exp.width e - n - 1 in *)
-(*   Exp.extract x x e *)
+  Exp.with_width f e
 
 let nbyte e n =
-  let x = Exp.width e / 8 - n in
-  let hi = (x + 1) * 8 - 1 in
-  let lo = x * 8 in
-  Exp.extract hi lo e
+  let f e width =
+    let x = width / 8 - n in
+    let hi = (x + 1) * 8 - 1 in
+    let lo = x * 8 in
+    Exp.extract hi lo e in
+  Exp.with_width f e
 
 let extract e left right =
-  let hi = Exp.width e - left - 1 in
-  let lo = Exp.width e - right - 1 in
-  Exp.extract hi lo e
+  let f e width =
+    let hi = width - left - 1 in
+    let lo = width - right - 1 in
+    Exp.extract hi lo e in
+  Exp.with_width f e

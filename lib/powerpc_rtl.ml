@@ -4,7 +4,7 @@ open Powerpc_utils
 
 type bil_exp = exp
 
-type s = Signed | Unsigned [@@deriving bin_io, compare, sexp]
+type sign = Signed | Unsigned [@@deriving bin_io, compare, sexp]
 
 type binop = Bil.binop [@@deriving bin_io, compare, sexp]
 type unop  = Bil.unop  [@@deriving bin_io, compare, sexp]
@@ -16,13 +16,13 @@ type body =
   | Concat of body * body
   | Binop of binop * body * body
   | Extract of (int * int * body)
-  | Cast of (s * int * body)
+  | Cast of (sign * int * body)
   | Unop of (unop * body)
 [@@deriving bin_io, compare, sexp]
 
 type meta = {
   body : body;
-  sign : s;
+  sign : sign;
   width : int;
 } [@@deriving bin_io, compare, sexp]
 
@@ -36,21 +36,36 @@ type exp = unit -> exp_kind
 module Tmp = struct
   type t = int64
 
+  type info =
+    | Well_formed of meta
+    | Signed_only of sign
+
   let state = ref 0L
-  let bindings : (int64, meta) Hashtbl.t = Int64.Table.create ()
+  let bindings : (int64, info) Hashtbl.t = Int64.Table.create ()
 
-  let bind x m = Hashtbl.change bindings x ~f:(fun _ -> Some m)
+  let bind x m =
+    Hashtbl.change bindings x ~f:(fun _ -> Some (Well_formed m))
+
   let mem x = Hashtbl.mem bindings x
-  let get x = Hashtbl.find bindings x
   let incr_state () = Int64.incr state
+  let get x = Hashtbl.find bindings x
 
-  let get_exn x = match get x with
+  let get_meta x = match Hashtbl.find bindings x with
+    | Some (Well_formed m) -> Some m
+    | _ -> None
+
+  let get_meta_exn x = match get_meta x with
     | None ->
       ppc_fail "attempting to use tmp expression before assignment to it"
     | Some e -> e
 
+  let change_sign x s =
+    Hashtbl.change bindings x (function
+        | None | Some (Signed_only _) -> Some (Signed_only s)
+        | Some (Well_formed m) -> Some (Well_formed {m with sign=s}))
+
   let create () =
-    let x : int64 = !state in
+    let x = !state in
     incr_state ();
     Tmp x
 end
@@ -103,28 +118,25 @@ module Meta = struct
     let rhs = cast rhs width sign in
     { sign; width; body = Binop (op, lhs.body, rhs.body); }
 
-  let plus lhs rhs =
-    binop_with_cast Bil.plus lhs rhs
-
-  let minus lhs rhs =
-    binop_with_cast Bil.minus lhs rhs
-
   let concat lhs rhs =
     let sign = derive_sign lhs.sign rhs.sign in
     let width = lhs.width + rhs.width in
     let body = Concat (lhs.body, rhs.body) in
     { sign; width; body; }
 
-  let lt x y = binop_with_cast Bil.lt x y
-  let gt x y = binop_with_cast Bil.lt y x
-  let eq x y = binop_with_cast Bil.eq y x
-  let slt x y = binop_with_cast Bil.slt x y
-  let sgt x y = binop_with_cast Bil.slt y x
-  let lshift x y = binop Bil.lshift x y
-  let rshift x y = binop Bil.rshift x y
-  let bit_and x y = binop_with_cast Bil.bit_and x y
-  let bit_xor x y = binop_with_cast Bil.bit_xor x y
-  let bit_or x y = binop_with_cast Bil.bit_or x y
+  let plus = binop_with_cast Bil.plus
+  let minus = binop_with_cast Bil.minus
+  let lt = binop_with_cast Bil.lt
+  let gt = binop_with_cast Bil.lt
+  let eq = binop_with_cast Bil.eq
+  let neq = binop_with_cast Bil.neq
+  let slt = binop_with_cast Bil.slt
+  let sgt = binop_with_cast Bil.slt
+  let lshift = binop Bil.lshift
+  let rshift = binop Bil.rshift
+  let bit_and = binop_with_cast Bil.bit_and
+  let bit_xor = binop_with_cast Bil.bit_xor
+  let bit_or = binop_with_cast Bil.bit_or
   let not x = unop Bil.not x
 
   let of_var var =
@@ -194,21 +206,18 @@ module Exp = struct
 
   let get_meta e = match e () with
     | Meta m -> m
-    | Tmp x -> Tmp.get_exn x
+    | Tmp x -> Tmp.get_meta_exn x
 
-  let update_exp e f = match e () with
-    | Meta m -> Meta (f m)
-    | Tmp x ->
-      let m = Tmp.get_exn x in
-      Tmp.bind x (f m);
-      Tmp x
+  let change_sign e s () = match e () with
+    | Tmp x as r -> Tmp.change_sign x s; r
+    | Meta m -> Meta {m with sign = s}
 
   let cast e width sign () = Meta (Meta.cast (get_meta e) width sign)
   let of_var v   () = Meta (Meta.of_var v)
   let of_vars vs () = Meta (Meta.of_vars vs)
   let of_word w  () = Meta (Meta.of_word w)
-  let signed e   () = update_exp e Meta.signed
-  let unsigned e () = update_exp e Meta.unsigned
+  let signed e   () = change_sign e Signed ()
+  let unsigned e () = change_sign e Unsigned ()
 
   let load var e endian size () =
     Meta (Meta.load var (get_meta e) endian size)
@@ -230,6 +239,7 @@ module Exp = struct
   let lt = binop Meta.lt
   let gt = binop Meta.gt
   let eq = binop Meta.eq
+  let neq = binop Meta.neq
   let slt = binop Meta.slt
   let sgt = binop Meta.sgt
   let lshift = binop Meta.lshift
@@ -239,7 +249,10 @@ module Exp = struct
   let bit_xor = binop Meta.bit_xor
   let not = unop Meta.not
 
-  let apply f x () = f x ()
+  let with_width f e () =
+    let width = width e in
+    f e width ()
+
   let bil_exp x = bil_exp (Meta.body (get_meta x))
 end
 
@@ -251,9 +264,7 @@ type t =
 
 type rtl = t
 
-let store mem addr data endian size =
-  Store (mem, addr, data, endian, size)
-
+let store mem addr x endian size = Store (mem, addr, x, endian, size)
 let jmp addr = Jmp addr
 let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
@@ -269,6 +280,7 @@ module Infix = struct
   let (<$) = slt
   let (>$) = sgt
   let (=)  = eq
+  let (<>)  = neq
   let (lsl)  = lshift
   let (lsr)  = rshift
   let (land) = bit_and
@@ -288,18 +300,22 @@ module Translate = struct
     let probe = bil_exp (Exp.body probe) in
     Bil.[ if_ probe then_ else_ ]
 
+  let make_tmp_var x width s =
+    let v = Var.create ~fresh:true "tmp" (Type.imm width) in
+    let m = Meta.of_var v in
+    let m = Meta.{m with sign = s} in
+    Tmp.bind x m;
+    m
+
   let rec move lhs rhs =
     match lhs () with
     | Tmp x ->
+      let rwidth = Exp.width rhs in
+      let rsign = Exp.sign rhs in
       let m = match Tmp.get x with
-        | None ->
-          let width = Exp.width rhs in
-          let v = Var.create ~fresh:true "tmp" (Type.imm width) in
-          let m = Meta.of_var v in
-          let m = Meta.{m with sign = Exp.sign rhs} in
-          Tmp.bind x m;
-          m
-        | Some v -> v in
+        | Some (Tmp.Well_formed m) -> m
+        | Some (Tmp.Signed_only s) -> make_tmp_var x rwidth s
+        | None -> make_tmp_var x rwidth rsign in
       move (fun () -> Meta m) rhs
     | Meta m ->
       match Meta.body m with

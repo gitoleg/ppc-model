@@ -12,19 +12,17 @@ module Exp : sig
   val of_var  : var -> exp
   val of_vars : var list -> exp
   val of_word : word -> exp
+  val tmp : unit -> exp
 
   val load : var -> exp -> endian -> size -> exp
   val extract : int -> int -> exp -> exp
 
   val signed : exp -> exp
   val unsigned : exp -> exp
-  val width : exp -> int
 
   val bil_exp : exp -> bil_exp
 
-  val tmp : unit -> exp
-
-  val apply : (exp -> exp) -> exp -> exp
+  val with_width : (exp -> int -> exp) -> exp -> exp
 
 end
 
@@ -40,6 +38,7 @@ module Infix : sig
   val (<)  : exp -> exp -> exp
   val (>)  : exp -> exp -> exp
   val (=)  : exp -> exp -> exp
+  val (<>)  : exp -> exp -> exp
   val (<$) : exp -> exp -> exp
   val (>$) : exp -> exp -> exp
   val (lsl)  : exp -> exp -> exp
