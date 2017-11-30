@@ -99,6 +99,8 @@ module Meta = struct
     else
       {width; sign; body = Cast (sign, width, x.body)}
 
+  let cast_width x width = cast x width x.sign
+
   let derive_sign s s' = match s, s' with
     | Signed, _ | _, Signed -> Signed
     | _ -> Unsigned
@@ -124,14 +126,16 @@ module Meta = struct
     let body = Concat (lhs.body, rhs.body) in
     { sign; width; body; }
 
+  let bit_result x = cast_width x 1
+
   let plus = binop_with_cast Bil.plus
   let minus = binop_with_cast Bil.minus
-  let lt = binop_with_cast Bil.lt
-  let gt = binop_with_cast Bil.lt
-  let eq = binop_with_cast Bil.eq
-  let neq = binop_with_cast Bil.neq
-  let slt = binop_with_cast Bil.slt
-  let sgt = binop_with_cast Bil.slt
+  let lt x y  = bit_result (binop_with_cast Bil.lt x y)
+  let gt x y  = bit_result (binop_with_cast Bil.lt y x)
+  let eq x y  = bit_result (binop_with_cast Bil.eq x y)
+  let neq x y = bit_result (binop_with_cast Bil.neq x y)
+  let slt x y = bit_result (binop_with_cast Bil.slt x y)
+  let sgt x y = bit_result (binop_with_cast Bil.slt y x)
   let lshift = binop Bil.lshift
   let rshift = binop Bil.rshift
   let bit_and = binop_with_cast Bil.bit_and
@@ -295,6 +299,7 @@ module Translate = struct
     let data = Exp.bil_exp data in
     Bil.[mem := store (var mem) addr data endian size]
 
+  (** TODO: think here about this cast  *)
   let if_ probe then_ else_ =
     let probe = Exp.cast probe 1 Unsigned in
     let probe = bil_exp (Exp.body probe) in

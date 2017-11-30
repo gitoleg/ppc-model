@@ -40,15 +40,9 @@ let lift addr_size mem insn =
   let cpu = Dsl.make_cpu addr_size endian mem  in
   let lift lifter =
     try
-      printf "enter lifter\n";
-      let rtl = lifter cpu (Insn.ops insn) in
-      printf "got RTL!!!!\n%!";
-      let bil = RTL.bil_of_t rtl in
-      Result.return bil
-
-      (* lifter cpu (Insn.ops insn) |> *)
-      (* RTL.bil_of_t |> *)
-      (* Result.return *)
+      lifter cpu (Insn.ops insn) |>
+      RTL.bil_of_t |>
+      Result.return
     with
     | Failure str -> Error (Error.of_string str) in
   match String.Table.find lifts (Insn.name insn) with
