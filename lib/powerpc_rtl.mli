@@ -3,10 +3,6 @@ open Bap.Std
 
 type bil_exp = exp
 
-(* type t [@@deriving bin_io, compare, sexp] *)
-(* type rtl = t [@@deriving bin_io, compare, sexp] *)
-(* type exp [@@deriving bin_io, compare, sexp] *)
-
 type t
 type rtl = t
 type exp

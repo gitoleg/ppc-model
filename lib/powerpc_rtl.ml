@@ -46,12 +46,11 @@ module Tmp = struct
 
   let get_exn x = match get x with
     | None ->
-      printf "not bound %Ld\n" x;
       ppc_fail "attempting to use tmp expression before assignment to it"
     | Some e -> e
 
   let create () =
-    let x = !state in
+    let x : int64 = !state in
     incr_state ();
     Tmp x
 end
@@ -190,71 +189,40 @@ end
 module Exp = struct
 
   let tmp () =
-    printf "creating temp\n";
-    Tmp.create
+    let x = Tmp.create () in
+    fun () -> x
 
   let get_meta e = match e () with
     | Meta m -> m
-    | Tmp x ->
-      printf "get meta ?!\n %!";
-      let r = Tmp.get_exn x in
-      printf "got meta !!!!\n %!";
-      r
+    | Tmp x -> Tmp.get_exn x
 
-  let update_exp e f =
-    match e () with
+  let update_exp e f = match e () with
     | Meta m -> Meta (f m)
     | Tmp x ->
       let m = Tmp.get_exn x in
       Tmp.bind x (f m);
       Tmp x
 
-  let cast e width sign =
-    fun () ->
-      printf "cast\n%!";
-      let r = Meta (Meta.cast (get_meta e) width sign) in
-      printf "cast is ok\n%!";
-      r
-
-  let of_var v () = Meta (Meta.of_var v)
+  let cast e width sign () = Meta (Meta.cast (get_meta e) width sign)
+  let of_var v   () = Meta (Meta.of_var v)
   let of_vars vs () = Meta (Meta.of_vars vs)
-  let of_word w () = Meta (Meta.of_word w)
+  let of_word w  () = Meta (Meta.of_word w)
+  let signed e   () = update_exp e Meta.signed
+  let unsigned e () = update_exp e Meta.unsigned
 
-  let load var e endian size : exp =
-    fun () -> Meta (Meta.load var (get_meta e) endian size)
+  let load var e endian size () =
+    Meta (Meta.load var (get_meta e) endian size)
 
-  let extract hi lo e : exp =
-    fun () ->
-      printf "extract!\n%!";
-      let _x = get_meta e in
-      printf "ok\n%!";
-      Meta (Meta.extract hi lo (get_meta e))
+  let extract hi lo e () = Meta (Meta.extract hi lo (get_meta e))
+  let width e = Meta.width (get_meta e)
+  let body e = Meta.body (get_meta e)
+  let sign e = Meta.sign (get_meta e)
+  let unop op e () = Meta (op (get_meta e))
 
-  let signed e : exp = fun () -> update_exp e Meta.signed
-  let unsigned e : exp = fun () -> update_exp e Meta.unsigned
-  let width e =
-    printf "width\n%!";
-    let r = Meta.width (get_meta e) in
-    printf "width ok\n%!";
-    r
-  let body e =
-    printf "body\n%!";
-    Meta.body (get_meta e)
-  let sign e =
-    printf "sign\n%!";
-    Meta.sign (get_meta e)
-
-  let unop op e =
-    fun () ->
-      printf "unnop\n%!";
-      Meta (op (get_meta e))
-
-  let binop op x y : exp =
-    fun () ->
-      printf "binop\n%!";
-      let lhs = get_meta x in
-      let rhs = get_meta y in
-      Meta (op lhs rhs)
+  let binop op x y () =
+    let lhs = get_meta x in
+    let rhs = get_meta y in
+    Meta (op lhs rhs)
 
   let plus = binop Meta.plus
   let minus = binop Meta.minus
@@ -271,12 +239,8 @@ module Exp = struct
   let bit_xor = binop Meta.bit_xor
   let not = unop Meta.not
 
-  let apply f x =
-    fun () -> f x ()
-
-  let bil_exp x =
-    printf "bil_exp\n%!";
-    bil_exp (Meta.body (get_meta x))
+  let apply f x () = f x ()
+  let bil_exp x = bil_exp (Meta.body (get_meta x))
 end
 
 type t =
@@ -287,11 +251,11 @@ type t =
 
 type rtl = t
 
-let store mem addr data endian size : t =
+let store mem addr data endian size =
   Store (mem, addr, data, endian, size)
 
-let jmp addr : t = Jmp addr
-let move x y : t = Move (x,y)
+let jmp addr = Jmp addr
+let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
 
 module Infix = struct
@@ -325,10 +289,8 @@ module Translate = struct
     Bil.[ if_ probe then_ else_ ]
 
   let rec move lhs rhs =
-    printf "move\n%!";
     match lhs () with
     | Tmp x ->
-      printf "move #1\n";
       let m = match Tmp.get x with
         | None ->
           let width = Exp.width rhs in
@@ -336,12 +298,10 @@ module Translate = struct
           let m = Meta.of_var v in
           let m = Meta.{m with sign = Exp.sign rhs} in
           Tmp.bind x m;
-          printf "%Ld is bound, var width is %d\n" x width;
           m
         | Some v -> v in
       move (fun () -> Meta m) rhs
     | Meta m ->
-      printf "move #2\n";
       match Meta.body m with
       | Vars (v, []) ->
         let rhs = Exp.(cast rhs (width lhs) (sign lhs)) in
@@ -371,7 +331,6 @@ module Translate = struct
       if_ cond then_ else_
   and
     to_bil stmts =
-    printf "to bil\n%!";
     List.concat (List.map ~f:stmt_to_bil stmts)
 
 end

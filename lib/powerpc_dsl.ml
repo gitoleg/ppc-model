@@ -49,12 +49,15 @@ let imm signed op =
 let signed f = f true
 let unsigned f = f false
 
+(** TODO: don't forget to fix this  *)
 let var signed =
-  let width = 64 in
-  let v = Var.create ~fresh:true "tmp" (Type.Imm width) in
-  let e = Exp.of_var v in
-  if signed then Exp.signed e
-  else Exp.unsigned e
+  (* let width = 64 in *)
+  (* let v = Var.create ~fresh:true "tmp" (Type.Imm width) in *)
+  (* let e = Exp.of_var v in *)
+  Exp.tmp ()
+  (* let e = Exp.tmp () in *)
+  (* if signed then Exp.signed e *)
+  (* else Exp.unsigned e *)
 
 let reg signed op = match op with
   | Op.Imm _ | Op.Fmm _ ->
@@ -136,6 +139,7 @@ let msb e =
 
 let lsb e = Exp.extract 0 0 e
 
+(** TODO: don't forget to think about those functions with extract  *)
 let nbit e n =
   let f e =
     let x = Exp.width e - n - 1 in
