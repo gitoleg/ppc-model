@@ -14,7 +14,6 @@ AlphaFeatures: ocamlbuild_more_args
 XOCamlbuildExtraArgs: -j 8
 
 
-
 Library powerpc_lifter
   Path:           lib
   FindLibName:    powerpc_lifter
@@ -39,7 +38,13 @@ Library powerpc_tests
   Build$:         flag(tests)
   Install:        false
   CompiledObject: best
-  Modules:        Powerpc_load_tests,
+  Modules:        Powerpc_add_tests,
+                  Powerpc_branch_tests,
+                  Powerpc_compare_tests,
+                  Powerpc_dsl_tests,
+                  Powerpc_load_tests,
+                  Powerpc_logical_tests,
+                  Powerpc_store_tests,
                   Powerpc_tests_helpers
   BuildDepends:   oUnit, powerpc_lifter
 

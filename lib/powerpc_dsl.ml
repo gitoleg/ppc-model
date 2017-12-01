@@ -130,19 +130,17 @@ let msb e =
 
 let lsb e = Exp.extract 0 0 e
 
-let nbit e n =
+let extract_nth e size index =
   let f e width =
-    let x = width - n - 1 in
-    Exp.extract x x e in
-  Exp.with_width f e
-
-let nbyte e n =
-  let f e width =
-    let x = width / 8 - n - 1 in
-    let hi = (x + 1) * 8 - 1 in
-    let lo = x * 8 in
+    let x = width / size - index - 1 in
+    let hi = (x + 1) * size - 1 in
+    let lo = x * size in
     Exp.extract hi lo e in
   Exp.with_width f e
+
+let nbit e n = extract_nth e 1 n
+let nbyte e n = extract_nth e 8 n
+let nsize e size n = extract_nth e (Size.in_bits size) n
 
 let extract e left right =
   let f e width =

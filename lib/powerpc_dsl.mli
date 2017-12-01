@@ -29,6 +29,12 @@ val doubleword : size
 val zero : exp
 val one  : exp
 
+(** [extract e lx rx] extracts portion of [e] starting
+    at bit [lx] and ending at bit [rx], all bounds
+    are inclusive. Bits indexes start from the most
+    significant bit. *)
+val extract : exp -> int -> int -> exp
+
 (** [low size e] - extracts low [size] bits from [e]  *)
 val low : size -> exp -> exp
 
@@ -51,17 +57,17 @@ val nbit : exp -> int -> exp
     Indexes are zero based and started from most significant byte.  *)
 val nbyte : exp -> int -> exp
 
+(** [nsize e size n] - extracts a portion of [e] of size [size] at
+    index [n], where each index points to a portion of size [size].
+    Indexes are zero based and started from most significant portion.
+    E.g. [nsize e halfword 1] extracts a second halfword from [e] *)
+val nsize : exp -> size -> int -> exp
+
 (** [msb e] - extracts the most significant bit from [e] *)
 val msb : exp -> exp
 
 (** [lsb e] - extracts the least significant bit from [e] *)
 val lsb : exp -> exp
 
-(** [extract e lx rx] extracts portion of [e] starting
-    at bit [lx] and ending at bit [rx], all bounds
-    are inclusive. Bits indexes start from the most
-    significant bit. *)
-val extract : exp -> int -> int -> exp
-
-
+(*TODO: still don't know if we want this  *)
 val loop : int -> rtl list -> (int -> rtl list) -> rtl list -> rtl list

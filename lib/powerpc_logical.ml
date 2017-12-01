@@ -303,14 +303,12 @@ let cmpb ops =
   let tm = unsigned var in
   let xb = unsigned int 0xFF in
   let foreach_byte index =
-    let sh = unsigned int (index * 8) in
     RTL.[
       if_ (nbyte rs index = nbyte rb index) [
         nbyte tm index := xb
-        (* tm := tm lor (xb lsl sh); *)
       ] [ ]
     ] in
-  let init = RTL.[tm := zero ] in
+  let init = RTL.[tm := extract zero 0 63] in
   let loop = List.concat @@ List.init 8 ~f:foreach_byte in
   let finish = RTL.[ra := tm] in
   List.concat [
@@ -333,23 +331,20 @@ let popcnt ops size =
   let cnt = unsigned var in
   let tmp = unsigned var in
   let res = unsigned var in
-  let foreach_bit reg index =
+  let foreach_bit index =
     RTL.[
-      if_ (nbit reg index = one) [
+      if_ (nbit tmp index = one) [
         cnt := cnt + one;
       ] [];
     ] in
   let foreach_size index =
-    let lo = index * bits in
-    let hi = (index + 1) * bits - 1 in
-    let shift = unsigned int (index * bits) in
     let init = RTL.[
-      cnt := zero;
-      (* tmp := extract hi lo rs; *)
+      cnt := extract zero 0 31;
+      tmp := nsize rs size index;
     ] in
-    let loop = List.concat @@ List.init bits (foreach_bit tmp) in
+    let loop = List.concat @@ List.init bits ~f:foreach_bit in
     let finish = RTL.[
-      res := res lor (cnt lsl shift);
+        nsize res size index := cnt;
     ] in
     List.concat [
       init;
@@ -357,7 +352,7 @@ let popcnt ops size =
       finish;
     ] in
   let init = RTL.[
-    res := zero;
+    res := extract zero 0 63;
   ] in
   let loop = List.concat @@ List.init steps ~f:foreach_size in
   let finish = RTL.[ra := res] in
@@ -383,26 +378,22 @@ let bpermd ops =
   let rs = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   let max_ind = unsigned int 64 in
-  let index = unsigned var in
-  let iv = unsigned var in
+  let bit_i = unsigned var in
   let tmp = unsigned var in
   let bit = unsigned var in
   let init = RTL.[
-      tmp := zero;
+      tmp := extract zero 0 63;
     ] in
   let foreach_byte i =
-    let hi = (i + 1) * 8 - 1 in
-    let lo = i * 8 in
-    let i = unsigned int i in
+    let bi = 56 + i in
     RTL.[
-      iv := i;
-      index := extract rs lo hi;
-      if_ (index < max_ind) [
-        bit := lsb (rb lsr index);
+      bit_i := nbyte rs i;
+      if_ (bit_i < max_ind) [
+        bit := msb (rb lsl bit_i);
       ] [
         bit := zero;
       ];
-      tmp := tmp lor (bit lsl iv);
+      nbit tmp bi := bit;
     ] in
   let loop = List.concat @@ List.init 8 ~f:foreach_byte in
   let finish = RTL.[

@@ -6,10 +6,6 @@ open Powerpc_types
 open Hardware
 open Powerpc_tests_helpers
 
-let is_equal_words w = function
-  | None -> false
-  | Some w' -> Word.equal w w'
-
 let addi arch ctxt =
   let bytes = "\x38\x21\x00\x10" in (** addi r1, r1, 16  *)
   let r1 = find_gpr "R1" in

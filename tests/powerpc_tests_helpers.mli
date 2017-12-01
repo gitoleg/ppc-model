@@ -13,6 +13,9 @@ val lr  : var
 val ctr : var
 val tar : var
 
+val bit : RTL.exp -> int -> var
+
+
 (** [find_gpr name] - return a GPR with a [name] *)
 val find_gpr : string -> var
 
@@ -54,5 +57,3 @@ val is_equal_words : word -> word option -> bool
 
 (** [string_of_bytes bytes] - returns a readable string from [bytes] *)
 val string_of_bytes : string -> string
-
-val bit : RTL.exp -> int -> var
