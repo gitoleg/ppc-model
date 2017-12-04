@@ -20,55 +20,11 @@ type body =
   | Unop of (unop * body)
 [@@deriving bin_io, compare, sexp]
 
-type meta = {
+type exp = {
   body : body;
   sign : sign;
   width : int;
 } [@@deriving bin_io, compare, sexp]
-
-type exp_typ =
-  | Meta of meta
-  | Tmp of int64
-[@@deriving bin_io, compare, sexp]
-
-type exp = unit -> exp_typ
-
-module Tmp = struct
-  type t = int64
-
-  type info =
-    | Well_formed of meta
-    | Signed_only of sign
-
-  let state = ref 0L
-  let bindings : (int64, info) Hashtbl.t = Int64.Table.create ()
-
-  let bind x m =
-    Hashtbl.change bindings x ~f:(fun _ -> Some (Well_formed m))
-
-  let mem x = Hashtbl.mem bindings x
-  let incr_state () = Int64.incr state
-  let get x = Hashtbl.find bindings x
-
-  let get_meta x = match Hashtbl.find bindings x with
-    | Some (Well_formed m) -> Some m
-    | _ -> None
-
-  let get_meta_exn x = match get_meta x with
-    | None ->
-      ppc_fail "attempting to use tmp expression before assignment to it"
-    | Some e -> e
-
-  let change_sign x s =
-    Hashtbl.change bindings x (function
-        | None | Some (Signed_only _) -> Some (Signed_only s)
-        | Some (Well_formed m) -> Some (Well_formed {m with sign=s}))
-
-  let create () =
-    let x = !state in
-    incr_state ();
-    Tmp x
-end
 
 let rec bil_exp = function
   | Vars (v, []) -> Bil.var v
@@ -93,7 +49,7 @@ let var_bitwidth v =
 let width_of_vars vs =
   List.fold ~init:0 ~f:(fun x v -> x + var_bitwidth v) vs
 
-module Meta = struct
+module Exp = struct
 
   (** TODO: think again about signess + 1-bit values *)
   let cast x width sign =
@@ -162,6 +118,10 @@ module Meta = struct
     let width = Word.bitwidth w in
     {sign = Unsigned; width; body = Word w }
 
+  let tmp width =
+    let var = Var.create ~fresh:true "tmp" (Type.imm width) in
+    of_var var
+
   let load mem addr endian size =
     let width = Size.in_bits size in
     let sign = Unsigned in
@@ -205,64 +165,7 @@ module Meta = struct
   let width e = e.width
   let body e = e.body
   let sign e = e.sign
-end
-
-module Exp = struct
-
-  let tmp () =
-    let x = Tmp.create () in
-    fun () -> x
-
-  let get_meta e = match e () with
-    | Meta m -> m
-    | Tmp x -> Tmp.get_meta_exn x
-
-  let change_sign e s () = match e () with
-    | Tmp x as r -> Tmp.change_sign x s; r
-    | Meta m -> Meta {m with sign = s}
-
-  let cast e width sign () = Meta (Meta.cast (get_meta e) width sign)
-  let of_var v   () = Meta (Meta.of_var v)
-  let of_vars vs () = Meta (Meta.of_vars vs)
-  let of_word w  () = Meta (Meta.of_word w)
-  let signed e   () = change_sign e Signed ()
-  let unsigned e () = change_sign e Unsigned ()
-
-  let load var e endian size () =
-    Meta (Meta.load var (get_meta e) endian size)
-
-  let extract hi lo e () = Meta (Meta.extract hi lo (get_meta e))
-  let width e = Meta.width (get_meta e)
-  let body e = Meta.body (get_meta e)
-  let sign e = Meta.sign (get_meta e)
-  let unop op e () = Meta (op (get_meta e))
-
-  let binop op x y () =
-    let lhs = get_meta x in
-    let rhs = get_meta y in
-    Meta (op lhs rhs)
-
-  let plus = binop Meta.plus
-  let minus = binop Meta.minus
-  let concat = binop Meta.concat
-  let lt = binop Meta.lt
-  let gt = binop Meta.gt
-  let eq = binop Meta.eq
-  let neq = binop Meta.neq
-  let slt = binop Meta.slt
-  let sgt = binop Meta.sgt
-  let lshift = binop Meta.lshift
-  let rshift = binop Meta.rshift
-  let bit_or = binop Meta.bit_or
-  let bit_and = binop Meta.bit_and
-  let bit_xor = binop Meta.bit_xor
-  let not = unop Meta.not
-
-  let with_width f e () =
-    let width = width e in
-    f e width ()
-
-  let bil_exp x = bil_exp (Meta.body (get_meta x))
+  let bil_exp e = bil_exp e.body
 end
 
 type t =
@@ -270,7 +173,7 @@ type t =
   | Jmp of exp
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
-  | Loop of exp * int * (int -> exp -> t list)
+  (* | Loop of exp * int * (int -> exp -> t list) *)
 
 type rtl = t
 
@@ -278,7 +181,7 @@ let store mem addr x endian size = Store (mem, addr, x, endian, size)
 let jmp addr = Jmp addr
 let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
-let loop exp step f = Loop (exp,step,f)
+(* let loop exp step f = Loop (exp,step,f) *)
 
 
 module Infix = struct
@@ -304,8 +207,8 @@ end
 
 module Translate = struct
   let store mem addr data endian size =
-    let addr = Exp.bil_exp addr in
-    let data = Exp.bil_exp data in
+    let addr = bil_exp addr.body in
+    let data = bil_exp data.body in
     Bil.[mem := store (var mem) addr data endian size]
 
   (** TODO: think here about this cast  *)
@@ -313,13 +216,6 @@ module Translate = struct
     let probe = Exp.cast probe 1 Unsigned in
     let probe = bil_exp (Exp.body probe) in
     Bil.[ if_ probe then_ else_ ]
-
-  let make_tmp_var x width s =
-    let v = Var.create ~fresh:true "tmp" (Type.imm width) in
-    let m = Meta.of_var v in
-    let m = Meta.{m with sign = s} in
-    Tmp.bind x m;
-    m
 
   let rec expand_vars e = match e with
     | Vars (v, vs) -> v :: vs
@@ -385,32 +281,22 @@ module Translate = struct
       4) extract hi lo var := exp, change only certain bits of var
       5) extract hi lo (var1 ^ var2 ... varN) := exp *)
   let rec move lhs rhs =
-    match lhs () with
-    | Tmp x ->
-      let rwidth = Exp.width rhs in
-      let rsign = Exp.sign rhs in
-      let m = match Tmp.get x with
-        | Some (Tmp.Well_formed m) -> m
-        | Some (Tmp.Signed_only s) -> make_tmp_var x rwidth s
-        | None -> make_tmp_var x rwidth rsign in
-      move (fun () -> Meta m) rhs
-    | Meta m ->
-      match Meta.body m with
-      | Vars (v, []) ->
-        let rhs = Exp.(cast rhs (width lhs) (sign lhs)) in
-        Bil.[v := bil_exp (Exp.body rhs)]
-      | Vars (v, vars) -> assign_vars (v::vars) rhs
-      | Concat (x,y) ->
-        let vars = expand_vars x @ expand_vars y in
-        let width = width_of_vars vars in
-        let rhs = Exp.cast rhs width (Exp.sign rhs) in
-        assign_vars vars rhs
-      | Extract (hi, lo, x) ->
-        let vars = expand_vars x in
-        assign_vars vars ~hi ~lo rhs
-      | _ -> ppc_fail "unexpected left side of :="
+    match Exp.body lhs with
+    | Vars (v, []) ->
+      let rhs = Exp.(cast rhs (width lhs) (sign lhs)) in
+      Bil.[v := bil_exp (Exp.body rhs)]
+    | Vars (v, vars) -> assign_vars (v::vars) rhs
+    | Concat (x,y) ->
+      let vars = expand_vars x @ expand_vars y in
+      let width = width_of_vars vars in
+      let rhs = Exp.cast rhs width (Exp.sign rhs) in
+      assign_vars vars rhs
+    | Extract (hi, lo, x) ->
+      let vars = expand_vars x in
+      assign_vars vars ~hi ~lo rhs
+    | _ -> ppc_fail "unexpected left side of :="
 
-  let jmp exp = Bil.[ jmp (Exp.bil_exp exp)]
+  let jmp exp = Bil.[ jmp (bil_exp exp.body)]
 
   let rec stmt_to_bil = function
     | Move (x,y) -> move x y
@@ -421,22 +307,22 @@ module Translate = struct
       let then_ = to_bil then_ in
       let else_ = to_bil else_ in
       if_ cond then_ else_
-    | Loop (exp, step, f) ->
-      let width = Exp.width exp in
-      let iters = width / step in
-      let rtl = List.concat
-          (List.init iters
-             ~f:(fun i ->
-                 (** TODO: wrong place for this index conversion  *)
-                 let i' = iters  - 1 - i in
-                 let hi = (i' + 1) * step - 1 in
-                 let lo = i' * step in
-                 let exp = Exp.extract hi lo exp in
-                 f i exp)) in
-      to_bil rtl
+    (* | Loop (exp, step, f) -> *)
+    (*   let width = Exp.width exp in *)
+    (*   let iters = width / step in *)
+    (*   let rtl = List.concat *)
+    (*       (List.init iters *)
+    (*          ~f:(fun i -> *)
+    (*              (\** TODO: wrong place for this index conversion  *\) *)
+    (*              let i' = iters  - 1 - i in *)
+    (*              let hi = (i' + 1) * step - 1 in *)
+    (*              let lo = i' * step in *)
+    (*              let exp = Exp.extract hi lo exp in *)
+    (*              f i exp)) in *)
+    (*   to_bil rtl *)
   and
-    to_bil stmts =
-    List.concat (List.map ~f:stmt_to_bil stmts)
+    to_bil (ts : t list)  =
+    List.concat (List.map ~f:stmt_to_bil ts)
 
 end
 

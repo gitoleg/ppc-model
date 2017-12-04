@@ -12,15 +12,15 @@ let var_exn x = match Exp.bil_exp x with
   | Bil.Var v -> v
   | _ -> failwith "var_exn: not a variable"
 
-let nf = var_exn @@ Dsl.nbit cr 0
-let pf = var_exn @@ Dsl.nbit cr 1
-let zf = var_exn @@ Dsl.nbit cr 2
+let nf = var_exn @@ Dsl.(nth bit cr 0)
+let pf = var_exn @@ Dsl.(nth bit cr 1)
+let zf = var_exn @@ Dsl.(nth bit cr 2)
 let ca = var_exn ca
 let ca32 = var_exn ca32
 let lr = var_exn lr
 let ctr = var_exn ctr
 let tar = var_exn tar
-let bit e n = var_exn @@ Dsl.nbit e n
+let bit e n = var_exn @@ Dsl.(nth bit e n)
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>

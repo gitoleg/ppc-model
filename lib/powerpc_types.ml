@@ -12,10 +12,10 @@ end
 
 include Powerpc_utils
 
-type rtl = RTL.t
+type rtl = RTL.rtl
 type cpu = Dsl.cpu
 
-
-(**
-
-*)
+module type Lifter = sig
+  type t [@@deriving sexp, enumerate]
+  val lift : t -> cpu -> op array -> rtl list
+end

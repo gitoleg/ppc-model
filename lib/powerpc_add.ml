@@ -40,25 +40,19 @@ open Dsl
     subic rx,ry,value  = addic  rx, ry, -value
     subic. rx,ry,value = addic. rx, ry, -value *)
 
-(** TODO: rework those functions *)
-let compute_ca size x result =
-  RTL.(low size result < low size x)
-
-let compute_ca32 x result = RTL.(low word result < low word x)
-
 (** Fixed-Point Arithmetic Instructions - Add Immediate
     Page 67 of IBM Power ISATM Version 3.0 B
     examples:
     38 21 00 10     addi    r1,r1,16
     3b de fd 28     addi    r30,r30,-728
     38 20 00 10     addi    r1,0,16 (OR li r1, 16) *)
-let addi ops =
+let addi cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let im = signed imm ops.(2) in
   RTL.[ rt := ra + im; ]
 
-let li ops =
+let li cpu ops =
   let rt = signed reg ops.(0) in
   let im = signed imm ops.(1) in
   RTL.[ rt := im; ]
@@ -68,64 +62,56 @@ let li ops =
     examples:
     3f de 00 02     addis   r30,r30,2
     3d 6b f0 00     addis   r11,r11,-4096 *)
-let addis ops =
+let addis cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let im = signed imm ops.(2) in
-  let sh = unsigned int 16 in
+  let sh = unsigned const word 16 in
   RTL.[ rt := ra + (im lsl sh); ]
 
-let lis ops =
+let lis cpu ops =
   let rt = signed reg ops.(0) in
   let im = signed imm ops.(1) in
-  let sh = unsigned int 16 in
+  let sh = unsigned const word 16 in
   RTL.[ rt := im lsl sh; ]
-
-(** Fixed-Point Arithmetic Instructions - Add PC Immediate Shifted
-    Page 68 of IBM Power ISATM Version 3.0 B
-    example:
-    4c 22 00 04     addpcis r1,4
-    llvm doesn't recognize this instruction  *)
-let addpcis rt imm = ppc_fail "unimplemented"
 
 (** Fixed-Point Arithmetic Instructions - Add
     Page 69 of IBM Power ISATM Version 3.0 B
 
     7d 62 5a 14 add   r11, r2, r11
     7d 62 5a 15 add.  r11, r2, r11 *)
-let add ops =
+let add cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[rt := ra + rb]
 
-(** TODO think about addr size here.  *)
-let write_fixpoint_result addr_size res =
-  let res = signed reg res in
+let add_dot cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
   RTL.[
-    nbit cr 0 := low addr_size res <$ zero;
-    nbit cr 1 := low addr_size res >$ zero;
-    nbit cr 2 := low addr_size res = zero;
+    rt := ra + rb;
+    nth bit cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cr 2 := low cpu.addr_size rt = zero;
   ]
-
-let add_dot addr_size ops =
-  add ops @ write_fixpoint_result addr_size ops.(0)
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
     Page 69 of IBM Power ISATM Version 3.0 B
     examples:
     30 21 00 10    addic r1, r1, 16
     33 de fd 28    addic r30, r30, -728  *)
-let addic addr_size ops =
+let addic cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let im = signed imm ops.(2) in
-  let tm = signed var in
+  let tm = signed var doubleword in
   RTL.[
     tm := ra;
     rt := ra + im;
-    ca := compute_ca addr_size tm rt;
-    ca32 := compute_ca32 tm rt;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying and Record
@@ -133,99 +119,152 @@ let addic addr_size ops =
     examples:
     34 21 00 10    addic. r1, r1, 16
     37 de fd 28    addic. r30, r30, -728  *)
-let addic_dot addr_size ops =
-  addic addr_size ops @ write_fixpoint_result addr_size ops.(0)
+let addic_dot cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let im = signed imm ops.(2) in
+  let tm = signed var doubleword in
+  RTL.[
+    tm := ra;
+    rt := ra + im;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
+    nth bit cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cr 2 := low cpu.addr_size rt = zero;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Add Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
     examples:
     7d 62 58 14  addc   r11, r2, r11
     7d 62 58 15  addc.  r11, r2, r11 *)
-let addc addr_size ops =
+let addc cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  let tm = signed var in
+  let tm = signed var doubleword in
   RTL.[
     tm := ra;
     rt := ra + rb;
-    ca := compute_ca addr_size tm rt;
-    ca32 := compute_ca32 tm rt;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
   ]
 
-let addc_dot addr_size ops =
-  addc addr_size ops @ write_fixpoint_result addr_size ops.(0)
+let addc_dot cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let tm = signed var doubleword in
+  RTL.[
+    tm := ra;
+    rt := ra + rb;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
+    nth bit cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cr 2 := low cpu.addr_size rt = zero;
+  ]
+
 
 (** Fixed-Point Arithmetic Instructions - Add Extend
     Page 71 of IBM Power ISATM Version 3.0 B
     examples:
     7c 21 81 14  adde   r11, r2, r11
     7c 21 81 15  adde.  r11, r2, r11 *)
-let adde addr_size ops =
+let adde cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  let tm = signed var in
+  let tm = signed var doubleword in
   RTL.[
     tm := ra;
     rt := ra + rb + ca;
-    ca := compute_ca addr_size tm rt;
-    ca32 := compute_ca32 tm rt; ]
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
+  ]
 
-let adde_dot addr_size ops =
-  adde addr_size ops @ write_fixpoint_result addr_size ops.(0)
+let adde_dot cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let tm = signed var doubleword in
+  RTL.[
+    tm := ra;
+    rt := ra + rb + ca;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
+    nth bit cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cr 2 := low cpu.addr_size rt = zero;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Add to Minus One Extend
     Page 71 of IBM Power ISATM Version 3.0 B
     examples:
     7c 22 01 d4  addme  r1,r2
     7c 22 01 d5  addme. r1,r2  *)
-let addme addr_size ops =
+let addme cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
-  let tm = signed var in
+  let tm = signed var doubleword in
   RTL.[
     tm := ra;
     rt := ra + ca - one;
-    ca := compute_ca addr_size tm rt;
-    ca32 := compute_ca32 tm rt;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
   ]
 
-let addme_dot addr_size ops =
-  addme addr_size ops @ write_fixpoint_result addr_size ops.(0)
-
-(** Fixed-Point Arithmetic Instructions - Add Extended using alternate carry bit
-    Page 72 of IBM Power ISATM Version 3.0 B
-    example:
-    7c 22 19 54   addex r1,r2,r3
-    llvm doesn't recognize this instruction *)
-let addex rt ra rb = ppc_fail "unimplemented"
+let addme_dot cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let tm = signed var doubleword in
+  RTL.[
+    tm := ra;
+    rt := ra + ca - one;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
+    nth bit cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cr 2 := low cpu.addr_size rt = zero;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Add to Zero extended
     Page 72 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 01 94   addze r1,r2
     7c 22 01 95   addze. r1,r2 *)
-let addze addr_size ops =
+let addze cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
-  let tm = signed var in
+  let tm = signed var doubleword in
   RTL.[
     tm := ra;
     rt := ra + ca;
-    ca := compute_ca addr_size tm rt;
-    ca32 := compute_ca32 tm rt;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
   ]
 
-let addze_dot addr_size ops =
-  addze addr_size ops @ write_fixpoint_result addr_size ops.(0)
+let addze_dot cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let tm = signed var doubleword in
+  RTL.[
+    tm := ra;
+    rt := ra + ca;
+    ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    ca32 := low word rt < low word tm;
+    nth bit cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cr 2 := low cpu.addr_size rt = zero;
+  ]
+
 
 type t = [
   | `ADD4
   | `ADD4o
   | `ADDI
   | `ADDIS
-  | `ADDPCIS
   | `ADDIC
   | `ADDICo
   | `ADDC
@@ -241,26 +280,21 @@ type t = [
   | `LA
 ] [@@deriving sexp, enumerate]
 
-let lift opcode cpu ops =
-  match opcode with
-  | `ADD4   -> add ops
-  | `ADD4o  -> add_dot cpu.addr_size ops
-  | `ADDI   -> addi ops
-  | `ADDIS  -> addis ops
-  | `ADDIC  -> addic cpu.addr_size ops
-  | `ADDICo -> addic_dot cpu.addr_size ops
-  | `ADDC   -> addc cpu.addr_size ops
-  | `ADDCo  -> addc_dot cpu.addr_size ops
-  | `ADDE   -> adde cpu.addr_size ops
-  | `ADDEo  -> adde_dot cpu.addr_size ops
-  | `ADDME  -> addme cpu.addr_size ops
-  | `ADDMEo -> addme_dot cpu.addr_size ops
-  | `ADDZE  -> addze cpu.addr_size ops
-  | `ADDZEo -> addze_dot cpu.addr_size ops
-  | `LI     -> li ops
-  | `LIS    -> lis ops
-  | `LA     -> addi ops
-  | opcode ->
-    let opcode = Sexp.to_string (sexp_of_t opcode) in
-    ppc_fail "%s: unexpected operand set" opcode
-(** TODO: error message should be different here  *)
+let lift t cpu ops = match t with
+  | `ADD4   -> add cpu ops
+  | `ADD4o  -> add_dot cpu ops
+  | `ADDI   -> addi cpu ops
+  | `ADDIS  -> addis cpu ops
+  | `ADDIC  -> addic cpu ops
+  | `ADDICo -> addic_dot cpu ops
+  | `ADDC   -> addc cpu ops
+  | `ADDCo  -> addc_dot cpu ops
+  | `ADDE   -> adde cpu ops
+  | `ADDEo  -> adde_dot cpu ops
+  | `ADDME  -> addme cpu ops
+  | `ADDMEo -> addme_dot cpu ops
+  | `ADDZE  -> addze cpu ops
+  | `ADDZEo -> addze_dot cpu ops
+  | `LI     -> li cpu ops
+  | `LIS    -> lis cpu ops
+  | `LA     -> addi cpu ops

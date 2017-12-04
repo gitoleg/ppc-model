@@ -23,9 +23,9 @@ let andi_dot addr_size ops =
   let im = unsigned imm ops.(2) in
   RTL.[
     ra := rs land im;
-    nbit cr 0 := low addr_size ra <$ zero;
-    nbit cr 1 := low addr_size ra >$ zero;
-    nbit cr 2 := low addr_size ra = zero
+    nth bit cr 0 := low addr_size ra <$ zero;
+    nth bit cr 1 := low addr_size ra >$ zero;
+    nth bit cr 2 := low addr_size ra = zero
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -36,12 +36,12 @@ let andis_dot addr_size ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   let im = unsigned imm ops.(2) in
-  let sh = unsigned int 16 in
+  let sh = unsigned const byte 16 in
   RTL.[
     ra := rs land (im lsl sh);
-    nbit cr 0 := low addr_size ra <$ zero;
-    nbit cr 1 := low addr_size ra >$ zero;
-    nbit cr 2 := low addr_size ra = zero;
+    nth bit cr 0 := low addr_size ra <$ zero;
+    nth bit cr 1 := low addr_size ra >$ zero;
+    nth bit cr 2 := low addr_size ra = zero;
   ]
 
 (** Fixed-point AND
@@ -58,9 +58,9 @@ let and_ ops =
 let write_fixpoint_result addr_size res =
   let res = signed reg res in
   RTL.[
-    nbit cr 0 := low addr_size res <$ zero;
-    nbit cr 1 := low addr_size res >$ zero;
-    nbit cr 2 := low addr_size res = zero;
+    nth bit cr 0 := low addr_size res <$ zero;
+    nth bit cr 1 := low addr_size res >$ zero;
+    nth bit cr 2 := low addr_size res = zero;
   ]
 
 let and_dot addr_size ops =
@@ -98,7 +98,7 @@ let oris ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   let im = unsigned imm ops.(2) in
-  let sh = unsigned int 16 in
+  let sh = unsigned const byte 16 in
   RTL.[ ra := rs lor (im lsl sh); ]
 
 (** Fixed-point OR
@@ -148,7 +148,7 @@ let xoris ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   let im = unsigned imm ops.(2) in
-  let sh = unsigned int 16 in
+  let sh = unsigned const byte 16 in
   RTL.[ ra := rs lxor (im lsl sh); ]
 
 (** Fixed-point XOR
@@ -348,9 +348,9 @@ let bpermd ops =
     tmp := extract zero 0 7;
     foreach byte rs (fun i x -> [
           if_ (x < max_ind) [
-            nbit tmp i := msb (rb lsl x);
+            nth bit tmp i := msb (rb lsl x);
           ] [
-            nbit tmp i := zero;
+            nth bit tmp i := zero;
           ];
         ]);
     ra := tmp;
@@ -423,42 +423,42 @@ type bperm = [ `BPERMD ] [@@deriving sexp,enumerate]
 type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | bperm ] [@@deriving sexp,enumerate]
 
 let lift t cpu ops = match t with
-  | `ANDIo   -> andi_dot cpu.addr_size ops
-  | `ANDISo  -> andis_dot cpu.addr_size ops
-  | `AND     -> and_ ops
-  | `ANDo    -> and_dot cpu.addr_size ops
-  | `ANDC    -> andc ops
-  | `ANDCo   -> andc_dot cpu.addr_size ops
-  | `ORI     -> ori ops
-  | `ORIS    -> oris ops
-  | `OR      -> or_ ops
-  | `ORo     -> or_dot cpu.addr_size ops
-  | `ORC     -> orc ops
-  | `ORCo    -> orc_dot cpu.addr_size ops
-  | `XORI    -> xori ops
-  | `XORIS   -> xoris ops
-  | `XOR     -> xor_ ops
-  | `XORo    -> xor_dot cpu.addr_size ops
-  | `NAND    -> nand ops
-  | `NANDo   -> nand_dot cpu.addr_size ops
-  | `NOR     -> nor ops
-  | `NORo    -> nor_dot cpu.addr_size ops
-  | `EQV     -> eqv ops
-  | `EQVo    -> eqv_dot cpu.addr_size ops
+  | `ANDIo   -> andi_dot cpu ops
+  | `ANDISo  -> andis_dot cpu ops
+  | `AND     -> and_ cpu ops
+  | `ANDo    -> and_dot cpu ops
+  | `ANDC    -> andc cpu ops
+  | `ANDCo   -> andc_dot cpu ops
+  | `ORI     -> ori cpu ops
+  | `ORIS    -> oris cpu ops
+  | `OR      -> or_ cpu ops
+  | `ORo     -> or_dot cpu ops
+  | `ORC     -> orc cpu ops
+  | `ORCo    -> orc_dot cpu ops
+  | `XORI    -> xori cpu ops
+  | `XORIS   -> xoris cpu ops
+  | `XOR     -> xor_ cpu ops
+  | `XORo    -> xor_dot cpu ops
+  | `NAND    -> nand cpu ops
+  | `NANDo   -> nand_dot cpu ops
+  | `NOR     -> nor cpu ops
+  | `NORo    -> nor_dot cpu ops
+  | `EQV     -> eqv cpu ops
+  | `EQVo    -> eqv_dot cpu ops
   | `EXTSB   -> exts ops `r8
-  | `EXTSBo  -> exts_dot cpu.addr_size ops `r8
+  | `EXTSBo  -> exts_dot cpu ops `r8
   | `EXTSH   -> exts ops `r16
-  | `EXTSHo  -> exts_dot cpu.addr_size ops `r16
+  | `EXTSHo  -> exts_dot cpu ops `r16
   | `EXTSW   -> exts ops `r32
-  | `EXTSWo  -> exts_dot cpu.addr_size ops `r32
+  | `EXTSWo  -> exts_dot cpu ops `r32
   | `CNTLZW  -> cntlz ops `r32
-  | `CNTLZWo -> cntlz_dot cpu.addr_size ops `r32
+  | `CNTLZWo -> cntlz_dot cpu ops `r32
   | `CNTLZD  -> cntlz ops `r64
-  | `CNTLZDo -> cntlz_dot cpu.addr_size ops `r64
+  | `CNTLZDo -> cntlz_dot cpu ops `r64
   | `CNTTZW  -> cnttz ops `r32
-  | `CNTTZWo -> cnttz_dot cpu.addr_size ops `r32
+  | `CNTTZWo -> cnttz_dot cpu ops `r32
   | `CNTTZD  -> cnttz ops `r64
-  | `CNTTZDo -> cnttz_dot cpu.addr_size ops `r64
+  | `CNTTZDo -> cnttz_dot cpu ops `r64
   | `CMPB    -> cmpb ops
   | `POPCNTW -> popcnt ops `r32
   | `POPCNTB -> popcnt ops `r8

@@ -12,7 +12,7 @@ module Exp : sig
   val of_var  : var -> exp
   val of_vars : var list -> exp
   val of_word : word -> exp
-  val tmp : unit -> exp
+  val tmp : int -> exp
 
   val load : var -> exp -> endian -> size -> exp
   val extract : int -> int -> exp -> exp
@@ -22,7 +22,7 @@ module Exp : sig
 
   val bil_exp : exp -> bil_exp
 
-  val with_width : (exp -> int -> exp) -> exp -> exp
+  val width : exp -> int
 
 end
 
@@ -30,10 +30,10 @@ val store : var -> exp -> exp -> endian -> size -> t
 val if_ : exp -> t list -> t list -> t
 val jmp : exp -> t
 
-val loop : exp -> int -> (int -> exp -> t list) -> t
+(* val loop : exp -> int -> (int -> exp -> t list) -> t list *)
 
 module Infix : sig
-  val (:=)  : exp -> exp -> t
+  val (:=)  : exp -> exp -> rtl
   val (+)  : exp -> exp -> exp
   val (-)  : exp -> exp -> exp
   val (^)  : exp -> exp -> exp

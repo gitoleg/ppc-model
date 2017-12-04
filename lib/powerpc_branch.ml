@@ -6,7 +6,7 @@ open Hardware
 open Dsl
 
 let update_link_register cpu =
-  RTL.[lr := cpu.addr + unsigned int 4]
+  RTL.[lr := cpu.addr + unsigned const byte 4]
 
 (** Branch Instructions, Branch
     Page 37 of IBM Power ISATM Version 3.0 B
@@ -17,18 +17,18 @@ let update_link_register cpu =
     4b ff fe f3  bla 67108592 *)
 let b cpu ops =
   let im = unsigned imm ops.(0) in
-  let sh = unsigned int 2 in
+  let sh = unsigned const byte 2 in
   RTL.[cpu.jmp (cpu.addr + (im lsl sh))]
 
 let ba cpu ops =
   let im = unsigned imm ops.(0) in
-  let sh = unsigned int 2 in
+  let sh = unsigned const byte 2 in
   RTL.[ cpu.jmp (im lsl sh)]
 
 let bl cpu ops =
   let im = unsigned imm ops.(0) in
-  let sh = unsigned int 2 in
-  let ad = unsigned int 4 in
+  let sh = unsigned const byte 2 in
+  let ad = unsigned const byte 4 in
   RTL.[
     cpu.jmp (cpu.addr + (im lsl sh));
     lr := cpu.addr + ad;
@@ -36,8 +36,8 @@ let bl cpu ops =
 
 let bla cpu ops =
   let im = unsigned imm ops.(0) in
-  let sh = unsigned int 2 in
-  let ad = unsigned int 4 in
+  let sh = unsigned const byte 2 in
+  let ad = unsigned const byte 4 in
   RTL.[
     cpu.jmp (im lsl sh);
     lr := cpu.addr + ad;
@@ -54,47 +54,40 @@ let bc cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
   let bd = unsigned imm ops.(2) in
-  let sh = unsigned int 2 in
-  let ctr_ok = unsigned var in
-  let cond_ok = unsigned var in
-  let x = unsigned var in
-
-  let y = unsigned var in
-  let z = unsigned var in
-  let w = unsigned var in
+  let sh = unsigned const byte 2 in
+  let ctr_ok = unsigned var bit in
+  let cond_ok = unsigned var bit in
+  let x = unsigned var (width 5) in
   RTL.[
     x := last bo 5;
-    if_ (nbit x 2 = zero) [
+    when_ (nth bit x 2 = zero) [
       ctr := ctr - one;
-    ] [];
-    y := nbit x 2;
-    z := ctr = zero;
-    w := bi lxor (lnot (nbit x 1));
-    ctr_ok := nbit x 2 lor ((ctr <> zero) lxor (nbit x 3));
-    cond_ok := nbit x 0 lor (bi lxor (lnot (nbit x 1)));
-    if_ (ctr_ok land cond_ok) [
+    ];
+    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
+    when_ (ctr_ok land cond_ok) [
       cpu.jmp (cpu.addr + (bd lsl sh));
-    ] [ ]
+    ]
   ]
 
 let bca cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
   let bd = unsigned imm ops.(2) in
-  let sh = unsigned int 2 in
-  let ctr_ok = unsigned var in
-  let cond_ok = unsigned var in
-  let x = unsigned var in
+  let sh = unsigned const byte 2 in
+  let ctr_ok = unsigned var bit in
+  let cond_ok = unsigned var bit in
+  let x = unsigned var (width 5) in
   RTL.[
     x := last bo 5;
-    if_ (nbit x 2 = zero) [
+    when_ (nth bit x 2 = zero) [
       ctr := ctr - one;
-    ] [];
-    ctr_ok := nbit x 2 lor ((ctr <> zero) lxor (nbit x 3));
-    cond_ok := nbit x 0 lor (bi lxor (lnot (nbit x 1)));
-    if_ (ctr_ok land cond_ok) [
+    ];
+    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
+    when_ (ctr_ok land cond_ok) [
       cpu.jmp (bd lsl sh);
-    ] [ ]
+    ]
   ]
 
 let bcl cpu ops = bc cpu ops @ update_link_register cpu
@@ -103,12 +96,12 @@ let bcla cpu ops = bca cpu ops @ update_link_register cpu
 (** bdnz  target = bc 16,0, target *)
 let bdnz cpu ops =
   let bd = unsigned imm ops.(0) in
-  let sh = unsigned int 2 in
+  let sh = unsigned const byte 2 in
   RTL.[
     ctr := ctr - one;
-    if_ (low cpu.addr_size ctr <> zero) [
+    when_ (low cpu.addr_size ctr <> zero) [
       cpu.jmp (cpu.addr + (bd lsl sh))
-    ] [  ]
+    ]
   ]
 
 (** Branch Instructions, Branch Conditional to Link Register
@@ -119,32 +112,32 @@ let bdnz cpu ops =
 let bclr cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
-  let sh = unsigned int 2 in
-  let ctr_ok = unsigned var in
-  let cond_ok = unsigned var in
-  let x = unsigned var in
+  let sh = unsigned const byte 2 in
+  let ctr_ok = unsigned var bit in
+  let cond_ok = unsigned var bit in
+  let x = unsigned var (width 5) in
   RTL.[
     x := last bo 5;
-    if_ (nbit x 2 = zero) [
+    when_ (nth bit x 2 = zero) [
       ctr := ctr - one;
-    ] [];
-    ctr_ok := nbit x 2 lor ((ctr <> zero) lxor (nbit x 3));
-    cond_ok := nbit x 0 lor (bi lxor (lnot (nbit x 1)));
-    if_ (ctr_ok land cond_ok) [
+    ];
+    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
+    when_ (ctr_ok land cond_ok) [
       cpu.jmp (lr lsl sh);
-    ] [ ]
+    ];
   ]
 
 let bclrl cpu ops = bclr cpu ops @ update_link_register cpu
 
 (** bdnzlr = bclr 16,0,0  *)
 let bdnzlr cpu ops =
-  let sh = unsigned int 2 in
+  let sh = unsigned const byte 2 in
   RTL.[
     ctr := ctr - one;
-    if_ (ctr <> zero) [
+    when_ (ctr <> zero) [
       cpu.jmp (lr lsl sh);
-    ] [  ];
+    ];
   ]
 
 (** Branch Instructions, Branch Conditional to Count Register
@@ -155,15 +148,15 @@ let bdnzlr cpu ops =
 let bcctr cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
-  let sh = unsigned int 2 in
-  let cond_ok = unsigned var in
-  let x = unsigned var in
+  let sh = unsigned const byte 2 in
+  let cond_ok = unsigned var bit in
+  let x = unsigned var (width 5) in
   RTL.[
     x := last bo 5;
-    cond_ok := (nbit x 0 = one) lor ( bi lxor (lnot (nbit x 1)));
-    if_ (cond_ok) [
+    cond_ok := (nth bit x 0 = one) lor ( bi lxor (lnot (nth bit x 1)));
+    when_ (cond_ok) [
       cpu.jmp (ctr lsl sh);
-    ] []
+    ];
   ]
 
 let bcctrl cpu ops =
@@ -178,20 +171,20 @@ let bcctrl cpu ops =
 let bctar cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
-  let sh = unsigned int 2 in
-  let cond_ok = unsigned var in
-  let ctr_ok = unsigned var in
-  let x = unsigned var in
+  let sh = unsigned const byte 2 in
+  let cond_ok = unsigned var bit in
+  let ctr_ok = unsigned var bit in
+  let x = unsigned var (width 5) in
   RTL.[
     x := last bo 5;
-    if_ (nbit x 2 = zero) [
+    when_ (nth bit x 2 = zero) [
       ctr := ctr - one;
-    ] [];
-    ctr_ok := nbit x 2 lor ((ctr <> zero) lxor (nbit x 3));
-    cond_ok := nbit x 0 lor (bi lxor (lnot (nbit x 1)));
-    if_ (ctr_ok land cond_ok) [
+    ];
+    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
+    when_ (ctr_ok land cond_ok) [
       cpu.jmp (tar lsl sh);
-    ] []
+    ]
   ]
 
 let bctarl cpu ops =

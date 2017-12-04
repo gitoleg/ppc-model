@@ -6,17 +6,12 @@ open Powerpc_types
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
 
-module type Lifter = sig
-  type t [@@deriving sexp, enumerate]
-  val lift : t -> cpu -> op array -> rtl list
-end
-
 let lifters : (module Lifter) list = [
   (module Powerpc_add);
   (module Powerpc_branch);
   (module Powerpc_compare);
   (module Powerpc_load);
-  (module Powerpc_logical);
+  (* (module Powerpc_logical); *)
   (module Powerpc_store);
 ]
 
