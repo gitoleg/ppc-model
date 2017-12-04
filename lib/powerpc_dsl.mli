@@ -69,5 +69,5 @@ val msb : exp -> exp
 (** [lsb e] - extracts the least significant bit from [e] *)
 val lsb : exp -> exp
 
-val foreach_byte : exp -> (int -> exp -> rtl list) -> rtl
+val foreach : size -> exp -> (int -> exp -> rtl list) -> rtl
 val foreach_bit : exp -> (int -> exp -> rtl list) -> rtl

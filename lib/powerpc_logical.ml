@@ -232,28 +232,24 @@ let exts_dot addr_size ops size =
     7c 63 00 74     cntlzd   r3,r3
     7c 63 00 75     cntlzd.  r3,r3 *)
 let cntlz ops size =
-  let bits = Size.in_bits size in
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
   let xv = unsigned var in
   let cnt = unsigned var in
   let has_no_ones = unsigned var in
-  let init = RTL.[
-      xv := low size rs;
-      cnt := extract zero 0 15;
-      has_no_ones := one;
-    ] in
-  let foreach_bit = RTL.[
-      if_ (has_no_ones land (msb xv = zero)) [
-        cnt := cnt + one;
-        xv := xv lsl one;
-      ] [
-        has_no_ones := zero;
-      ];
-    ] in
-  let loop = List.concat @@ List.init bits ~f:(fun _ -> foreach_bit) in
-  let finish = RTL.[ra := cnt] in
-  init @ loop @ finish
+  RTL.[
+    xv := low size rs;
+    cnt := extract zero 0 15;
+    has_no_ones := one;
+    foreach_bit xv (fun i bit ->[
+          if_ (has_no_ones land (bit = zero)) [
+            cnt := cnt + one;
+          ] [
+            has_no_ones := zero;
+          ]
+        ]);
+    ra := cnt;
+  ]
 
 let cntlz_dot addr_size ops size =
   cntlz ops size @ write_fixpoint_result addr_size ops.(0)
@@ -266,28 +262,22 @@ let cntlz_dot addr_size ops size =
     7c 63 04 74     cnttzd   r3,r3
     7c 63 04 75     cnttzd.  r3,r3 *)
 let cnttz ops size =
-  let bits = Size.in_bits size in
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   let xv = unsigned var in
   let cnt = unsigned var in
-  let has_no_ones = unsigned var in
-  let init = RTL.[
-      xv := low size rs;
-      cnt := extract zero 0 15;
-      has_no_ones := one;
-    ] in
-  let foreach_bit = RTL.[
-      if_ (has_no_ones land (lsb xv = zero)) [
-        cnt := cnt + one;
-        xv := xv lsr one
-      ] [
-        has_no_ones := zero;
-      ];
-    ] in
-  let loop = List.concat @@ List.init bits ~f:(fun _ -> foreach_bit) in
-  let finish = RTL.[ra := cnt] in
-  init @ loop @ finish
+  RTL.[
+    xv := low size rs;
+    cnt := extract zero 0 15;
+    foreach_bit xv (fun i b -> [
+          if_ (b = zero) [
+            cnt := cnt + one;
+          ] [
+            cnt := zero;
+          ]
+        ]);
+    ra := cnt;
+  ]
 
 let cnttz_dot addr_size ops size =
   cnttz ops size @ write_fixpoint_result addr_size ops.(0)
@@ -304,31 +294,13 @@ let cmpb ops =
   let xb = unsigned int 0xFF in
   RTL.[
     tm := extract zero 0 63;
-    foreach_byte rs (fun index rs_byte ->
-        [
+    foreach byte rs (fun index rs_byte -> [
           if_ (rs_byte = nbyte rb index) [
             nbyte tm index := xb
           ] [ ];
-        ]
-      );
+        ]);
     ra := tm;
   ]
-  (**
-  let foreach_byte index =
-    RTL.[
-      if_ (nbyte rs index = nbyte rb index) [
-        nbyte tm index := xb
-      ] [ ]
-    ] in
-  let init = RTL.[tm := extract zero 0 63] in
-  let loop = List.concat @@ List.init 8 ~f:foreach_byte in
-  let finish = RTL.[ra := tm] in
-  List.concat [
-    init;
-    loop;
-    finish;
-  ]
-  *)
 
 (** Fixed-point Population Count Bytes/Words/Doubleword
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -339,40 +311,20 @@ let cmpb ops =
 let popcnt ops size =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
-  let bits = Size.in_bits size in
-  let steps = gpr_bitwidth / bits in
   let cnt = unsigned var in
-  let tmp = unsigned var in
   let res = unsigned var in
-  let foreach_bit index =
-    RTL.[
-      if_ (nbit tmp index = one) [
-        cnt := cnt + one;
-      ] [];
-    ] in
-  let foreach_size index =
-    let init = RTL.[
-      cnt := extract zero 0 31;
-      tmp := nsize rs size index;
-    ] in
-    let loop = List.concat @@ List.init bits ~f:foreach_bit in
-    let finish = RTL.[
-        nsize res size index := cnt;
-    ] in
-    List.concat [
-      init;
-      loop;
-      finish;
-    ] in
-  let init = RTL.[
+  RTL.[
     res := extract zero 0 63;
-  ] in
-  let loop = List.concat @@ List.init steps ~f:foreach_size in
-  let finish = RTL.[ra := res] in
-  List.concat [
-    init;
-    loop;
-    finish;
+    foreach size rs (fun i x -> [
+          cnt := extract zero 0 31;
+          foreach_bit x (fun j bit -> [
+                if_ (bit = one) [
+                  cnt := cnt + one;
+                ] [];
+              ]);
+          nsize res size i := cnt;
+        ]);
+    ra := res;
   ]
 
 (** Fixed-point Parity Doubleword/Word
@@ -391,31 +343,17 @@ let bpermd ops =
   let rs = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   let max_ind = unsigned int 64 in
-  let bit_i = unsigned var in
   let tmp = unsigned var in
-  let bit = unsigned var in
-  let init = RTL.[
-      tmp := extract zero 0 63;
-    ] in
-  let foreach_byte i =
-    let bi = 56 + i in
-    RTL.[
-      bit_i := nbyte rs i;
-      if_ (bit_i < max_ind) [
-        bit := msb (rb lsl bit_i);
-      ] [
-        bit := zero;
-      ];
-      nbit tmp bi := bit;
-    ] in
-  let loop = List.concat @@ List.init 8 ~f:foreach_byte in
-  let finish = RTL.[
-      ra := low byte tmp;
-    ] in
-  List.concat [
-    init;
-    loop;
-    finish;
+  RTL.[
+    tmp := extract zero 0 7;
+    foreach byte rs (fun i x -> [
+          if_ (x < max_ind) [
+            nbit tmp i := msb (rb lsl x);
+          ] [
+            nbit tmp i := zero;
+          ];
+        ]);
+    ra := tmp;
   ]
 
 type and_ = [

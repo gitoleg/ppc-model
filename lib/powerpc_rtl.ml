@@ -427,10 +427,11 @@ module Translate = struct
       let rtl = List.concat
           (List.init iters
              ~f:(fun i ->
-                 let i = iters  - 1 - i in
-                 let hi = (i + 1) * step - 1 in
-                 let lo = i * step in
-                 let exp = Exp.extract  hi lo exp in
+                 (** TODO: wrong place for this index conversion  *)
+                 let i' = iters  - 1 - i in
+                 let hi = (i' + 1) * step - 1 in
+                 let lo = i' * step in
+                 let exp = Exp.extract hi lo exp in
                  f i exp)) in
       to_bil rtl
   and

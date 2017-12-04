@@ -153,6 +153,5 @@ let extract e left right =
       Exp.extract (target_width - 1) 0 e in
   Exp.with_width f e
 
-let foreach_byte e f = loop e 8 f
-
+let foreach size e f = loop e (Size.in_bits size) f
 let foreach_bit e f = loop e 1 f

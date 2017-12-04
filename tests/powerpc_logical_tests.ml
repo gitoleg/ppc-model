@@ -538,12 +538,12 @@ let suite = "logical" >::: [
     "cntlzw32: 2" >:: cntlzw `ppc 0x4000000 5;
     "cntlzw32: 3" >:: cntlzw `ppc 0x40000000 1;
     "cntlzw32: 4" >:: cntlzw `ppc 0x80000000 0;
-    (* "cnttzw32: 1" >:: cnttzw `ppc 0x0 32; *)
-    (* "cnttzw32: 2" >:: cnttzw `ppc 0x1 0; *)
-    (* "cnttzw32: 3" >:: cnttzw `ppc 0x2 1; *)
-    (* "cnttzw32: 4" >:: cnttzw `ppc 0x20 5; *)
+    "cnttzw32: 1" >:: cnttzw `ppc 0x0 32;
+    "cnttzw32: 2" >:: cnttzw `ppc 0x1 0;
+    "cnttzw32: 3" >:: cnttzw `ppc 0x2 1;
+    "cnttzw32: 4" >:: cnttzw `ppc 0x20 5;
     "cntlzd32"    >:: cntlzd `ppc;
-    (* "cnttzd32"    >:: cnttzd `ppc; *)
+    "cnttzd32"    >:: cnttzd `ppc;
     "cmpb32: 1"   >:: cmpb `ppc ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
     "cmpb32: 2"   >:: cmpb `ppc ~bytes_cnt:3 0 0x34_42_AD 0x0;
     "cmpb32: 3"   >:: cmpb `ppc ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
@@ -581,12 +581,12 @@ let suite = "logical" >::: [
     "cntlz64: 2"  >:: cntlzw `ppc64 0x4000000 5;
     "cntlz64: 3"  >:: cntlzw `ppc64 0x40000000 1;
     "cntlz64: 4"  >:: cntlzw `ppc64 0x80000000 0;
-    (* "cnttz64: 1"  >:: cnttzw `ppc64 0x0 32; *)
-    (* "cnttz64: 2"  >:: cnttzw `ppc64 0x1 0; *)
-    (* "cnttz64: 3"  >:: cnttzw `ppc64 0x2 1; *)
-    (* "cnttz64: 4"  >:: cnttzw `ppc64 0x20 5; *)
-    (* "cntlzd64"    >:: cntlzd `ppc64; *)
-    (* "cnttzd64"    >:: cnttzd `ppc64; *)
+    "cnttz64: 1"  >:: cnttzw `ppc64 0x0 32;
+    "cnttz64: 2"  >:: cnttzw `ppc64 0x1 0;
+    "cnttz64: 3"  >:: cnttzw `ppc64 0x2 1;
+    "cnttz64: 4"  >:: cnttzw `ppc64 0x20 5;
+    "cntlzd64"    >:: cntlzd `ppc64;
+    "cnttzd64"    >:: cnttzd `ppc64;
     "cmpb64: 1"   >:: cmpb `ppc64 ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
     "cmpb64: 2"   >:: cmpb `ppc64 ~bytes_cnt:3 0 0x34_42_AD 0x0;
     "cmpb64: 3"   >:: cmpb `ppc64 ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
