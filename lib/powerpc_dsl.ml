@@ -153,10 +153,6 @@ let extract e left right =
       Exp.extract (target_width - 1) 0 e in
   Exp.with_width f e
 
-let loop times init f fin =
-  let loop = List.concat @@ List.init times ~f in
-  List.concat [
-    init;
-    loop;
-    fin;
-  ]
+let foreach_byte e f = loop e 8 f
+
+let foreach_bit e f = loop e 1 f

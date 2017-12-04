@@ -270,6 +270,7 @@ type t =
   | Jmp of exp
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
+  | Loop of exp * int * (int -> exp -> t list)
 
 type rtl = t
 
@@ -277,6 +278,8 @@ let store mem addr x endian size = Store (mem, addr, x, endian, size)
 let jmp addr = Jmp addr
 let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
+let loop exp step f = Loop (exp,step,f)
+
 
 module Infix = struct
   open Exp
@@ -297,6 +300,7 @@ module Infix = struct
   let (lxor) = bit_xor
   let (lnot) = not
 end
+
 
 module Translate = struct
   let store mem addr data endian size =
@@ -337,48 +341,36 @@ module Translate = struct
   let assign_vars vars ?hi ?lo rhs =
     let in_bounds x left right = x <= left && x >= right in
     let fullw = width_of_vars vars in
-    printf "full width %d\n" fullw;
     let hi = Option.value ~default:(fullw - 1) hi in
     let lo = Option.value ~default:0 lo in
     let assigned = hi - lo + 1 in
     let rhs = Exp.cast rhs assigned (Exp.sign rhs) in
-    printf "hi %d; lo %d\n" hi lo;
     let rhs_width = Exp.width rhs in
-    printf "rhs width %d\n" rhs_width;
     let vars = List.rev vars in
     let rec assign es assigned vars_lo = function
       | [] -> es
       | v :: vars ->
-        printf "var to assign %s\n" (Var.name v);
         let width = var_bitwidth v in
         let vars_hi = width + vars_lo - 1 in
-        printf   "   vars_hi: %d, width %d; var_lo %d; assigned %d\n"
-          vars_hi width vars_lo assigned;
         let var_in_bounds =
           hi < width
           || in_bounds vars_lo hi lo
           || in_bounds vars_hi hi lo in
-        printf "in bounds ? %b\n" var_in_bounds;
         if var_in_bounds then
           let is_partial_assign = vars_hi > hi || lo > vars_lo  in
           if is_partial_assign then
-            let () = printf "   part assignment\n" in
             let lo_var = max lo vars_lo  - vars_lo in
             let hi_var = min (rhs_width + lo - 1) vars_hi - vars_lo in
             let bits_to_assign = hi_var - lo_var + 1 in
             let hi_exp = assigned + bits_to_assign - 1 in
             let lo_exp = assigned in
-            printf "   bits to assign %d\n" bits_to_assign;
-            printf "   hi/lo exp %d %d; hi/lo var %d %d\n" hi_exp lo_exp hi_var lo_var;
             let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) :: es in
             assign es (assigned + bits_to_assign) (vars_lo + width) vars
           else
           if width = rhs_width then
-            let () = printf "equal width case\n" in
             let es = Bil.(v := bil_exp (Exp.body rhs)) :: es in
             assign es (assigned + width) (vars_lo + width) vars
           else
-            let () = printf "   just assignment\n" in
             let hi = assigned + width - 1 in
             let lo = assigned in
             let es = Bil.(v := extract hi lo (bil_exp (Exp.body rhs))) :: es in
@@ -429,6 +421,18 @@ module Translate = struct
       let then_ = to_bil then_ in
       let else_ = to_bil else_ in
       if_ cond then_ else_
+    | Loop (exp, step, f) ->
+      let width = Exp.width exp in
+      let iters = width / step in
+      let rtl = List.concat
+          (List.init iters
+             ~f:(fun i ->
+                 let i = iters  - 1 - i in
+                 let hi = (i + 1) * step - 1 in
+                 let lo = i * step in
+                 let exp = Exp.extract  hi lo exp in
+                 f i exp)) in
+      to_bil rtl
   and
     to_bil stmts =
     List.concat (List.map ~f:stmt_to_bil stmts)

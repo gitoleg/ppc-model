@@ -302,6 +302,18 @@ let cmpb ops =
   let rb = unsigned reg ops.(2) in
   let tm = unsigned var in
   let xb = unsigned int 0xFF in
+  RTL.[
+    tm := extract zero 0 63;
+    foreach_byte rs (fun index rs_byte ->
+        [
+          if_ (rs_byte = nbyte rb index) [
+            nbyte tm index := xb
+          ] [ ];
+        ]
+      );
+    ra := tm;
+  ]
+  (**
   let foreach_byte index =
     RTL.[
       if_ (nbyte rs index = nbyte rb index) [
@@ -316,6 +328,7 @@ let cmpb ops =
     loop;
     finish;
   ]
+  *)
 
 (** Fixed-point Population Count Bytes/Words/Doubleword
     Pages 92-98 of IBM Power ISATM Version 3.0 B

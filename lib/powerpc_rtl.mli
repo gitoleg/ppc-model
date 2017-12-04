@@ -30,6 +30,8 @@ val store : var -> exp -> exp -> endian -> size -> t
 val if_ : exp -> t list -> t list -> t
 val jmp : exp -> t
 
+val loop : exp -> int -> (int -> exp -> t list) -> t
+
 module Infix : sig
   val (:=)  : exp -> exp -> t
   val (+)  : exp -> exp -> exp
