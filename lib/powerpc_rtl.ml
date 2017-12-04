@@ -363,16 +363,12 @@ module Translate = struct
           let is_partial_assign = vars_hi > hi || lo > vars_lo  in
           if is_partial_assign then
             let () = printf "   part assignment\n" in
-            let bits_to_assign =
-              let x = lo + rhs_width - 1 in
-              let () = printf "x is %d\n" x in
-              if in_bounds (lo + rhs_width - 1) hi lo then rhs_width
-              else lo + assigned - vars_lo + 1 in
-            printf "   bits to assign %d\n" bits_to_assign;
+            let lo_var = max lo vars_lo  - vars_lo in
+            let hi_var = min (rhs_width + lo - 1) vars_hi - vars_lo in
+            let bits_to_assign = hi_var - lo_var + 1 in
             let hi_exp = assigned + bits_to_assign - 1 in
             let lo_exp = assigned in
-            let lo_var = max 0 (lo - vars_lo) in
-            let hi_var = lo_var + bits_to_assign - 1 in
+            printf "   bits to assign %d\n" bits_to_assign;
             printf "   hi/lo exp %d %d; hi/lo var %d %d\n" hi_exp lo_exp hi_var lo_var;
             let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) :: es in
             assign es (assigned + bits_to_assign) (vars_lo + width) vars
