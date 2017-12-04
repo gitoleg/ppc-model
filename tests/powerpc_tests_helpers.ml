@@ -76,6 +76,7 @@ let get_bil ?addr arch bytes =
 let check_gpr ?addr init bytes var expected arch ctxt =
   let mem,insn = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
+  printf "%s\n" (Bil.to_string (init @ bil));
   let c = Stmt.eval (init @ bil) (new Bili.context) in
   match lookup_var c var with
   | None -> assert_bool "var not found OR it's result not Imm" false

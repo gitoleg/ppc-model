@@ -317,23 +317,9 @@ module Translate = struct
     Tmp.bind x m;
     m
 
-  let filter_vars hi lo vars =
-    let bounds,new_hi,new_lo,_ =
-      List.fold ~init:([],hi,lo,0)
-        ~f:(fun (acc, new_hi, new_lo, n) v ->
-            let len = var_bitwidth v in
-            let hiv = var_bitwidth v + n in
-            if (n >= lo && n <= hi ) || (hiv >= lo && hiv <= hi) then
-              v :: acc, new_hi, new_lo, n + len
-            else
-              let new_hi = new_hi - len in
-              let new_lo = new_lo - len in
-              acc, new_hi, new_lo, n + len) vars in
-    new_hi, new_lo, List.rev bounds
-
   let rec expand_vars e = match e with
     | Vars (v, vs) -> v :: vs
-    | Concat (x,y) -> expand_vars x @ expand_vars y
+    | Concat (x,y) ->  expand_vars x @ expand_vars y
     | Cast _ | Extract _ | Load _ | Word _ | Binop _ | Unop _ -> []
 
   let partial_assign v (hi_var, lo_var) rhs (hi_exp, lo_exp) =
@@ -349,56 +335,60 @@ module Translate = struct
     Bil.(v := bil_exp (Exp.body rhs))
 
   let assign_vars vars ?hi ?lo rhs =
+    let in_bounds x left right = x <= left && x >= right in
     let fullw = width_of_vars vars in
+    printf "full width %d\n" fullw;
     let hi = Option.value ~default:(fullw - 1) hi in
     let lo = Option.value ~default:0 lo in
+    let assigned = hi - lo + 1 in
+    let rhs = Exp.cast rhs assigned (Exp.sign rhs) in
+    printf "hi %d; lo %d\n" hi lo;
     let rhs_width = Exp.width rhs in
+    printf "rhs width %d\n" rhs_width;
     let vars = List.rev vars in
-    let rec assign es exp_bits vars_bits = function
+    let rec assign es assigned vars_lo = function
       | [] -> es
       | v :: vars ->
+        printf "var to assign %s\n" (Var.name v);
         let width = var_bitwidth v in
-        let next = width + vars_bits in
-        let in_bounds =
-          (vars_bits >= lo && vars_bits <= hi ) || (next >= lo && next <= hi) in
-        if in_bounds then
-          let is_partial_assign = next > hi || vars_bits > lo in
+        let vars_hi = width + vars_lo - 1 in
+        printf   "   vars_hi: %d, width %d; var_lo %d; assigned %d\n"
+          vars_hi width vars_lo assigned;
+        let var_in_bounds =
+          hi < width
+          || in_bounds vars_lo hi lo
+          || in_bounds vars_hi hi lo in
+        printf "in bounds ? %b\n" var_in_bounds;
+        if var_in_bounds then
+          let is_partial_assign = vars_hi > hi || lo > vars_lo  in
           if is_partial_assign then
-            let bits_to_assign = min (hi + 1) vars_bits in
-            let hi_exp = exp_bits + bits_to_assign - 1 in
-            let lo_exp = exp_bits in
-            let lo_var = max 0 (lo - vars_bits) in
+            let () = printf "   part assignment\n" in
+            let bits_to_assign =
+              let x = lo + rhs_width - 1 in
+              let () = printf "x is %d\n" x in
+              if in_bounds (lo + rhs_width - 1) hi lo then rhs_width
+              else lo + assigned - vars_lo + 1 in
+            printf "   bits to assign %d\n" bits_to_assign;
+            let hi_exp = assigned + bits_to_assign - 1 in
+            let lo_exp = assigned in
+            let lo_var = max 0 (lo - vars_lo) in
             let hi_var = lo_var + bits_to_assign - 1 in
+            printf "   hi/lo exp %d %d; hi/lo var %d %d\n" hi_exp lo_exp hi_var lo_var;
             let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) :: es in
-            assign es (exp_bits + width) (vars_bits + width) vars
+            assign es (assigned + bits_to_assign) (vars_lo + width) vars
           else
           if width = rhs_width then
+            let () = printf "equal width case\n" in
             let es = Bil.(v := bil_exp (Exp.body rhs)) :: es in
-            assign es (exp_bits + width) (vars_bits + width) vars
+            assign es (assigned + width) (vars_lo + width) vars
           else
-            let hi = exp_bits + width - 1 in
-            let lo = exp_bits in
+            let () = printf "   just assignment\n" in
+            let hi = assigned + width - 1 in
+            let lo = assigned in
             let es = Bil.(v := extract hi lo (bil_exp (Exp.body rhs))) :: es in
-            assign es (exp_bits + width) (vars_bits + width) vars
-        else assign es exp_bits (vars_bits + width) vars in
+            assign es (assigned + width) (vars_lo + width) vars
+        else assign es assigned (vars_lo + width) vars in
     assign [] 0 0 vars
-
-  (* let assign_vars vars rhs = *)
-  (*   let vars = List.rev vars in *)
-  (*   let rec assign es n = function *)
-  (*     | [] -> es *)
-  (*     | v :: vars -> *)
-  (*       let w = var_bitwidth v in *)
-  (*       let wrhs = Exp.width rhs in *)
-  (*       if w = wrhs then *)
-  (*         let es = Bil.(v := bil_exp (Exp.body rhs)) :: es in *)
-  (*         assign es (n + w) vars *)
-  (*       else *)
-  (*         let hi = n + w - 1 in *)
-  (*         let lo = n in *)
-  (*         let es = Bil.(v := extract hi lo (bil_exp (Exp.body rhs))) :: es in *)
-  (*         assign es (n + w) vars in *)
-  (*   assign [] 0 vars *)
 
   (** valid forms of assignment:
       1) var := exp
@@ -424,16 +414,12 @@ module Translate = struct
       | Vars (v, vars) -> assign_vars (v::vars) rhs
       | Concat (x,y) ->
         let vars = expand_vars x @ expand_vars y in
+        let width = width_of_vars vars in
+        let rhs = Exp.cast rhs width (Exp.sign rhs) in
         assign_vars vars rhs
       | Extract (hi, lo, x) ->
-        (* let shift = Exp.of_word (Word.of_int ~width:32 lo) in *)
         let vars = expand_vars x in
         assign_vars vars ~hi ~lo rhs
-        (* let hi, lo, vars = filter_vars hi lo vars in *)
-        (* let rhs = Exp.cast rhs (width_of_vars vars) (Exp.sign rhs) in *)
-        (* let rhs = Infix.(rhs lsl shift) in *)
-        (* let rhs = Infix.(Exp.of_vars vars lor rhs) in *)
-        (* assign_vars vars rhs *)
       | _ -> ppc_fail "unexpected left side of :="
 
   let jmp exp = Bil.[ jmp (Exp.bil_exp exp)]

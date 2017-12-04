@@ -551,46 +551,46 @@ let suite = "logical" >::: [
     "popcntd32"   >:: popcntd `ppc;
     "bperm32"     >:: bperm `ppc;
 
-    "andi.64"     >:: andi_dot `ppc64;
-    "andis.64"    >:: andis_dot `ppc64;
-    "and64"       >:: and_ `ppc64;
-    "and.64"      >:: and_dot `ppc64;
-    "andc64"      >:: andc `ppc64;
-    "andc.64"     >:: andc_dot `ppc64;
-    "ori64"       >:: ori `ppc64;
-    "oris64"      >:: oris `ppc64;
-    "or64"        >:: or_ `ppc64;
-    "or.64"       >:: or_dot `ppc64;
-    "orc64"       >:: orc `ppc64;
-    "orc.64"      >:: orc_dot `ppc64;
-    "xori64"      >:: xori `ppc64;
-    "xoris64"     >:: xoris `ppc64;
-    "xor64"       >:: xor_ `ppc64;
-    "xor.64"      >:: xor_dot `ppc64;
-    "nand64"      >:: nand `ppc64;
-    "nand.64"     >:: nand_dot `ppc64;
-    "nor64"       >:: nor `ppc64;
-    "nor.64"      >:: nor_dot `ppc64;
-    "eqv64"       >:: eqv `ppc64;
-    "eqv.64"      >:: eqv_dot `ppc64;
-    "extsb64"     >:: extsb `ppc64;
-    "extsh64"     >:: extsh `ppc64;
-    "extsw64"     >:: extsw `ppc64;
-    "exts.64"     >:: exts_dot `ppc64;
-    "cntlz64: 1"  >:: cntlzw `ppc64 0x0 32;
-    "cntlz64: 2"  >:: cntlzw `ppc64 0x4000000 5;
-    "cntlz64: 3"  >:: cntlzw `ppc64 0x40000000 1;
-    "cntlz64: 4"  >:: cntlzw `ppc64 0x80000000 0;
-    "cnttz64: 1"  >:: cnttzw `ppc64 0x0 32;
-    "cnttz64: 2"  >:: cnttzw `ppc64 0x1 0;
-    "cnttz64: 3"  >:: cnttzw `ppc64 0x2 1;
-    "cnttz64: 4"  >:: cnttzw `ppc64 0x20 5;
-    "cntlzd64"    >:: cntlzd `ppc64;
-    "cnttzd64"    >:: cnttzd `ppc64;
-    "cmpb64: 1"   >:: cmpb `ppc64 ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
-    "cmpb64: 2"   >:: cmpb `ppc64 ~bytes_cnt:3 0 0x34_42_AD 0x0;
-    "cmpb64: 3"   >:: cmpb `ppc64 ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
-    "popcntw64"   >:: popcntw `ppc64;
-    "popcntd64"   >:: popcntd `ppc64;
-    "bperm64"     >:: bperm `ppc64;
+    (* "andi.64"     >:: andi_dot `ppc64; *)
+    (* "andis.64"    >:: andis_dot `ppc64; *)
+    (* "and64"       >:: and_ `ppc64; *)
+    (* "and.64"      >:: and_dot `ppc64; *)
+    (* "andc64"      >:: andc `ppc64; *)
+    (* "andc.64"     >:: andc_dot `ppc64; *)
+    (* "ori64"       >:: ori `ppc64; *)
+    (* "oris64"      >:: oris `ppc64; *)
+    (* "or64"        >:: or_ `ppc64; *)
+    (* "or.64"       >:: or_dot `ppc64; *)
+    (* "orc64"       >:: orc `ppc64; *)
+    (* "orc.64"      >:: orc_dot `ppc64; *)
+    (* "xori64"      >:: xori `ppc64; *)
+    (* "xoris64"     >:: xoris `ppc64; *)
+    (* "xor64"       >:: xor_ `ppc64; *)
+    (* "xor.64"      >:: xor_dot `ppc64; *)
+    (* "nand64"      >:: nand `ppc64; *)
+    (* "nand.64"     >:: nand_dot `ppc64; *)
+    (* "nor64"       >:: nor `ppc64; *)
+    (* "nor.64"      >:: nor_dot `ppc64; *)
+    (* "eqv64"       >:: eqv `ppc64; *)
+    (* "eqv.64"      >:: eqv_dot `ppc64; *)
+    (* "extsb64"     >:: extsb `ppc64; *)
+    (* "extsh64"     >:: extsh `ppc64; *)
+    (* "extsw64"     >:: extsw `ppc64; *)
+    (* "exts.64"     >:: exts_dot `ppc64; *)
+    (* "cntlz64: 1"  >:: cntlzw `ppc64 0x0 32; *)
+    (* "cntlz64: 2"  >:: cntlzw `ppc64 0x4000000 5; *)
+    (* "cntlz64: 3"  >:: cntlzw `ppc64 0x40000000 1; *)
+    (* "cntlz64: 4"  >:: cntlzw `ppc64 0x80000000 0; *)
+    (* "cnttz64: 1"  >:: cnttzw `ppc64 0x0 32; *)
+    (* "cnttz64: 2"  >:: cnttzw `ppc64 0x1 0; *)
+    (* "cnttz64: 3"  >:: cnttzw `ppc64 0x2 1; *)
+    (* "cnttz64: 4"  >:: cnttzw `ppc64 0x20 5; *)
+    (* "cntlzd64"    >:: cntlzd `ppc64; *)
+    (* "cnttzd64"    >:: cnttzd `ppc64; *)
+    (* "cmpb64: 1"   >:: cmpb `ppc64 ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00; *)
+    (* "cmpb64: 2"   >:: cmpb `ppc64 ~bytes_cnt:3 0 0x34_42_AD 0x0; *)
+    (* "cmpb64: 3"   >:: cmpb `ppc64 ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF; *)
+    (* "popcntw64"   >:: popcntw `ppc64; *)
+    (* "popcntd64"   >:: popcntd `ppc64; *)
+    (* "bperm64"     >:: bperm `ppc64; *)
   ]
