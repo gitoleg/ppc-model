@@ -91,6 +91,8 @@ module Exp = struct
 
   let plus = binop_with_cast Bil.plus
   let minus = binop_with_cast Bil.minus
+  let times = binop_with_cast Bil.times
+  let divide = binop_with_cast Bil.divide
   let lt x y  = bit_result (binop_with_cast Bil.lt x y)
   let gt x y  = bit_result (binop_with_cast Bil.lt y x)
   let eq x y  = bit_result (binop_with_cast Bil.eq x y)
@@ -173,7 +175,7 @@ type t =
   | Jmp of exp
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
-  (* | Loop of exp * int * (int -> exp -> t list) *)
+  | Foreach of exp * exp * t list
 
 type rtl = t
 
@@ -181,27 +183,28 @@ let store mem addr x endian size = Store (mem, addr, x, endian, size)
 let jmp addr = Jmp addr
 let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
-(* let loop exp step f = Loop (exp,step,f) *)
-
+let foreach step exp code = Foreach (step,exp,code)
 
 module Infix = struct
   open Exp
-  let (:=)  = move
-  let (+)  = plus
-  let (-)  = minus
-  let (^)  = concat
-  let (<)  = lt
-  let (>)  = gt
-  let (<$) = slt
-  let (>$) = sgt
-  let (=)  = eq
-  let (<>)  = neq
-  let (lsl)  = lshift
-  let (lsr)  = rshift
-  let (land) = bit_and
-  let (lor)  = bit_or
-  let (lxor) = bit_xor
-  let (lnot) = not
+  let ( := )  = move
+  let ( + )  = plus
+  let ( - )  = minus
+  let ( * )  = times
+  let ( / )  = divide
+  let ( ^ )  = concat
+  let ( < )  = lt
+  let ( > )  = gt
+  let ( <$ ) = slt
+  let ( >$ ) = sgt
+  let ( = )  = eq
+  let ( <> )  = neq
+  let ( lsl )  = lshift
+  let ( lsr )  = rshift
+  let ( lor )  = bit_or
+  let ( land ) = bit_and
+  let ( lxor ) = bit_xor
+  let ( lnot ) = not
 end
 
 
@@ -307,19 +310,17 @@ module Translate = struct
       let then_ = to_bil then_ in
       let else_ = to_bil else_ in
       if_ cond then_ else_
-    (* | Loop (exp, step, f) -> *)
-    (*   let width = Exp.width exp in *)
-    (*   let iters = width / step in *)
-    (*   let rtl = List.concat *)
-    (*       (List.init iters *)
-    (*          ~f:(fun i -> *)
-    (*              (\** TODO: wrong place for this index conversion  *\) *)
-    (*              let i' = iters  - 1 - i in *)
-    (*              let hi = (i' + 1) * step - 1 in *)
-    (*              let lo = i' * step in *)
-    (*              let exp = Exp.extract hi lo exp in *)
-    (*              f i exp)) in *)
-    (*   to_bil rtl *)
+    | Foreach (step_e, e, code) ->
+      let iters = Exp.width e / Exp.width step_e in
+      let step = Exp.width step_e in
+      let rtl = List.concat
+          (List.init iters
+             ~f:(fun i ->
+                 let i = iters - i - 1 in
+                 let hi = (i + 1) * step - 1 in
+                 let lo = i * step in
+                 Infix.(step_e := Exp.extract hi lo e) :: code)) in
+      to_bil rtl
   and
     to_bil (ts : t list)  =
     List.concat (List.map ~f:stmt_to_bil ts)

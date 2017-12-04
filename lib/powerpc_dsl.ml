@@ -148,10 +148,9 @@ let extract e left right =
     Exp.extract (target_width - 1) 0 e
 
 let when_ cond then_ = if_ cond then_ []
-let until cond else_ = if_ cond [] else_
+let ifnot cond else_ = if_ cond [] else_
 
-
-(* let foreach size e f = loop e (Size.in_bits size) f *)
+let foreach = foreach
 
 type cpu = {
   load  : exp -> width -> exp;

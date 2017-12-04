@@ -55,14 +55,14 @@ val msb : exp -> exp
 (** [lsb e] - extracts the least significant bit from [e] *)
 val lsb : exp -> exp
 
-(** [foreach width e rtl] - repeat [rtl] for each [width] of [e] *)
-(* val foreach : width -> exp -> rtl list -> rtl *)
+(** [foreach step e rtl] - repeat [rtl] for each [step] of [e] *)
+val foreach : exp -> exp -> rtl list -> rtl
 
 (** [when_ cond rtl] = if_ cond rtl [] *)
 val when_ : exp -> rtl list -> rtl
 
-(** [until cond rtl] = if_ cond [] rtl *)
-val until : exp -> rtl list -> rtl
+(** [ifnot cond rtl] = if_ cond [] rtl *)
+val ifnot : exp -> rtl list -> rtl
 
 type cpu = {
   load  : exp -> width -> exp;

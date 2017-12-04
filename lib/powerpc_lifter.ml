@@ -11,7 +11,7 @@ let lifters : (module Lifter) list = [
   (module Powerpc_branch);
   (module Powerpc_compare);
   (module Powerpc_load);
-  (* (module Powerpc_logical); *)
+  (module Powerpc_logical);
   (module Powerpc_store);
 ]
 

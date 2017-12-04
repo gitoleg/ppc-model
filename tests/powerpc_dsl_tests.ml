@@ -85,6 +85,20 @@ let complex_assign ctxt =
   assert_bool "complex left := exp : failed at v5"
     (is_equal_words expected_val5 val5)
 
+let nth_byte ctxt =
+  let var = Var.create "tmp" (Type.Imm 64) in
+  let e = Exp.of_var var in
+  let x1 = Exp.of_word (Word.of_int64 0xAAAAAAAA_AAAAAAAAL) in
+  let x2 = Exp.of_word (Word.of_int ~width:16 0xFF) in
+  let expected = Word.of_int64 0xAAAAAAFF_AAAAAAAAL in
+  let rtl = RTL.[
+      e := x1;
+      nth byte e 3 := x2;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt var in
+  assert_bool "nsize failed" (is_equal_words expected value)
+
 let nth_hw ctxt =
   let var = Var.create "tmp" (Type.Imm 64) in
   let e = Exp.of_var var in
@@ -116,6 +130,7 @@ let suite = "Dsl" >::: [
     "plain :="                               >:: plain_assign;
     "concated exp := exp"                    >:: concat_assign;
     "extract (concat [v1; v2; ...]) := exp"  >:: complex_assign;
-    "nsize"                                  >:: nth_hw;
-    "nbit"                                   >:: nth_bit;
+    "nth byte"                               >:: nth_byte;
+    "nth halfword"                           >:: nth_hw;
+    "nth bit"                                >:: nth_bit;
   ]
