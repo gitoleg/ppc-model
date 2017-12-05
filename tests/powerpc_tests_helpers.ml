@@ -136,3 +136,40 @@ let is_equal_words w = function
 let string_of_bytes bytes =
   String.fold ~init:"" ~f:(fun acc b ->
       sprintf "%s%02X " acc (Char.to_int b)) bytes
+
+type form = [
+  | `D
+  | `X
+]
+
+let make_insn ?name ?(arch=`ppc) form fields =
+  let bytes =
+    match form, fields with
+    | `D, [opcode; rt; ra; d] ->
+      make_bytes [
+        Word.of_int ~width:6 opcode;
+        Word.of_int ~width:5 rt;
+        Word.of_int ~width:5 ra;
+        Word.of_int ~width:16 d;
+      ]
+    | `X, [opcode; rt; ra; rb; opt_opcode] ->
+      make_bytes [
+        Word.of_int ~width:6 opcode;
+        Word.of_int ~width:5 rt;
+        Word.of_int ~width:5 ra;
+        Word.of_int ~width:5 rb;
+        Word.of_int ~width:10 opt_opcode;
+        Word.b0;
+      ]
+    | _ -> failwith "unexpected argument set for given insn form" in
+  let () = match name with
+    | None -> ()
+    | Some name ->
+      let _,insn = get_insn arch bytes in
+      let insn_name = Insn.(name @@ of_basic insn) in
+      if not (String.equal name insn_name) then
+        let err =
+          sprintf "error: failed to construct %s insn, got a %s"
+            name insn_name in
+        failwith err in
+  bytes

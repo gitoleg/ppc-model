@@ -12,59 +12,45 @@ let env_of_arch = function
   | `ppc64 -> mem64, 64
   | _ -> failwith "ppc OR ppc64 arch only"
 
-let lbz arch d_addr ctxt =
-  let byte1 = Word.of_int ~width:8 0x89 in
-  let byte2 = Word.of_int ~width:8 0x3c in
-  let bytes34 = Word.of_int ~width:16 d_addr in
-  let bytes = make_bytes [byte1; byte2; bytes34] in
+let lz name opcode size arch ~d_addr ~value ctxt =
+  let bytes = make_insn ~name `D [opcode; 9; 28; d_addr] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r28 = find_gpr "R28" in
   let addr = 0xABCDEF00 in
   let ea = Word.of_int ~width:addr_size (addr + d_addr) in
-  let value = 0x42 in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r8;
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
       r28 := int (Word.of_int ~width:64 addr);
       r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
     ] in
   let expected = Word.of_int ~width:64 value in
   check_gpr init bytes r9 expected arch ctxt
 
-let lbz_zero_op arch ctxt =
-  let bytes = "\x89\x20\x00\x14" in (** lbz r9, 20(0) *)
+let lbz = lz "LBZ" 34 `r8
+let lhz = lz "LHZ" 40 `r16
+let lwz = lz "LWZ" 32 `r32
+
+let lz_zero_reg name opcode size arch ~d_addr ~value ctxt =
+  let bytes = make_insn ~name `D [opcode; 9; 0; d_addr] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
-  let ea = Word.of_int ~width:addr_size 20 in
-  let value = 0x42 in
+  let ea = Word.of_int ~width:addr_size d_addr in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r8;
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
       r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
     ] in
   let expected = Word.of_int ~width:64 value in
   check_gpr init bytes r9 expected arch ctxt
 
-let lwz arch ctxt =
-  let bytes = "\x83\xeb\xff\xfc" in (** lwz r31, -4(r11) *)
-  let mem, addr_size = env_of_arch arch in
-  let r31 = find_gpr "R31" in
-  let r11 = find_gpr "R11" in
-  let addr = 0xABCDEF04 in
-  let ea = Word.of_int ~width:addr_size (addr - 4) in
-  let value = 0xAA42FF42 in
-  let data = Word.of_int ~width:32 value in
-  let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r32;
-      r11 := int (Word.of_int ~width:64 addr);
-      r31 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
-    ] in
-  let expected = Word.of_int ~width:64 value in
-  check_gpr init bytes r31 expected arch ctxt
+let lbz_zero_reg = lz_zero_reg "LBZ" 34 `r8
+let lhz_zero_reg = lz_zero_reg "LHZ" 40 `r16
+let lwz_zero_reg = lz_zero_reg "LWZ" 32 `r32
 
-let lbzx arch ctxt =
-  let bytes = "\x7d\x3d\x50\xae" in (** lbzx r9, r29, r10 *)
+let lzx name opt size arch ~value ctxt =
+  let bytes = make_insn ~name `X [31; 9; 10; 29; opt] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r10 = find_gpr "R10" in
@@ -72,10 +58,9 @@ let lbzx arch ctxt =
   let x = Word.of_int ~width:addr_size 0xABCD0000 in
   let y = Word.of_int ~width:addr_size 0x0000FF42 in
   let ea = Word.(x + y) in
-  let value = 0x42 in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r8;
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
       r29 := int x;
       r10 := int y;
       r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
@@ -83,95 +68,65 @@ let lbzx arch ctxt =
   let expected = Word.of_int ~width:64 value in
   check_gpr init bytes r9 expected arch ctxt
 
-let lbzx_zero_op arch ctxt =
-  let bytes = "\x7d\x20\x50\xae" in (** lbzx r9, 0, r10 *)
+let lbzx = lzx "LBZX" 87 `r8
+let lhzx = lzx "LHZX" 279 `r16
+let lwzx = lzx "LWZX" 23 `r32
+
+let lzx_zero_reg name opt size arch ~value ctxt =
+  let bytes = make_insn ~name `X [31; 9; 0; 10; opt] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r10 = find_gpr "R10" in
   let ea = Word.of_int ~width:addr_size 0xABCD0000 in
-  let value = 0x42 in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r8;
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
       r10 := int ea;
       r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
     ] in
   let expected = Word.of_int ~width:64 value in
   check_gpr init bytes r9 expected arch ctxt
 
-let lwzx arch ctxt =
-  let bytes = "\x7d\x3d\x50\x2e" in (** lwzx r9, r29, r10 *)
-  let mem, addr_size = env_of_arch arch in
-  let r9 = find_gpr "R9" in
-  let r10 = find_gpr "R10" in
-  let r29 = find_gpr "R29" in
-  let x = Word.of_int ~width:addr_size 0xABCD0000 in
-  let y = Word.of_int ~width:addr_size 0x0000FF42 in
-  let ea = Word.(x + y) in
-  let value = 0xAA42FF42 in
-  let data = Word.of_int ~width:32 value in
-  let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r32;
-      r29 := int x;
-      r10 := int y;
-      r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
-    ] in
-  let expected = Word.of_int ~width:64 value in
-  check_gpr init bytes r9 expected arch ctxt
+let lbzx_zero_reg = lzx_zero_reg "LBZX" 87 `r8
+let lhzx_zero_reg = lzx_zero_reg "LHZX" 279 `r16
+let lwzx_zero_reg = lzx_zero_reg "LWZX" 23 `r32
 
-let lbzu arch ctxt =
-  let bytes = "\x8d\x3c\x00\x14" in (** lbzu r9, 20(r28)  *)
+let lzu name opcode size arch ~d_addr ~value ctxt =
+  let bytes = make_insn ~name `D [opcode; 9; 28; d_addr] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r28 = find_gpr "R28" in
   let addr = 0xABCDEF04 in
-  let ea = Word.of_int ~width:addr_size (addr + 20) in
-  let value = 0x42 in
+  let ea = Word.of_int ~width:addr_size (addr + d_addr) in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r8;
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
       r28 := int (Word.of_int ~width:64 addr);
       r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
     ] in
   let expected = Word.of_int ~width:64 value in
   check_gpr init bytes r9 expected arch ctxt;
-  let expected_addr = Word.of_int ~width:64 (addr + 20) in
+  let expected_addr = Word.of_int ~width:64 (addr + d_addr) in
   check_gpr init bytes r28 expected_addr arch ctxt
 
-let lwzu arch ctxt =
-  let bytes = "\x85\x3f\xff\xfc" in (** lwzu r9, -4(r31)  *)
-  let mem, addr_size = env_of_arch arch in
-  let r9 = find_gpr "R9" in
-  let r31 = find_gpr "R31" in
-  let addr = 0xABCDEF04 in
-  let ea = Word.of_int ~width:addr_size (addr - 4) in
-  let value = 0xAA42FF42 in
-  let data = Word.of_int ~width:32 value in
-  let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r32;
-      r31 := int (Word.of_int ~width:64 addr);
-      r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
-    ] in
-  let expected = Word.of_int ~width:64 value in
-  check_gpr init bytes r9 expected arch ctxt;
-  let expected_addr = Word.of_int ~width:64 (addr - 4) in
-  check_gpr init bytes r31 expected_addr arch ctxt
+let lbzu = lzu "LBZU" 35 `r8
+let lhzu = lzu "LHZU" 41 `r16
+let lwzu = lzu "LWZU" 33 `r32
 
-let lbzux arch ctxt =
-  let bytes = "\x7d\x3d\x50\xee" in (** lbzux r9, r29, r10 *)
+let lzux name opt_opcode size arch ~value ctxt =
+  let bytes = make_insn ~name `X [31; 9; 29; 10; opt_opcode] in
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r10 = find_gpr "R10" in
   let r29 = find_gpr "R29" in
   let x = 0xABCD0000 in
   let y = 0x0000EF42 in
-  let ea = Word.of_int ~width:addr_size  (x + y) in
-  let x = Word.of_int ~width:64 0xABCD0000 in
-  let y = Word.of_int ~width:64 0x0000EF42 in
-  let value = 0x42 in
+  let ea = Word.of_int ~width:addr_size (x + y) in
+  let x = Word.of_int ~width:64 x in
+  let y = Word.of_int ~width:64 y in
   let data = Word.of_int ~width:32 value in
   let init = Bil.[
-      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian `r8;
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
       r29 := int x;
       r10 := int y;
       r9 := int (Word.of_int64 0xFFFFFFFFFFFFFFFFL);
@@ -180,6 +135,10 @@ let lbzux arch ctxt =
   check_gpr init bytes r9 expected arch ctxt;
   let expected_addr = Word.of_int ~width:64 0xABCDEF42 in
   check_gpr init bytes r29 expected_addr arch ctxt
+
+let lbzux = lzux "LBZUX" 119 `r8
+let lhzux = lzux "LHZUX" 311 `r16
+let lwzux = lzux "LWZUX" 55 `r32
 
 let lha arch ctxt =
   let bytes = "\xa8\x29\x00\x05" in (** lha r1, 5(r9)  *)
@@ -399,47 +358,84 @@ let ldux_big_addr ctxt =
   check_gpr init bytes r8 expected_addr arch ctxt
 
 let suite = "load" >::: [
-    "lbz32 +imm"  >:: lbz `ppc 20;
-    "lbz32 -imm"  >:: lbz `ppc (-16);
-    "lbz32_0"   >:: lbz_zero_op `ppc;
-    "lwz32"     >:: lwz `ppc;
-    "lbzx32"    >:: lbzx `ppc;
-    "lbzx32_0"  >:: lbzx_zero_op `ppc;
-    "lwzx32"    >:: lwzx `ppc;
-    "lbzu32"    >:: lbzu `ppc;
-    "lwzu32"    >:: lwzu `ppc;
-    "lbzux32"   >:: lbzux `ppc;
-    "lha32"     >:: lha `ppc;
-    "lhax32"    >:: lhax `ppc;
-    "lhau32"    >:: lhau `ppc;
-    "lhaux32"   >:: lhaux `ppc;
-    "lwa32"     >:: lwa `ppc;
-    "lwax32"    >:: lwax `ppc;
-    "lwaux32"   >:: lwaux `ppc;
-    "ld32"      >:: ld `ppc;
-    "ldx32"     >:: ldx `ppc;
-    "ldu32"     >:: ldu `ppc;
-    "ldux32"    >:: ldux `ppc;
+    "lbz32 +imm"     >:: lbz `ppc ~d_addr:20 ~value:0x42;
+    "lbz32 -imm"     >:: lbz `ppc ~d_addr:(-16) ~value:0x42;
+    "lbz32 0 reg"    >:: lbz_zero_reg `ppc ~d_addr:20 ~value:0x42;
+    "lhz32 +imm"     >:: lhz `ppc ~d_addr:20 ~value:0x4242;
+    "lhz32 -imm"     >:: lhz `ppc ~d_addr:(-16) ~value:0x4252;
+    "lhz32 0 reg"    >:: lhz_zero_reg `ppc ~d_addr:20 ~value:0x4242;
+    "lwz32 +imm"     >:: lwz `ppc ~d_addr:20 ~value:0xAAAA4242;
+    "lwz32 -imm"     >:: lwz `ppc ~d_addr:(-16) ~value:0xAAAA4252;
+    "lwz32 0 reg"    >:: lwz_zero_reg `ppc ~d_addr:20 ~value:0xAAAA4242;
 
-    "lbz64"     >:: lbz `ppc64 20;
-    "lbz64_0"   >:: lbz_zero_op `ppc64;
-    "lwz64"     >:: lwz `ppc64;
-    "lbzx64"    >:: lbzx `ppc64;
-    "lbzx64_0"  >:: lbzx_zero_op `ppc64;
-    "lwzx64"    >:: lwzx `ppc64;
-    "lbzu64"    >:: lbzu `ppc64;
-    "lwzu64"    >:: lwzu `ppc64;
-    "lbzux64"   >:: lbzux `ppc64;
-    "lha64"     >:: lha `ppc64;
-    "lhax64"    >:: lhax `ppc64;
-    "lhau64"    >:: lhau `ppc64;
-    "lhaux64"   >:: lhaux `ppc64;
-    "lwa64"     >:: lwa `ppc64;
-    "lwax64"    >:: lwax `ppc64;
-    "lwaux64"   >:: lwaux `ppc64;
-    "ld64"      >:: ld `ppc64;
-    "ldx64"     >:: ldx `ppc64;
-    "ldu64"     >:: ldu `ppc64;
-    "ldux64"    >:: ldux `ppc64;
-    "ldux64a"   >:: ldux_big_addr;
+    "lbzx32"         >:: lbzx `ppc ~value:0x42;
+    "lbzx32 0 reg"   >:: lbzx_zero_reg `ppc ~value:0x42;
+    "lhzx32 +imm"    >:: lhzx `ppc ~value:0x4242;
+    "lhzx32 0 reg"   >:: lhzx_zero_reg `ppc ~value:0x4242;
+    "lwzx32 +imm"    >:: lwzx `ppc ~value:0xAAAA4242;
+    "lwzx32 0 reg"   >:: lwzx_zero_reg `ppc ~value:0xAAAA4242;
+
+    "lbzu32 +imm"    >:: lbzu `ppc ~d_addr:20 ~value:0x42;
+    "lbzu32 -imm"    >:: lbzu `ppc ~d_addr:(-16) ~value:0x42;
+    "lhzu32 +imm"    >:: lhzu `ppc ~d_addr:20 ~value:0x4242;
+    "lhzu32 -imm"    >:: lhzu `ppc ~d_addr:(-16) ~value:0x4252;
+    "lwzu32 +imm"    >:: lwzu `ppc ~d_addr:20 ~value:0xAAAA4242;
+    "lwzu32 -imm"    >:: lwzu `ppc ~d_addr:(-16) ~value:0xAAAA4252;
+
+    "lbzux32"        >:: lbzux `ppc ~value:0x42;
+    "lhzux32"        >:: lhzux `ppc ~value:0x4242;
+    "lwzux32"        >:: lwzux `ppc ~value:0xAAAA4242;
+
+    "lha32"          >:: lha `ppc;
+    "lhax32"         >:: lhax `ppc;
+    "lhau32"         >:: lhau `ppc;
+    "lhaux32"        >:: lhaux `ppc;
+    "lwa32"          >:: lwa `ppc;
+    "lwax32"         >:: lwax `ppc;
+    "lwaux32"        >:: lwaux `ppc;
+    "ld32"           >:: ld `ppc;
+    "ldx32"          >:: ldx `ppc;
+    "ldu32"          >:: ldu `ppc;
+    "ldux32"         >:: ldux `ppc;
+
+    "lbz64 +imm"     >:: lbz `ppc64 ~d_addr:20 ~value:0x42;
+    "lbz64 -imm"     >:: lbz `ppc64 ~d_addr:(-16) ~value:0x42;
+    "lbz64 0 reg"    >:: lbz_zero_reg `ppc64 ~d_addr:20 ~value:0x42;
+    "lhz64 +imm"     >:: lhz `ppc64 ~d_addr:20 ~value:0x4242;
+    "lhz64 -imm"     >:: lhz `ppc64 ~d_addr:(-16) ~value:0x4252;
+    "lhz64 0 reg"    >:: lhz_zero_reg `ppc64 ~d_addr:20 ~value:0x4242;
+    "lwz64 +imm"     >:: lwz `ppc64 ~d_addr:20 ~value:0xAAAA4242;
+    "lwz64 -imm"     >:: lwz `ppc64 ~d_addr:(-16) ~value:0xAAAA4252;
+    "lwz64 0 reg"    >:: lwz_zero_reg `ppc64 ~d_addr:20 ~value:0xAAAA4242;
+
+    "lbzx64"         >:: lbzx `ppc64 ~value:0x42;
+    "lbzx64 0 reg"   >:: lbzx_zero_reg `ppc64 ~value:0x42;
+    "lhzx64 +imm"    >:: lhzx `ppc64 ~value:0x4242;
+    "lhzx64 0 reg"   >:: lhzx_zero_reg `ppc64 ~value:0x4242;
+    "lwzx64 +imm"    >:: lwzx `ppc64 ~value:0xAAAA4242;
+    "lwzx64 0 reg"   >:: lwzx_zero_reg `ppc64 ~value:0xAAAA4242;
+
+    "lbzu64 +imm"    >:: lbzu `ppc64 ~d_addr:20 ~value:0x42;
+    "lbzu64 -imm"    >:: lbzu `ppc64 ~d_addr:(-16) ~value:0x42;
+    "lhzu64 +imm"    >:: lhzu `ppc64 ~d_addr:20 ~value:0x4242;
+    "lhzu64 -imm"    >:: lhzu `ppc64 ~d_addr:(-16) ~value:0x4252;
+    "lwzu64 +imm"    >:: lwzu `ppc64 ~d_addr:20 ~value:0xAAAA4242;
+    "lwzu64 -imm"    >:: lwzu `ppc64 ~d_addr:(-16) ~value:0xAAAA4252;
+
+    "lbzux64"        >:: lbzux `ppc64 ~value:0x42;
+    "lhzux64"        >:: lhzux `ppc64 ~value:0x4242;
+    "lwzux64"        >:: lwzux `ppc64 ~value:0xAAAA4242;
+
+    "lha64"          >:: lha `ppc64;
+    "lhax64"         >:: lhax `ppc64;
+    "lhau64"         >:: lhau `ppc64;
+    "lhaux64"        >:: lhaux `ppc64;
+    "lwa64"          >:: lwa `ppc64;
+    "lwax64"         >:: lwax `ppc64;
+    "lwaux64"        >:: lwaux `ppc64;
+    "ld64"           >:: ld `ppc64;
+    "ldx64"          >:: ldx `ppc64;
+    "ldu64"          >:: ldu `ppc64;
+    "ldux64"         >:: ldux `ppc64;
+    "ldux64a"        >:: ldux_big_addr;
   ]

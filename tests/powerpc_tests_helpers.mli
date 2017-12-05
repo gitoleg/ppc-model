@@ -57,3 +57,16 @@ val is_equal_words : word -> word option -> bool
 
 (** [string_of_bytes bytes] - returns a readable string from [bytes] *)
 val string_of_bytes : string -> string
+
+(** PowerPC instruction forms  *)
+type form = [
+  | `D
+  | `X
+]
+
+(** [make_insn ~name form fields] - return a bytes sequence from
+    instruction [form] and [fields] list. Raises is form and fields
+    mismatches. If [name] is provided, checks that formed bytes
+    belongs to expected instruction for [arch], raises if not.
+    Default [arch] is ppc *)
+val make_insn : ?name:string -> ?arch:arch -> form -> int list -> string
