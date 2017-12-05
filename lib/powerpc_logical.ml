@@ -509,33 +509,38 @@ let cnttzd_dot cpu ops =
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
     7c 8a 53 f8   cmpb r10, r4, r10 *)
-(* let cmpb ops = *)
-(*   let ra = unsigned reg ops.(0) in *)
-(*   let rs = unsigned reg ops.(1) in *)
-(*   let rb = unsigned reg ops.(2) in *)
-(*   let xb = unsigned const byte 0xFF in *)
-(*   let sh = unsigned const byte 8 in *)
-(*   let tmp = unsigned var doubleword in *)
-(*   let res = unsigned var doubleword in *)
-(*   let ind = unsigned var byte in *)
-(*   let byte_i = unsigned var byte in *)
-(*   RTL.[ *)
-(*     tmp := rb; *)
-(*     res := zero; *)
-(*     ind := zero; *)
-(*     foreach byte_i rs [ *)
-(*       if_ (byte_i = nth byte tmp 0) [ *)
-(*         nth byte res 0 := xb; *)
-(*       ] [ *)
-(*         nth byte res 0 := zero; *)
-(*       ]; *)
-(*       res := res lsr sh; *)
-(*       tmp := tmp lsl sh; *)
-(*       ind := ind + one; *)
-(*     ]; *)
-(*     ra := res; *)
-(*   ] *)
-
+let cmpb cpu ops =
+  let ra = unsigned reg ops.(0) in
+  let rs = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let xb = unsigned const byte 0xFF in
+  let ind_i = unsigned var byte in
+  let ind_j = unsigned var byte in
+  let ind_k = unsigned var byte in
+  let byte_i = unsigned var byte in
+  let byte_j = unsigned var byte in
+  let byte_k = unsigned var byte in
+  RTL.[
+    ind_i := zero;
+    foreach byte_i rs [
+      ind_j := zero;
+      foreach byte_j rb [
+        ind_k := zero;
+        foreach byte_k ra [
+          when_ ((ind_j = ind_i) land (ind_j = ind_k)) [
+            if_ (byte_i = byte_j) [
+              byte_k := xb;
+            ] [
+              byte_k := zero;
+            ];
+          ];
+          ind_k := ind_k + one;
+        ];
+        ind_j := ind_j + one;
+      ];
+      ind_i := ind_i + one;
+    ];
+  ]
 
 (** Fixed-point Population Count Bytes/Words/Doubleword
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -546,22 +551,41 @@ let cnttzd_dot cpu ops =
 let popcntw cpu ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
-  let cnt = unsigned var byte in
+  let cnt = unsigned var doubleword in
   let res = unsigned var doubleword in
   let word_i = unsigned var word in
   let bit_i = unsigned var bit in
+  let ind = unsigned var word in
+  let x = unsigned const byte 32 in
   RTL.[
     res := zero;
+    ind := one;
     foreach word_i rs [
       cnt := zero;
       foreach bit_i word_i [
-        if_ (bit_i = one) [
+        when_ (bit_i = one) [
           cnt := cnt + one;
-        ] [];
+        ];
       ];
-      nth word res i := cnt;
+      res := res lor (cnt lsl (ind * x));
+      ind := ind - one;
     ];
     ra := res;
+  ]
+
+let popcntd cpu ops =
+  let ra = signed reg ops.(0) in
+  let rs = signed reg ops.(1) in
+  let cnt = unsigned var doubleword in
+  let bit_i = unsigned var bit in
+  RTL.[
+    cnt := zero;
+    foreach bit_i rs [
+      when_ (bit_i = one) [
+        cnt := cnt + one;
+      ];
+    ];
+    ra := cnt;
   ]
 
 (** Fixed-point Parity Doubleword/Word
@@ -569,31 +593,38 @@ let popcntw cpu ops =
     examples:
     7c 84 01 74     prtyd r4, r4 (not working in llvm)
     7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
-let parity ops size = ppc_fail "llvm doens't now about this insn"
+let parity ops size = ppc_fail "llvm disasm failed"
 
-(**
+
 (** Fixed-point Bit Permute Doubleword
     Pages 100 of IBM Power ISATM Version 3.0 B
     examples:
     7c a1 49 f8    bperm r1, r5, r9 *)
-let bpermd ops =
+let bpermd cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
-  let max_ind = unsigned int 64 in
-  let tmp = unsigned var in
+  let max_ind = unsigned const byte 64 in
+  let tmp = unsigned var byte in
+  let bit_index = unsigned var byte in
+  let ind = unsigned var byte in
+  let x = unsigned var doubleword in
+  let max = unsigned const byte 7 in
   RTL.[
-    tmp := extract zero 0 7;
-    foreach byte rs (fun i x -> [
-          if_ (x < max_ind) [
-            nth bit tmp i := msb (rb lsl x);
-          ] [
-            nth bit tmp i := zero;
-          ];
-        ]);
+    tmp := zero;
+    ind := max;
+    foreach bit_index rs [
+      if_ (bit_index < max_ind) [
+        x := msb (rb lsl bit_index);
+      ] [
+        x := zero;
+      ];
+      tmp := tmp lor (x lsl ind);
+      ind := ind - one;
+    ];
     ra := tmp;
-  ]
-*)
+]
+
 type and_ = [
   | `ANDIo
   | `ANDISo
@@ -651,7 +682,6 @@ type cntz = [
 type cmpb = [ `CMPB ] [@@deriving sexp,enumerate]
 
 type popcnt = [
-  | `POPCNTB
   | `POPCNTW
   | `POPCNTD
 ] [@@deriving sexp,enumerate]
@@ -697,9 +727,8 @@ let lift t cpu ops = match t with
   | `CNTTZWo -> cnttzw_dot cpu ops
   | `CNTTZD  -> cnttzd cpu ops
   | `CNTTZDo -> cnttzd_dot cpu ops
-  | `CMPB    -> cmpb ops
-  (* | `POPCNTW -> popcnt ops `r32 *)
-  (* | `POPCNTB -> popcnt ops `r8 *)
-  (* | `POPCNTD -> popcnt ops `r64 *)
-  (* | `BPERMD  -> bpermd ops *)
+  | `CMPB    -> cmpb cpu ops
+  | `POPCNTW -> popcntw cpu ops
+  | `POPCNTD -> popcntd cpu ops
+  | `BPERMD  -> bpermd cpu ops
   | _ -> ppc_fail "oops"

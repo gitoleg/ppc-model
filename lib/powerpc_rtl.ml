@@ -49,6 +49,10 @@ let var_bitwidth v =
 let width_of_vars vs =
   List.fold ~init:0 ~f:(fun x v -> x + var_bitwidth v) vs
 
+let var_of_exp e = match e.body with
+  | Vars (v,_) -> v
+  | _ -> ppc_fail "variable expected"
+
 module Exp = struct
 
   (** TODO: think again about signess + 1-bit values *)
@@ -207,8 +211,8 @@ module Infix = struct
   let ( lnot ) = not
 end
 
-
 module Translate = struct
+
   let store mem addr data endian size =
     let addr = bil_exp addr.body in
     let data = bil_exp data.body in
@@ -231,11 +235,21 @@ module Translate = struct
     let rhs =
       if hi_exp - lo_exp + 1 = rhs_width then rhs
       else Exp.extract hi_exp lo_exp rhs in
-    let shift = Exp.of_word (Word.of_int ~width:32 lo_var) in
-    let rhs = Exp.cast rhs width (Exp.sign rhs) in
-    let rhs = Infix.(rhs lsl shift) in
-    let rhs = Infix.(Exp.of_var v lor rhs) in
-    Bil.(v := bil_exp (Exp.body rhs))
+    let var = Bil.var v in
+    let width_left = width - hi_var - 1 in
+    let width_right = lo_var in
+    let left =
+      if width_left = 0 then None
+      else Some (Bil.extract (width - 1) (hi_var + 1) var) in
+    let middle = bil_exp (Exp.body rhs) in
+    let right =
+      if width_right = 0 then None
+      else Some (Bil.extract (lo_var - 1) 0 var) in
+    match left,right with
+    | None, None -> Bil.[v := middle]
+    | Some left, None -> Bil.[v := left ^ middle]
+    | None, Some right -> Bil.[v := middle ^ right]
+    | Some left, Some right -> Bil.[ v := left ^ middle ^ right; ]
 
   let assign_vars vars ?hi ?lo rhs =
     let in_bounds x left right = x <= left && x >= right in
@@ -263,7 +277,7 @@ module Translate = struct
             let bits_to_assign = hi_var - lo_var + 1 in
             let hi_exp = assigned + bits_to_assign - 1 in
             let lo_exp = assigned in
-            let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) :: es in
+            let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) @ es in
             assign es (assigned + bits_to_assign) (vars_lo + width) vars
           else
           if width = rhs_width then
@@ -301,6 +315,11 @@ module Translate = struct
 
   let jmp exp = Bil.[ jmp (bil_exp exp.body)]
 
+  class move_finder var = object(self)
+    inherit [bool] Stmt.visitor
+    method! enter_move v _ x = Var.equal var v || x
+  end
+
   let rec stmt_to_bil = function
     | Move (x,y) -> move x y
     | Store (mem, addr, data, endian, size) ->
@@ -311,19 +330,29 @@ module Translate = struct
       let else_ = to_bil else_ in
       if_ cond then_ else_
     | Foreach (step_e, e, code) ->
+      let step_var = var_of_exp step_e in
       let iters = Exp.width e / Exp.width step_e in
       let step = Exp.width step_e in
+      let has_assignments = has_assignments step_var code in
       let rtl = List.concat
           (List.init iters
              ~f:(fun i ->
                  let i = iters - i - 1 in
                  let hi = (i + 1) * step - 1 in
                  let lo = i * step in
-                 Infix.(step_e := Exp.extract hi lo e) :: code)) in
+                 if has_assignments then
+                   let last = Infix.(Exp.extract hi lo e := step_e) in
+                   Infix.(step_e := Exp.extract hi lo e) :: code @ [last]
+                 else
+                   Infix.(step_e := Exp.extract hi lo e) :: code)) in
       to_bil rtl
   and
     to_bil (ts : t list)  =
     List.concat (List.map ~f:stmt_to_bil ts)
+  and has_assignments var rtl =
+    let bil = to_bil rtl in
+    let vis = new move_finder var in
+    vis#run bil false
 
 end
 
