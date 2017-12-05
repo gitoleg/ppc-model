@@ -513,33 +513,24 @@ let cmpb cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
-  let xb = unsigned const byte 0xFF in
-  let ind_i = unsigned var byte in
-  let ind_j = unsigned var byte in
-  let ind_k = unsigned var byte in
+  let xb = unsigned const doubleword 0xFF in
+  let ind = unsigned var byte in
   let byte_i = unsigned var byte in
   let byte_j = unsigned var byte in
-  let byte_k = unsigned var byte in
+  let max = unsigned const byte 7 in
+  let sh = unsigned const byte 8 in
+  let tmp = unsigned var doubleword in
   RTL.[
-    ind_i := zero;
+    ind := zero;
+    tmp := zero;
     foreach byte_i rs [
-      ind_j := zero;
-      foreach byte_j rb [
-        ind_k := zero;
-        foreach byte_k ra [
-          when_ ((ind_j = ind_i) land (ind_j = ind_k)) [
-            if_ (byte_i = byte_j) [
-              byte_k := xb;
-            ] [
-              byte_k := zero;
-            ];
-          ];
-          ind_k := ind_k + one;
-        ];
-        ind_j := ind_j + one;
+      byte_j := nth byte (rb lsl (ind * sh)) 0;
+      when_ (byte_i = byte_j) [
+        tmp := tmp lor (xb lsl ((max - ind) * sh));
       ];
-      ind_i := ind_i + one;
+      ind := ind + one;
     ];
+    ra := tmp;
   ]
 
 (** Fixed-point Population Count Bytes/Words/Doubleword
