@@ -75,12 +75,11 @@ let stx_zero_reg name opt_opcode size arch ctxt =
   let mem, addr_size = env_of_arch arch in
   let r9 = find_gpr "R9" in
   let r31 = find_gpr "R31" in
-  let x = Word.of_int ~width:addr_size 0xABCD0000 in
-  let ea = x in
+  let ea = Word.of_int ~width:addr_size 0xABCD0000 in
   let data = Word.of_int64 0xFFFFFFFFABCDEF42L in
   let init = Bil.[
       r9  := int data;
-      r31 := int x;
+      r31 := int ea;
     ] in
   let bits = Size.in_bits size in
   let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in

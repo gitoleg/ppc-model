@@ -21,6 +21,15 @@ let plain_assign ctxt =
   let value = lookup_var ctxt v in
   assert_bool "plain := failed" (is_equal_words expected value)
 
+
+(** Assign to concated variables:
+    +----+---+----+---+---+---+--+
+    | 0 | 1 |  2 | 3 | 4 | 5 | 6 |
+    |---|---|----|---|---|---|---|
+    |   | 1 |  1 | 1 | 0 | 1 | 0 |
+    |-------|----|---------------|
+    |  var1 |var2|       var3    |
+    +----+---+---+---+---+---+---+ *)
 let concat_assign ctxt =
   let v1 = Var.create "v1" (Type.Imm 2) in
   let v2 = Var.create "v2" (Type.Imm 1) in
@@ -45,6 +54,15 @@ let concat_assign ctxt =
   assert_bool "concated exp := exp : failed at v3"
     (is_equal_words expected_val3 val3)
 
+
+(** Assign to concated variables with extract:
+    +----+---+---+---+---+---+---+---+---+---+---+
+    | 0  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |10 |
+    |----|---|---|---|---|---|---|---|---|---|---|
+    |    |   | 1 | 1 | 1 | 0 | 1 | 0 |   |   |   |
+    |----|-------|-----------|-----------|-------|
+    |var1|  var2 |   var3    |   var4    | var5  |
+    +----+---+---+---+---+---+---+---+---+---+---+ *)
 let complex_assign ctxt =
   let v1 = Var.create "v1" (Type.Imm 1) in
   let v2 = Var.create "v2" (Type.Imm 2) in
@@ -216,7 +234,7 @@ let foreach_with_assign ctxt =
 
 let suite = "Dsl" >::: [
     "plain :="                               >:: plain_assign;
-    "concated exp := exp"                    >:: concat_assign;
+    "concated vars := exp"                   >:: concat_assign;
     "extract (concat [v1; v2; ...]) := exp"  >:: complex_assign;
     "nth byte"                               >:: nth_byte;
     "nth halfword"                           >:: nth_hw;

@@ -55,7 +55,6 @@ let var_of_exp e = match e.body with
 
 module Exp = struct
 
-  (** TODO: think again about signess + 1-bit values *)
   let cast x width sign =
     if x.sign = sign && x.width = width then x
     else
@@ -218,9 +217,7 @@ module Translate = struct
     let data = bil_exp data.body in
     Bil.[mem := store (var mem) addr data endian size]
 
-  (** TODO: think here about this cast  *)
   let if_ probe then_ else_ =
-    let probe = Exp.cast probe 1 Unsigned in
     let probe = bil_exp (Exp.body probe) in
     Bil.[ if_ probe then_ else_ ]
 
@@ -253,13 +250,13 @@ module Translate = struct
 
   let assign_vars vars ?hi ?lo rhs =
     let in_bounds x left right = x <= left && x >= right in
-    let fullw = width_of_vars vars in
-    let hi = Option.value ~default:(fullw - 1) hi in
-    let lo = Option.value ~default:0 lo in
-    let assigned = hi - lo + 1 in
-    let rhs = Exp.cast rhs assigned (Exp.sign rhs) in
-    let rhs_width = Exp.width rhs in
     let vars = List.rev vars in
+    let full = width_of_vars vars in
+    let hi = Option.value ~default:(full - 1) hi in
+    let lo = Option.value ~default:0 lo in
+    let dif = hi - lo + 1 in
+    let rhs = Exp.cast rhs dif (Exp.sign rhs) in
+    let rhs_width = Exp.width rhs in
     let rec assign es assigned vars_lo = function
       | [] -> es
       | v :: vars ->
@@ -270,8 +267,6 @@ module Translate = struct
           || in_bounds vars_lo hi lo
           || in_bounds vars_hi hi lo in
         if var_in_bounds then
-          let is_partial_assign = vars_hi > hi || lo > vars_lo  in
-          if is_partial_assign then
             let lo_var = max lo vars_lo  - vars_lo in
             let hi_var = min (rhs_width + lo - 1) vars_hi - vars_lo in
             let bits_to_assign = hi_var - lo_var + 1 in
@@ -279,23 +274,14 @@ module Translate = struct
             let lo_exp = assigned in
             let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) @ es in
             assign es (assigned + bits_to_assign) (vars_lo + width) vars
-          else
-          if width = rhs_width then
-            let es = Bil.(v := bil_exp (Exp.body rhs)) :: es in
-            assign es (assigned + width) (vars_lo + width) vars
-          else
-            let hi = assigned + width - 1 in
-            let lo = assigned in
-            let es = Bil.(v := extract hi lo (bil_exp (Exp.body rhs))) :: es in
-            assign es (assigned + width) (vars_lo + width) vars
         else assign es assigned (vars_lo + width) vars in
     assign [] 0 0 vars
 
   (** valid forms of assignment:
       1) var := exp
       2) var1 ^ var2 ... varN := exp
-      3) [var1;var2; ...] := exp, equivalent to 2)
-      4) extract hi lo var := exp, change only certain bits of var
+      3) [var1;var2; ...] := exp  - equivalent to 2)
+      4) extract hi lo var := exp - change only certain bits of var
       5) extract hi lo (var1 ^ var2 ... varN) := exp *)
   let rec move lhs rhs =
     match Exp.body lhs with
