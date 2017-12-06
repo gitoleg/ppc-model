@@ -2,9 +2,7 @@ open Core_kernel.Std
 open Bap.Std
 open Op
 
-open Powerpc_types
-open Hardware
-open Dsl
+open Powerpc
 
 (** Fixed-point Store Byte/Halfword/Word
     Pages 54-56 of IBM Power ISATM Version 3.0 B

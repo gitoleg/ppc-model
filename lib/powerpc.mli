@@ -1,26 +1,84 @@
 open Core_kernel.Std
 open Bap.Std
-open Powerpc_rtl
 
-type 'a p
-
+(** Operands and registers bitwidth.  *)
 type bitwidth
 
 val bit  : bitwidth
 val byte : bitwidth
-val halfword : bitwidth
 val word : bitwidth
+val halfword : bitwidth
 val doubleword : bitwidth
 val bitwidth : int -> bitwidth
+
+type 'a p
+type exp
+type rtl
 
 val imm : (op -> exp) p
 val reg : (op -> exp) p
 val var : (bitwidth -> exp) p
 val const : (bitwidth -> int -> exp) p
+
+(** those function return exp of appropriative bitwidth
+    from a given integer or operand *)
 val signed : 'a p -> 'a
 val unsigned : 'a p -> 'a
 
+module RTL : sig
+  val ( := )  : exp -> exp -> rtl
+  val ( + )  : exp -> exp -> exp
+  val ( - )  : exp -> exp -> exp
+  val ( * )  : exp -> exp -> exp
+  val ( / )  : exp -> exp -> exp
+  val ( ^ )  : exp -> exp -> exp
+  val ( < )  : exp -> exp -> exp
+  val ( > )  : exp -> exp -> exp
+  val ( = )  : exp -> exp -> exp
+  val ( <> )  : exp -> exp -> exp
+  val ( <$ ) : exp -> exp -> exp
+  val ( >$ ) : exp -> exp -> exp
+  val ( lsl )  : exp -> exp -> exp
+  val ( lsr )  : exp -> exp -> exp
+  val ( lor )  : exp -> exp -> exp
+  val ( land ) : exp -> exp -> exp
+  val ( lxor ) : exp -> exp -> exp
+  val lnot : exp -> exp
+
+  (** [if_ cond then_ else_] *)
+  val if_ : exp -> rtl list -> rtl list -> rtl
+
+  (** [foreach step e rtl] - repeat [rtl] for each [step] of [e].
+      One must create an iteration variable to iterate over some
+      expression. So, in example below, assuming the first operand
+      is a 64-bit register, [cnt] will be equal to 8:
+      ...
+      let reg = unsigned reg ops.(0) in
+      let cnt = unsigned const byte in
+      let byte_i = unsigned var byte in
+      RTL.[
+         cnt := zero;
+         foreach byte_i reg [
+             cnt := cnt + one;
+         ]
+      ]
+      ...
+
+      One can use iteration variable to change content of register,
+      e.g. :
+      ...
+      if_ (cnt = zero) [
+          byte_i := zero;
+      ]
+      ...
+      will set a most significant byte of [reg] to zero *)
+  val foreach : exp -> exp -> rtl list -> rtl
+end
+
+(** [zero] is a one bit length expression set to zero *)
 val zero : exp
+
+(** [one] is a one bit length expression set to one *)
 val one  : exp
 
 (** [extract e lx rx] extracts portion of [e] starting
@@ -55,14 +113,16 @@ val msb : exp -> exp
 (** [lsb e] - extracts the least significant bit from [e] *)
 val lsb : exp -> exp
 
-(** [foreach step e rtl] - repeat [rtl] for each [step] of [e] *)
-val foreach : exp -> exp -> rtl list -> rtl
-
 (** [when_ cond rtl] = if_ cond rtl [] *)
 val when_ : exp -> rtl list -> rtl
 
 (** [ifnot cond rtl] = if_ cond [] rtl *)
 val ifnot : exp -> rtl list -> rtl
+
+(** [ppc_fail error_string] - raise a failure with [error_string] *)
+val ppc_fail : ('a, unit, string, 'b) format4 -> 'a
+
+val bil_of_rtl : rtl list -> bil
 
 type cpu = {
   load      : exp -> bitwidth -> exp;
@@ -90,3 +150,8 @@ type cpu = {
 }
 
 val make_cpu : addr_size -> endian -> mem -> cpu
+
+module type Lifter = sig
+  type t [@@deriving sexp, enumerate]
+  val lift : t -> cpu -> op array -> rtl list
+end

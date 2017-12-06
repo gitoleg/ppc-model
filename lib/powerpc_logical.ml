@@ -1,10 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Powerpc_types
-open Model
-open Hardware
-open Dsl
+open Powerpc
 
 (** Extended mnemonics:
 
@@ -23,9 +20,9 @@ let andi_dot cpu ops =
   let im = unsigned imm ops.(2) in
   RTL.[
     ra := rs land im;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -39,9 +36,9 @@ let andis_dot cpu ops =
   let sh = unsigned const byte 16 in
   RTL.[
     ra := rs land (im lsl sh);
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point AND
@@ -61,9 +58,9 @@ let and_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := rs land rb;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point AND with Complement
@@ -83,9 +80,9 @@ let andc_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := rs land (lnot rb);
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point OR Immediate
@@ -126,9 +123,9 @@ let or_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := rs lor rb;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point OR with Complement
@@ -148,9 +145,9 @@ let orc_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := rs lor (lnot rb);
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 
@@ -193,9 +190,9 @@ let xor_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := rs lxor rb;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point NAND
@@ -215,9 +212,9 @@ let nand_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := lnot (rs land rb);
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 
@@ -238,9 +235,9 @@ let nor_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := lnot (rs lor rb);
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Equivalent
@@ -260,9 +257,9 @@ let eqv_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     ra := lnot (rs lxor rb);
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Extend Sign Byte/Halfword/Word
@@ -284,9 +281,9 @@ let extsb_dot cpu ops =
   let rs = signed reg ops.(1) in
   RTL.[
     ra := low byte rs;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 let extsh cpu ops =
@@ -299,9 +296,9 @@ let extsh_dot cpu ops =
   let rs = signed reg ops.(1) in
   RTL.[
     ra := low halfword rs;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 let extsw cpu ops =
@@ -314,9 +311,9 @@ let extsw_dot cpu ops =
   let rs = signed reg ops.(1) in
   RTL.[
     ra := low word rs;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Count Leading Zeros Word/Doubleword
@@ -366,9 +363,9 @@ let cntlzw_dot cpu ops =
           ]
         ];
     ra := cnt;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 let cntlzd cpu ops =
@@ -411,9 +408,9 @@ let cntlzd_dot cpu ops =
           ]
         ];
     ra := cnt;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Count Trailing Zeros Word
@@ -459,9 +456,9 @@ let cnttzw_dot cpu ops =
       ]
     ];
     ra := cnt;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 let cnttzd cpu ops =
@@ -500,9 +497,9 @@ let cnttzd_dot cpu ops =
       ]
     ];
     ra := cnt;
-    nth bit cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Compare Bytes

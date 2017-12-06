@@ -1,9 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Powerpc_types
-open Hardware
-open Dsl
+open Powerpc
 
 let lt = unsigned const byte 4
 let gt = unsigned const byte 2
@@ -30,7 +28,7 @@ let cmpwi cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 let cmpdi cpu ops =
@@ -49,7 +47,7 @@ let cmpdi cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 (** Fix-point Compare
@@ -73,7 +71,7 @@ let cmpw cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 let cmpd cpu ops =
@@ -92,7 +90,7 @@ let cmpd cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 (** Fix-point Compare Logical Immediate
@@ -116,7 +114,7 @@ let cmplwi cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 let cmpldi cpu ops =
@@ -135,7 +133,7 @@ let cmpldi cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 (** Fix-point Compare Logical
@@ -159,7 +157,7 @@ let cmplw cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 let cmpld cpu ops =
@@ -178,7 +176,7 @@ let cmpld cpu ops =
       ]
     ];
     extract bf 0 2 := tm;
-    nth bit bf 3 := so;
+    nth bit bf 3 := cpu.so;
   ]
 
 type t = [

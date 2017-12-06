@@ -2,9 +2,7 @@ open Core_kernel.Std
 open Bap.Std
 open Op
 
-open Powerpc_types
-open Dsl
-open Hardware
+open Powerpc
 
 (** TODO: check reg1 <> reg2  *)
 

@@ -2,13 +2,20 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc_types
-open Powerpc_model.Hardware
 open Powerpc_tests_helpers
+open Powerpc_rtl
+
+module Dsl = Powerpc_dsl
+module Exp = Powerpc_rtl.Exp
+module RTL = struct
+  include Powerpc_rtl
+  include Infix
+end
+
 open Dsl
 
 let eval_rtl rtl =
-  let bil = RTL.bil_of_t rtl in
+  let bil = bil_of_t rtl in
   Stmt.eval bil (new Bili.context)
 
 let dsl_extract ctxt =

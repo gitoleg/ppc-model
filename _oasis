@@ -17,7 +17,8 @@ XOCamlbuildExtraArgs: -j 8
 Library powerpc_lifter
   Path:           lib
   FindLibName:    powerpc_lifter
-  Modules:        Powerpc_add,
+  Modules:        Powerpc,
+                  Powerpc_add,
                   Powerpc_branch,
                   Powerpc_compare,
                   Powerpc_dsl,
@@ -27,7 +28,6 @@ Library powerpc_lifter
                   Powerpc_model,
                   Powerpc_rtl,
                   Powerpc_store,
-                  Powerpc_types,
                   Powerpc_utils
   CompiledObject: best
   Install:        true

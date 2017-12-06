@@ -3,14 +3,41 @@ open Bap.Std
 
 open Powerpc_rtl
 
+module type Hardware = sig
+  type t
+  val gpr  : t String.Map.t
+  val gpri : t Int.Map.t
+  val fpr : t String.Map.t
+  val fpri : t Int.Map.t
+  val vr : t String.Map.t
+  val vri : t Int.Map.t
+  val xer : t
+  val ctr : t
+  val lr : t
+  val tar : t
+  val cri : t Int.Map.t
+  val crn : t String.Map.t
+  val so : t
+  val ca : t
+  val ov : t
+  val ca32 : t
+  val ov32 : t
+end
+
 let range32 = List.range 0 32
 let range64 = List.range 0 64
 
 let make_var_i typ prefix i = Var.create (sprintf "%s%d" prefix i) typ
 
 let make_regs typ prefix range =
-  List.fold ~init:Var.Set.empty ~f:(fun regs i ->
-      Var.Set.add regs (make_var_i typ prefix i)) range
+  List.fold ~init:String.Map.empty ~f:(fun regs i ->
+      let var = make_var_i typ prefix i in
+      let name = Var.name var in
+      String.Map.add regs name var) range
+
+let make_regs_i typ prefix range =
+  List.fold ~init:Int.Map.empty ~f:(fun regs i ->
+      Int.Map.add regs i (make_var_i typ prefix i)) range
 
 let flag name = Var.create name (Type.imm 1)
 
@@ -23,16 +50,19 @@ let lr_bitwidth  = 64
 let ctr_bitwidth = 64
 let tar_bitwidth = 64
 
-module Hardware_var = struct
+module Hardware_vars = struct
 
   (** general purpose registers  *)
   let gpr = make_regs (Type.imm gpr_bitwidth) "R" range32
+  let gpri = make_regs_i (Type.imm gpr_bitwidth) "R" range32
 
   (** floating point registers *)
   let fpr = make_regs (Type.imm fpr_bitwidth) "F" range32
+  let fpri = make_regs_i (Type.imm fpr_bitwidth) "F" range32
 
   (** vector registers *)
   let vr = make_regs (Type.imm vr_bitwidth) "VR" range32
+  let vri = make_regs_i (Type.imm vr_bitwidth) "VR" range32
 
   (** count register  *)
   let ctr = Var.create "CTR" (Type.imm ctr_bitwidth)
@@ -101,13 +131,17 @@ module Hardware_var = struct
     cr24; cr25; cr26; cr27; cr28; cr29; cr30; cr31;
   ]
 
-
   let cri =
     let _, bits =
-      List.fold cr_bits ~init:(0,Int.Map.empty)
+      List.fold (List.rev cr_bits) ~init:(0,Int.Map.empty)
         ~f:(fun (num, bits) bit ->
             num + 1, Int.Map.add bits ~key:num ~data:bit) in
     bits
+
+  let crn =
+    Int.Map.fold cri ~init:String.Map.empty
+      ~f:(fun ~key ~data:var acc ->
+          String.Map.add acc (Var.name var) var)
 
   let cr_fields =
     let fields = [
@@ -127,14 +161,19 @@ end
 
 
 module Hardware = struct
-  open Hardware_var
+  open Hardware_vars
 
   let of_vars vars =
-    Set.fold vars ~init:String.Map.empty
-      ~f:(fun e v -> String.Map.add e (Var.name v) (Exp.of_var v))
+    String.Map.map vars ~f:(fun v -> Exp.of_var v)
 
+  let of_vars_i vars =
+    Int.Map.map vars ~f:(fun v -> Exp.of_var v)
+
+  let gpri = of_vars_i gpri
   let gpr = of_vars gpr
+  let fpri = of_vars_i fpri
   let fpr = of_vars fpr
+  let vri = of_vars_i vri
   let vr = of_vars vr
   let xer = Exp.of_var xer
   let ctr = Exp.of_var ctr
@@ -145,10 +184,12 @@ module Hardware = struct
   let ov  = Exp.of_var ov
   let ca32 = Exp.of_var ca32
   let ov32 = Exp.of_var ov32
+
   let crn =
     Int.Map.fold cri ~init:String.Map.empty
       ~f:(fun ~key ~data:var acc ->
-         String.Map.add acc (Var.name var) (Exp.of_var var))
+          String.Map.add acc (Var.name var) (Exp.of_var var))
+
   let cri = Int.Map.map cri ~f:(fun v -> Exp.of_var v)
 
   let cr = Exp.of_vars (List.rev cr_bits)
@@ -163,22 +204,27 @@ let mem64 = Var.create "mem" (Type.mem `r64 `r8)
 
 
 module PPC32 = struct
-  include Hardware_var
+  include Hardware_vars
   let mem = mem32
 end
 
 module PPC64 = struct
-  include Hardware_var
+  include Hardware_vars
   let mem = mem64
 end
 
 module type PPC_cpu = sig
-  include module type of Hardware_var
+  include module type of Hardware_vars
   val mem : var
 end
 
 module Make_cpu(P : PPC_cpu) : CPU = struct
   include P
+
+  let gpr =
+    let data = Map.data gpr in
+    List.fold data ~init:Var.Set.empty
+      ~f:(fun regs v -> Var.Set.add regs v)
 
   let sp = Var.Set.find_exn gpr ~f:(fun v -> Var.name v = "R1")
   let vf = ov

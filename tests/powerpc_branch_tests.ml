@@ -2,10 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc_types
-open Hardware
-open Model
-open Dsl
+open Powerpc
+open Powerpc_model
 open Powerpc_tests_helpers
 
 let typecheck bytes arch ctxt =
@@ -154,7 +152,7 @@ let bcx name fin arch case (ctxt : test_ctxt) =
   let bd = Word.of_int ~width:14 imm in
   let fin = Word.of_int ~width:2 fin in
   let bytes = make_bytes [opcode; bo; bi; bd; fin] in
-  let cr0 = bit cr 0 in
+  let cr0 = cr_bit 0 in
   let init = Bil.[
       cr0 := int case.cond_reg0;
       ctr := int case.ctr_before;
@@ -218,7 +216,7 @@ let bcxrx name opt_opcode fin reg arch case (ctxt : test_ctxt) =
   let fin = Word.of_int ~width:1 fin in
   let insn = [opcode; bo; bi; no_matter; bh; opt_opcode; fin] in
   let bytes = make_bytes insn in
-  let cr0 = bit cr 31 in
+  let cr0 = cr_bit 31 in
   let addr = addr_of_arch arch in
   let init = Bil.[
       cr0 := int case.cond_reg0;

@@ -27,9 +27,7 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Powerpc_types
-open Hardware
-open Dsl
+open Powerpc
 
 (** Extended mnemonics:
 
@@ -92,9 +90,9 @@ let add_dot cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[
     rt := ra + rb;
-    nth bit cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cr 2 := low cpu.addr_size rt = zero;
+    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
@@ -110,8 +108,8 @@ let addic cpu ops =
   RTL.[
     tm := ra;
     rt := ra + im;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying and Record
@@ -127,14 +125,14 @@ let addic_dot cpu ops =
   RTL.[
     tm := ra;
     rt := ra + im;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
-    nth bit cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cr 2 := low cpu.addr_size rt = zero;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
+    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
-(** Fixed-Point Arithmetic Instructions - Add Carrying
+(** Fixed-Point Arithmetic Instructions - Add Cpu.Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
     examples:
     7d 62 58 14  addc   r11, r2, r11
@@ -147,8 +145,8 @@ let addc cpu ops =
   RTL.[
     tm := ra;
     rt := ra + rb;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
   ]
 
 let addc_dot cpu ops =
@@ -159,11 +157,11 @@ let addc_dot cpu ops =
   RTL.[
     tm := ra;
     rt := ra + rb;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
-    nth bit cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cr 2 := low cpu.addr_size rt = zero;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
+    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
 
@@ -179,9 +177,9 @@ let adde cpu ops =
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
-    rt := ra + rb + ca;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
+    rt := ra + rb + cpu.ca;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
   ]
 
 let adde_dot cpu ops =
@@ -191,12 +189,12 @@ let adde_dot cpu ops =
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
-    rt := ra + rb + ca;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
-    nth bit cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cr 2 := low cpu.addr_size rt = zero;
+    rt := ra + rb + cpu.ca;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
+    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add to Minus One Extend
@@ -210,9 +208,9 @@ let addme cpu ops =
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
-    rt := ra + ca - one;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
+    rt := ra + cpu.ca - one;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
   ]
 
 let addme_dot cpu ops =
@@ -221,12 +219,12 @@ let addme_dot cpu ops =
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
-    rt := ra + ca - one;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
-    nth bit cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cr 2 := low cpu.addr_size rt = zero;
+    rt := ra + cpu.ca - one;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
+    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add to Zero extended
@@ -240,9 +238,9 @@ let addze cpu ops =
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
-    rt := ra + ca;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
+    rt := ra + cpu.ca;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
   ]
 
 let addze_dot cpu ops =
@@ -251,14 +249,13 @@ let addze_dot cpu ops =
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
-    rt := ra + ca;
-    ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    ca32 := low word rt < low word tm;
-    nth bit cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cr 2 := low cpu.addr_size rt = zero;
+    rt := ra + cpu.ca;
+    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
+    cpu.ca32 := low word rt < low word tm;
+    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
-
 
 type t = [
   | `ADD4

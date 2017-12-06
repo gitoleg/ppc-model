@@ -1,19 +1,17 @@
 open Bap.Std
 
-module Dsl = Powerpc_dsl
-module Exp = Powerpc_rtl.Exp
-module Model = Powerpc_model
-module Hardware = Model.Hardware
+include Powerpc_dsl
+include Powerpc_utils
 
 module RTL = struct
   include Powerpc_rtl
   include Infix
 end
 
-include Powerpc_utils
-
 type rtl = RTL.rtl
-type cpu = Dsl.cpu
+type exp = RTL.exp
+
+let bil_of_rtl = RTL.bil_of_t
 
 module type Lifter = sig
   type t [@@deriving sexp, enumerate]

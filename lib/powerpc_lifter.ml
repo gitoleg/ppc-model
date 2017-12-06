@@ -1,7 +1,8 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Powerpc_types
+open Powerpc
+module Model = Powerpc_model
 
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
@@ -32,11 +33,11 @@ let register insn lift =
 let lift addr_size mem insn =
   let insn = Insn.of_basic insn in
   let insn_name = Insn.name insn in
-  let cpu = Dsl.make_cpu addr_size endian mem  in
+  let cpu = make_cpu addr_size endian mem  in
   let lift lifter =
     try
       lifter cpu (Insn.ops insn) |>
-      RTL.bil_of_t |>
+      bil_of_rtl |>
       Result.return
     with
     | Failure str -> Error (Error.of_string str) in

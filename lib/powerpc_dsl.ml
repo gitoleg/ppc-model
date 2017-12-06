@@ -9,46 +9,23 @@ open Hardware
 
 type 'a p = bool -> 'a
 
-type width =
-  | Bit
-  | Byte
-  | Halfword
-  | Word
-  | Doubleword
-  | Custom of int
+type bitwidth = int
 
-let bit = Bit
-let byte = Byte
-let halfword = Halfword
-let word = Word
-let doubleword = Doubleword
-let width x = Custom x
+let bit = 1
+let byte = 8
+let halfword = 16
+let word = 32
+let doubleword = 64
+let bitwidth x = x
 
-let int_of_width = function
-  | Bit -> 1
-  | Byte -> 8
-  | Halfword -> 16
-  | Word -> 32
-  | Doubleword -> 64
-  | Custom x -> x
+let int_of_width = ident
 
-let width_of_size = function
-  | `r8 -> Byte
-  | `r16 -> Halfword
-  | `r32 -> Word
-  | `r64 -> Doubleword
-  | `r128 -> Custom 128
-  | `r256 -> Custom 256
+let width_of_size = Size.in_bits
 
-let size_of_width = function
-  | Byte -> `r8
-  | Halfword -> `r16
-  | Word -> `r32
-  | Doubleword -> `r64
-  | Custom 128 -> `r128
-  | Custom 256 -> `r256
-  | Bit -> ppc_fail "unknown size: bit"
-  | Custom x -> ppc_fail "unknown size: %d" x
+let size_of_width x =
+  match Size.of_int x with
+  | Ok s -> s
+  | Error _ -> ppc_fail "invalid size: %d" x
 
 (** will also try to find R# when got X#, (e.g. R3 when got X3)
     for reasons depended only from llvm side *)
@@ -153,11 +130,24 @@ let ifnot cond else_ = if_ cond [] else_
 let foreach = foreach
 
 type cpu = {
-  load  : exp -> width -> exp;
-  store : exp -> exp -> width -> rtl;
-  jmp   : exp -> rtl;
-  addr  : exp;
-  addr_size : width;
+  load      : exp -> bitwidth -> exp;
+  store     : exp -> exp -> bitwidth -> rtl;
+  jmp       : exp -> rtl;
+  addr      : exp;
+  addr_size : bitwidth;
+  gpr       : int -> exp;
+  fpr       : int -> exp;
+  vr        : int -> exp;
+  xer       : exp;
+  ctr       : exp;
+  lr        : exp;
+  tar       : exp;
+  cr        : exp;
+  so        : exp;
+  ca        : exp;
+  ov        : exp;
+  ca32      : exp;
+  ov32      : exp;
 }
 
 (** TODO: probably, it's not right place for this function *)
@@ -166,8 +156,8 @@ let make_cpu addr_size endian memory =
     | `r32 -> low word a
     | `r64 -> a in
   let mem,addr_size = match addr_size with
-    | `r32 -> mem32, Word
-    | `r64 -> mem64, Doubleword in
+    | `r32 -> mem32, word
+    | `r64 -> mem64, doubleword in
   let load exp width =
     let size = size_of_width width in
     let addr = extract_addr exp in
@@ -178,4 +168,14 @@ let make_cpu addr_size endian memory =
     store mem addr data endian size in
   let addr = Exp.of_word @@ Memory.min_addr memory in
   let jmp e = jmp (low addr_size e) in
-  { load; store; jmp; addr; addr_size; }
+  let find name regs n =
+    try
+      Int.Map.find_exn regs n
+    with _ ->
+      ppc_fail "%s with number %d not found" name n in
+  let gpr n = find "GPR" gpri n in
+  let fpr n = find "FPR" fpri n in
+  let vr n = find "VR" vri n in
+  { load; store; jmp; addr; addr_size;
+    gpr; fpr; vr; cr; xer; ctr; lr; tar;
+    so; ca; ov; ca32; ov32; }

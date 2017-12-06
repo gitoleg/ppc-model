@@ -2,8 +2,7 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc_types
-open Hardware
+open Powerpc
 open Powerpc_tests_helpers
 
 let addi arch ctxt =

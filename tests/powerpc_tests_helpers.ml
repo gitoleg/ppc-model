@@ -4,23 +4,25 @@ open OUnit2
 
 module Dis = Disasm_expert.Basic
 
-open Powerpc_types
-open Model
-open Hardware
+open Powerpc
 
-let var_exn x = match Exp.bil_exp x with
-  | Bil.Var v -> v
-  | _ -> failwith "var_exn: not a variable"
+module H = Powerpc_model.Hardware_vars
 
-let nf = var_exn @@ Dsl.(nth bit cr 0)
-let pf = var_exn @@ Dsl.(nth bit cr 1)
-let zf = var_exn @@ Dsl.(nth bit cr 2)
-let ca = var_exn ca
-let ca32 = var_exn ca32
-let lr = var_exn lr
-let ctr = var_exn ctr
-let tar = var_exn tar
-let bit e n = var_exn @@ Dsl.(nth bit e n)
+let cr_bit n =
+  try
+    Int.Map.find_exn H.cri n
+  with _ ->
+    sprintf "requested CR bit %d not found" n |>
+    failwith
+
+let nf = cr_bit 0
+let pf = cr_bit 1
+let zf = cr_bit 2
+let ca = H.ca
+let ca32 = H.ca32
+let lr = H.lr
+let ctr = H.ctr
+let tar = H.tar
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>
@@ -59,10 +61,10 @@ let lookup_var c var = match c#lookup var with
 
 (** [find_gpr name] - find a GPR by it's name *)
 let find_gpr name =
-  let x = String.Map.find_exn gpr name in
-  match Exp.bil_exp x with
-  | Bil.Var v -> v
-  | _ -> failwith "found register is not a variable"
+  try
+    String.Map.find_exn H.gpr name
+  with _ ->
+    sprintf "gpr %s not" name |> failwith
 
 let get_bil ?addr arch bytes =
   let mem,insn = get_insn ?addr arch bytes in

@@ -1,12 +1,10 @@
 open Core_kernel.Std
 open Bap.Std
 
-open Powerpc_types
-open Hardware
-open Dsl
+open Powerpc
 
 let update_link_register cpu =
-  RTL.[lr := cpu.addr + unsigned const byte 4]
+  RTL.[cpu.lr := cpu.addr + unsigned const byte 4]
 
 (** Branch Instructions, Branch
     Page 37 of IBM Power ISATM Version 3.0 B
@@ -31,7 +29,7 @@ let bl cpu ops =
   let ad = unsigned const byte 4 in
   RTL.[
     cpu.jmp (cpu.addr + (im lsl sh));
-    lr := cpu.addr + ad;
+    cpu.lr := cpu.addr + ad;
   ]
 
 let bla cpu ops =
@@ -40,7 +38,7 @@ let bla cpu ops =
   let ad = unsigned const byte 4 in
   RTL.[
     cpu.jmp (im lsl sh);
-    lr := cpu.addr + ad;
+    cpu.lr := cpu.addr + ad;
   ]
 
 (** Branch Instructions, Branch Conditional
@@ -57,13 +55,13 @@ let bc cpu ops =
   let sh = unsigned const byte 2 in
   let ctr_ok = unsigned var bit in
   let cond_ok = unsigned var bit in
-  let x = unsigned var (width 5) in
+  let x = unsigned var (bitwidth 5) in
   RTL.[
     x := last bo 5;
     when_ (nth bit x 2 = zero) [
-      ctr := ctr - one;
+      cpu.ctr := cpu.ctr - one;
     ];
-    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
       cpu.jmp (cpu.addr + (bd lsl sh));
@@ -77,13 +75,13 @@ let bca cpu ops =
   let sh = unsigned const byte 2 in
   let ctr_ok = unsigned var bit in
   let cond_ok = unsigned var bit in
-  let x = unsigned var (width 5) in
+  let x = unsigned var (bitwidth 5) in
   RTL.[
     x := last bo 5;
     when_ (nth bit x 2 = zero) [
-      ctr := ctr - one;
+      cpu.ctr := cpu.ctr - one;
     ];
-    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
       cpu.jmp (bd lsl sh);
@@ -98,8 +96,8 @@ let bdnz cpu ops =
   let bd = unsigned imm ops.(0) in
   let sh = unsigned const byte 2 in
   RTL.[
-    ctr := ctr - one;
-    when_ (low cpu.addr_size ctr <> zero) [
+    cpu.ctr := cpu.ctr - one;
+    when_ (low cpu.addr_size cpu.ctr <> zero) [
       cpu.jmp (cpu.addr + (bd lsl sh))
     ]
   ]
@@ -115,16 +113,16 @@ let bclr cpu ops =
   let sh = unsigned const byte 2 in
   let ctr_ok = unsigned var bit in
   let cond_ok = unsigned var bit in
-  let x = unsigned var (width 5) in
+  let x = unsigned var (bitwidth 5) in
   RTL.[
     x := last bo 5;
     when_ (nth bit x 2 = zero) [
-      ctr := ctr - one;
+      cpu.ctr := cpu.ctr - one;
     ];
-    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
-      cpu.jmp (lr lsl sh);
+      cpu.jmp (cpu.lr lsl sh);
     ];
   ]
 
@@ -134,9 +132,9 @@ let bclrl cpu ops = bclr cpu ops @ update_link_register cpu
 let bdnzlr cpu ops =
   let sh = unsigned const byte 2 in
   RTL.[
-    ctr := ctr - one;
-    when_ (ctr <> zero) [
-      cpu.jmp (lr lsl sh);
+    cpu.ctr := cpu.ctr - one;
+    when_ (cpu.ctr <> zero) [
+      cpu.jmp (cpu.lr lsl sh);
     ];
   ]
 
@@ -150,12 +148,12 @@ let bcctr cpu ops =
   let bi = unsigned reg ops.(1) in
   let sh = unsigned const byte 2 in
   let cond_ok = unsigned var bit in
-  let x = unsigned var (width 5) in
+  let x = unsigned var (bitwidth 5) in
   RTL.[
     x := last bo 5;
     cond_ok := (nth bit x 0 = one) lor ( bi lxor (lnot (nth bit x 1)));
     when_ (cond_ok) [
-      cpu.jmp (ctr lsl sh);
+      cpu.jmp (cpu.ctr lsl sh);
     ];
   ]
 
@@ -174,16 +172,16 @@ let bctar cpu ops =
   let sh = unsigned const byte 2 in
   let cond_ok = unsigned var bit in
   let ctr_ok = unsigned var bit in
-  let x = unsigned var (width 5) in
+  let x = unsigned var (bitwidth 5) in
   RTL.[
     x := last bo 5;
     when_ (nth bit x 2 = zero) [
-      ctr := ctr - one;
+      cpu.ctr := cpu.ctr - one;
     ];
-    ctr_ok := nth bit x 2 lor ((ctr <> zero) lxor (nth bit x 3));
+    ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
-      cpu.jmp (tar lsl sh);
+      cpu.jmp (cpu.tar lsl sh);
     ]
   ]
 

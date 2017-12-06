@@ -2,7 +2,7 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc_types
+open Powerpc
 
 val nf : var
 val pf : var
@@ -13,8 +13,8 @@ val lr  : var
 val ctr : var
 val tar : var
 
-val bit : RTL.exp -> int -> var
-
+(** [cr_bit n] - returns a condition register bit [n] *)
+val cr_bit : int -> var
 
 (** [find_gpr name] - return a GPR with a [name] *)
 val find_gpr : string -> var
