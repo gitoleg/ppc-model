@@ -3,10 +3,6 @@ open Bap.Std
 
 open Powerpc
 
-let lt = unsigned const byte 4
-let gt = unsigned const byte 2
-let eq = unsigned const byte 1
-
 (** Fix-point Compare Immediate
     Page 85 of IBM Power ISATM Version 3.0 B
     examples:
@@ -16,18 +12,10 @@ let cmpwi cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = signed reg ops.(1) in
   let si = signed imm ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (low word ra <$ si) [
-      tm := lt;
-    ] [
-      if_ (low word ra >$ si) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := low word ra <$ si;
+    nth bit bf 1 := low word ra >$ si;
+    nth bit bf 2 := low word ra = si;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -35,18 +23,10 @@ let cmpdi cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = signed reg ops.(1) in
   let si = signed imm ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (ra <$ si) [
-      tm := lt;
-    ] [
-      if_ (ra >$ si) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := ra <$ si;
+    nth bit bf 1 := ra >$ si;
+    nth bit bf 2 := ra = si;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -59,18 +39,10 @@ let cmpw cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (low word ra <$ low word rb) [
-      tm := lt;
-    ] [
-      if_ (low word ra >$ low word rb) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := low word ra <$ rb;
+    nth bit bf 1 := low word ra >$ rb;
+    nth bit bf 2 := low word ra = rb;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -78,18 +50,10 @@ let cmpd cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (ra <$ rb) [
-      tm := lt;
-    ] [
-      if_ (ra >$ rb) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := ra <$ rb;
+    nth bit bf 1 := ra >$ rb;
+    nth bit bf 2 := ra = rb;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -102,18 +66,10 @@ let cmplwi cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let ui = unsigned imm ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (low word ra < ui) [
-      tm := lt;
-    ] [
-      if_ (low word ra > ui) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := low word ra < ui;
+    nth bit bf 1 := low word ra > ui;
+    nth bit bf 2 := low word ra = ui;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -121,18 +77,10 @@ let cmpldi cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let ui = unsigned imm ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (ra < ui) [
-      tm := lt;
-    ] [
-      if_ (ra > ui) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := ra < ui;
+    nth bit bf 1 := ra > ui;
+    nth bit bf 2 := ra = ui;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -145,18 +93,10 @@ let cmplw cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (low word ra < low word rb) [
-      tm := lt;
-    ] [
-      if_ (low word ra > low word rb) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := low word ra < rb;
+    nth bit bf 1 := low word ra > rb;
+    nth bit bf 2 := low word ra = rb;
     nth bit bf 3 := cpu.so;
   ]
 
@@ -164,18 +104,10 @@ let cmpld cpu ops =
   let bf = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
-  let tm = unsigned var byte in
   RTL.[
-    if_ (ra < rb) [
-      tm := lt;
-    ] [
-      if_ (ra > rb) [
-        tm := gt;
-      ] [
-        tm := eq;
-      ]
-    ];
-    extract bf 0 2 := tm;
+    nth bit bf 0 := ra < rb;
+    nth bit bf 1 := ra > rb;
+    nth bit bf 2 := ra = rb;
     nth bit bf 3 := cpu.so;
   ]
 
