@@ -11,6 +11,105 @@ let eval_rtl rtl =
   let bil = RTL.bil_of_t rtl in
   Stmt.eval bil (new Bili.context)
 
+let dsl_extract ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 32) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.extract x 3 6;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:32 5 in
+  let value = lookup_var ctxt y' in
+  assert_bool "extract failed" (is_equal_words expected value)
+
+let first ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 32) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.first x 6;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:32 42 in
+  let value = lookup_var ctxt y' in
+  assert_bool "first failed" (is_equal_words expected value)
+
+let last ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 32) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.last x 6;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:32 29 in
+  let value = lookup_var ctxt y' in
+  assert_bool "last failed" (is_equal_words expected value)
+
+let msb ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:32 0x80000000 in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 1) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.msb x;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:1 1 in
+  let value = lookup_var ctxt y' in
+  assert_bool "msb failed" (is_equal_words expected value)
+
+let lsb ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:32 1 in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 1) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.lsb x;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:1 1 in
+  let value = lookup_var ctxt y' in
+  assert_bool "lsb failed" (is_equal_words expected value)
+
+let low ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 8) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.low byte x;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:8 0xDD in
+  let value = lookup_var ctxt y' in
+  assert_bool "low failed" (is_equal_words expected value)
+
+let high width bits ctxt =
+  let data = Word.of_int64 0xAABBCCDD_EEFFAABBL in
+  let v = Exp.of_word data in
+  let x = unsigned var doubleword in
+  let y' = Var.create "y" (Type.Imm bits) in
+  let y  = Exp.of_var y' in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.high width x;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.extract_exn ~lo:(64 - bits) data in
+  let value = lookup_var ctxt y' in
+  assert_bool "high failed" (is_equal_words expected value)
+
 let plain_assign ctxt =
   let v = Var.create "v" (Type.Imm 16) in
   let e = Exp.of_var v in
@@ -20,7 +119,6 @@ let plain_assign ctxt =
   let ctxt = eval_rtl rtl in
   let value = lookup_var ctxt v in
   assert_bool "plain := failed" (is_equal_words expected value)
-
 
 (** Assign to concated variables:
     +----+---+----+---+---+---+--+
@@ -233,6 +331,16 @@ let foreach_with_assign ctxt =
 
 
 let suite = "Dsl" >::: [
+    "extract"                                >:: dsl_extract;
+    "low"                                    >:: low;
+    "high byte"                              >:: high byte 8;
+    "high halfword"                          >:: high halfword 16;
+    "high word"                              >:: high word 32;
+    "high doubleword"                        >:: high doubleword 64;
+    "first"                                  >:: first;
+    "last"                                   >:: last;
+    "msb"                                    >:: msb;
+    "lsb"                                    >:: lsb;
     "plain :="                               >:: plain_assign;
     "concated vars := exp"                   >:: concat_assign;
     "extract (concat [v1; v2; ...]) := exp"  >:: complex_assign;

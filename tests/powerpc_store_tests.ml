@@ -23,7 +23,7 @@ let st name opcode size ~d_addr arch ctxt =
     r28 := int (Word.of_int ~width:64 addr);
   ] in
   let bits = Size.in_bits size in
-  let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in
+  let expected = Word.extract_exn ~hi:(bits - 1) ~lo:0 data in
   check_mem init bytes mem ~addr:ea ~size expected arch ctxt
 
 let stb = st "STB" 38 `r8
@@ -40,7 +40,7 @@ let st_zero_reg name opcode size ~d_addr arch ctxt =
     r9 := int data;
   ] in
   let bits = Size.in_bits size in
-  let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in
+  let expected = Word.extract_exn ~hi:(bits - 1) ~lo:0 data in
   check_mem init bytes mem ~addr:ea ~size expected arch ctxt
 
 let stb_zero_reg = st_zero_reg "STB" 38 `r8
@@ -63,7 +63,7 @@ let stx name opt_opcode size arch ctxt =
       r31 := int y;
     ] in
   let bits = Size.in_bits size in
-  let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in
+  let expected = Word.extract_exn ~hi:(bits - 1) ~lo:0 data in
   check_mem init bytes mem ~addr:ea ~size expected arch ctxt
 
 let stbx = stx "STBX" 215 `r8
@@ -82,7 +82,7 @@ let stx_zero_reg name opt_opcode size arch ctxt =
       r31 := int ea;
     ] in
   let bits = Size.in_bits size in
-  let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in
+  let expected = Word.extract_exn ~hi:(bits - 1) ~lo:0 data in
   check_mem init bytes mem ~addr:ea ~size expected arch ctxt
 
 let stbx_zero_reg = stx_zero_reg "STBX" 215 `r8
@@ -102,7 +102,7 @@ let stu name opcode size arch ~d_addr ctxt =
     r29 := int (Word.of_int ~width:64 addr);
   ] in
   let bits = Size.in_bits size in
-  let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in
+  let expected = Word.extract_exn ~hi:(bits - 1) ~lo:0 data in
   check_mem init bytes mem ~addr:ea ~size expected arch ctxt;
   let expected_addr = Word.of_int ~width:64 (addr + d_addr) in
   check_gpr init bytes r29 expected_addr arch ctxt
@@ -127,7 +127,7 @@ let stux name opt_opcode size arch ctxt =
       r9 := int data;
     ] in
   let bits = Size.in_bits size in
-  let expected = Or_error.ok_exn @@ Word.extract ~hi:(bits - 1) ~lo:0 data in
+  let expected = Word.extract_exn ~hi:(bits - 1) ~lo:0 data in
   check_mem init bytes mem ~addr:ea ~size expected arch ctxt;
   let expected_addr = Word.of_int ~width:64 0xABCDEF42 in
   check_gpr init bytes r31 expected_addr arch ctxt

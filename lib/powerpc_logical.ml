@@ -431,7 +431,7 @@ let cnttzw cpu ops =
   let biti = unsigned var bit in
   RTL.[
     xv := low word rs;
-    cnt := extract zero 0 15;
+    cnt := zero;
     foreach biti xv [
       if_ (biti = zero) [
         cnt := cnt + one;
@@ -450,7 +450,7 @@ let cnttzw_dot cpu ops =
   let biti = unsigned var bit in
   RTL.[
     xv := low word rs;
-    cnt := extract zero 0 15;
+    cnt := zero;
     foreach biti xv [
       if_ (biti = zero) [
         cnt := cnt + one;
@@ -472,7 +472,7 @@ let cnttzd cpu ops =
   let biti = unsigned var bit in
   RTL.[
     xv := rs;
-    cnt := extract zero 0 15;
+    cnt := zero;
     foreach biti xv [
       if_ (biti = zero) [
         cnt := cnt + one;
@@ -491,7 +491,7 @@ let cnttzd_dot cpu ops =
   let biti = unsigned var bit in
   RTL.[
     xv := rs;
-    cnt := extract zero 0 15;
+    cnt := zero;
     foreach biti xv [
       if_ (biti = zero) [
         cnt := cnt + one;

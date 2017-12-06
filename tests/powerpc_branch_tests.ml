@@ -32,8 +32,7 @@ let addr_of_arch = function
   | `ppc64 -> Word.of_int64 0x0AAAAAAA_00000042L
   | _ -> failwith "PowerPC only"
 
-let extract ~hi ~lo w =
-  Or_error.ok_exn @@ Word.extract ~hi ~lo w
+let extract ~hi ~lo w = Word.extract_exn ~hi ~lo w
 
 let b arch ctxt =
   let bits = Size.in_bits @@ Arch.addr_size arch in

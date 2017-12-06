@@ -160,15 +160,14 @@ type cpu = {
   addr_size : width;
 }
 
-(** TODO: addr_size is weird
-    TODO: probably, it's not right place for this function *)
+(** TODO: probably, it's not right place for this function *)
 let make_cpu addr_size endian memory =
   let extract_addr a = match addr_size with
     | `r32 -> low word a
     | `r64 -> a in
-  let mem = match addr_size with
-    | `r32 -> mem32
-    | `r64 -> mem64 in
+  let mem,addr_size = match addr_size with
+    | `r32 -> mem32, Word
+    | `r64 -> mem64, Doubleword in
   let load exp width =
     let size = size_of_width width in
     let addr = extract_addr exp in
@@ -178,8 +177,5 @@ let make_cpu addr_size endian memory =
     let addr = extract_addr addr in
     store mem addr data endian size in
   let addr = Exp.of_word @@ Memory.min_addr memory in
-  let addr_size = match addr_size with
-    | `r32 -> Word
-    | `r64 -> Doubleword in
   let jmp e = jmp (low addr_size e) in
   { load; store; jmp; addr; addr_size; }
