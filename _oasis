@@ -28,6 +28,7 @@ Library powerpc_lifter
                   Powerpc_model,
                   Powerpc_rtl,
                   Powerpc_rotate,
+                  Powerpc_shift,
                   Powerpc_store,
                   Powerpc_utils
   CompiledObject: best
@@ -46,6 +47,7 @@ Library powerpc_tests
                   Powerpc_load_tests,
                   Powerpc_logical_tests,
                   Powerpc_rotate_tests,
+                  Powerpc_shift_tests,
                   Powerpc_store_tests,
                   Powerpc_tests_helpers
   BuildDepends:   oUnit, powerpc_lifter

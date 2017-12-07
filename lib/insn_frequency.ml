@@ -39,7 +39,7 @@
    addze.     107         | add to zero extended
    blelr      107         |
    subfze     114         |
-   rlwimi     123         |
+   rlwimi     123         | rotate left imm then mask insert
    fsubs      127         |
    lhzu       154         | load halfword with update
    andc       154         | and with complement
@@ -76,7 +76,7 @@
    fadd       742         |
    stbu       768         | store byte with update
    xoris      805         | xor imm shifted
-   bctrl      813         | branch conditional  ??
+   bctrl      813         |
    mulhwu     839         |
    bdz        857         |
    subfic     1180        |
@@ -111,7 +111,7 @@
    mullw      4116        |
    andi.      4147        | add immediate
    stbx       4285        | store byte indexed
-   clrlwi     4387        |
+   clrlwi     4387        | extended mnemonic for Rotate left imm + mask
    mr.        4847        | or_dot (extended)
    blt        4910        |
    ori        5288        | ori
@@ -136,7 +136,7 @@
    lbz        17430       | load byte and zero
    add        20844       | add
    cmplw      22235       | compare logical
-   rlwinm     27103       |
+   rlwinm     27103       | rotate left imm then and mask
    bne        40300       | branch (extended)
    lis        43125       | addis (extended)
    beq        55306       | branch (extended)

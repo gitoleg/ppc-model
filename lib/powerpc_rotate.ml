@@ -231,6 +231,7 @@ type t = [
   | `RLDCR
   | `RLDIMI
 ] [@@deriving sexp, enumerate]
+(** TODO: add *_dot instructions *)
 
 
 let lift opcode cpu ops =
