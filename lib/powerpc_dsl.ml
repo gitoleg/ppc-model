@@ -112,6 +112,12 @@ let nth w e index =
   let x = width / step - index - 1 in
   let hi = (x + 1) * step - 1 in
   let lo = x * step in
+  let n = width / step in
+  let hi, lo =
+    if n * step < width then
+      let sh = width - n * step in
+      hi + sh, lo + sh
+    else hi, lo in
   Exp.extract hi lo e
 
 let extract e left right =

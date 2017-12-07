@@ -61,7 +61,11 @@ val string_of_bytes : string -> string
 (** PowerPC instruction forms  *)
 type form = [
   | `D
+  | `M
+  | `MD
+  | `MDS
   | `X
+  | `XS
 ]
 
 (** [make_insn ~name form fields] - return a bytes sequence from

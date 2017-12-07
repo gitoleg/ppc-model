@@ -13,6 +13,7 @@ let lifters : (module Lifter) list = [
   (module Powerpc_compare);
   (module Powerpc_load);
   (module Powerpc_logical);
+  (module Powerpc_rotate);
   (module Powerpc_store);
 ]
 

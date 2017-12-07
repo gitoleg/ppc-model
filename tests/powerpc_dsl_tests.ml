@@ -209,6 +209,66 @@ let complex_assign ctxt =
     (is_equal_words expected_val5 val5)
 
 let nth_byte ctxt =
+  let x = Var.create "x" (Type.Imm 64) in
+  let y = Var.create "y" (Type.Imm 8) in
+  let ex = Exp.of_var x in
+  let ey = Exp.of_var y in
+  let ew = Exp.of_word (Word.of_int64 0xABCDEF34_FFAABB42L) in
+  let expected = Word.of_int ~width:8 0xEF in
+  let rtl = RTL.[
+      ex := ew;
+      ey := nth byte ex 2;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt y in
+  assert_bool "nth byte failed" (is_equal_words expected value)
+
+let nth_hw ctxt =
+  let x = Var.create "x" (Type.Imm 64) in
+  let y = Var.create "y" (Type.Imm 16) in
+  let ex = Exp.of_var x in
+  let ey = Exp.of_var y in
+  let ew = Exp.of_word (Word.of_int64 0xABCDEF34_FFAABB42L) in
+  let expected = Word.of_int ~width:16 0xEF34 in
+  let rtl = RTL.[
+      ex := ew;
+      ey := nth halfword ex 1;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt y in
+  assert_bool "nth halfword failed" (is_equal_words expected value)
+
+let nth_dw ctxt =
+  let x = Var.create "x" (Type.Imm 96) in
+  let y = Var.create "y" (Type.Imm 64) in
+  let ex = Exp.of_var x in
+  let ey = Exp.of_var y in
+  let ew1 = Exp.of_word (Word.of_int ~width:32 0xABCDEF42) in
+  let ew2 = Exp.of_word (Word.of_int ~width:32 0xFFAABBCC) in
+  let ew3 = Exp.of_word (Word.of_int ~width:32 0x12345678) in
+  let expected = Word.of_int64 0xABCDEF42_FFAABBCCL in
+  let rtl = RTL.[
+      ex := ew1 ^ ew2 ^ ew3;
+      ey := nth doubleword ex 0;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt y in
+  assert_bool "nth doubleword failed" (is_equal_words expected value)
+
+let nth_bit_with_assign ctxt =
+  let var = Var.create "tmp" (Type.Imm 64) in
+  let e = Exp.of_var var in
+  let x1 = Exp.of_word (Word.of_int64 0xAAAAAAAA_AAAAAAAAL) in
+  let expected = Word.of_int64 0xEAAAAAAA_AAAAAAAAL in
+  let rtl = RTL.[
+      e := x1;
+      nth bit e 1 := one;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt var in
+  assert_bool "nth bit failed" (is_equal_words expected value)
+
+let nth_byte_with_assign ctxt =
   let var = Var.create "tmp" (Type.Imm 64) in
   let e = Exp.of_var var in
   let x1 = Exp.of_word (Word.of_int64 0xFFFFFFFF_FFFFFFFFL) in
@@ -220,9 +280,9 @@ let nth_byte ctxt =
     ] in
   let ctxt = eval_rtl rtl in
   let value = lookup_var ctxt var in
-  assert_bool "nsize failed" (is_equal_words expected value)
+  assert_bool "nth byte failed" (is_equal_words expected value)
 
-let nth_hw ctxt =
+let nth_hw_with_assign ctxt =
   let var = Var.create "tmp" (Type.Imm 64) in
   let e = Exp.of_var var in
   let x1 = Exp.of_word (Word.of_int64 0xAAAAAAAA_AAAAAAAAL) in
@@ -234,20 +294,7 @@ let nth_hw ctxt =
     ] in
   let ctxt = eval_rtl rtl in
   let value = lookup_var ctxt var in
-  assert_bool "nsize failed" (is_equal_words expected value)
-
-let nth_bit ctxt =
-  let var = Var.create "tmp" (Type.Imm 64) in
-  let e = Exp.of_var var in
-  let x1 = Exp.of_word (Word.of_int64 0xAAAAAAAA_AAAAAAAAL) in
-  let expected = Word.of_int64 0xEAAAAAAA_AAAAAAAAL in
-  let rtl = RTL.[
-      e := x1;
-      nth bit e 1 := one;
-    ] in
-  let ctxt = eval_rtl rtl in
-  let value = lookup_var ctxt var in
-  assert_bool "nbit failed" (is_equal_words expected value)
+  assert_bool "nth halfword failed" (is_equal_words expected value)
 
 let foreach ctxt =
   let w = 40 in
@@ -336,6 +383,26 @@ let foreach_with_assign ctxt =
   let value = lookup_var ctxt v3' in
   assert_bool "foreach with assign failed" (is_equal_words expected value)
 
+(** check that rotate insns could be implemented like this  *)
+let circ_shift_32 ctxt =
+  let w = Word.of_int64 0xAABBCCDD_EEFF4242L in
+  let e = Exp.of_word w in
+  let x = unsigned var doubleword in
+  let y = unsigned var word in
+  let z' = Var.create "res" (Type.Imm 64) in
+  let z = Exp.of_var z' in
+  let sh = unsigned const byte 4 in
+  let rtl =
+    RTL.[
+      x := e;
+      y := nth word x 1;
+      z := nth doubleword ((y ^ y ^ y) lsl sh) 0;
+    ] in
+  let expected = Word.of_int64 0xEFF4242E_EFF4242EL in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "circ_shift failed" (is_equal_words expected value)
+
 
 let suite = "Dsl" >::: [
     "extract"                                >:: dsl_extract;
@@ -351,9 +418,13 @@ let suite = "Dsl" >::: [
     "plain :="                               >:: plain_assign;
     "concated vars := exp"                   >:: concat_assign;
     "extract (concat [v1; v2; ...]) := exp"  >:: complex_assign;
+    "nth bit with assign"                    >:: nth_bit_with_assign;
+    "nth byte with assign"                   >:: nth_byte_with_assign;
+    "nth halfword with assign"               >:: nth_hw_with_assign;
     "nth byte"                               >:: nth_byte;
     "nth halfword"                           >:: nth_hw;
-    "nth bit"                                >:: nth_bit;
+    "nth doubleword"                         >:: nth_dw;
     "foreach"                                >:: foreach;
     "foreach with assign"                    >:: foreach_with_assign;
+    "circ shift"                             >:: circ_shift_32;
   ]

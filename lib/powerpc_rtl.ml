@@ -99,10 +99,12 @@ module Exp = struct
   let lt x y  = bit_result (binop_with_cast Bil.lt x y)
   let gt x y  = bit_result (binop_with_cast Bil.lt y x)
   let eq x y  = bit_result (binop_with_cast Bil.eq x y)
+  let le x y  = bit_result (binop_with_cast Bil.le x y)
+  let ge x y  = bit_result (binop_with_cast Bil.le y x)
   let neq x y = bit_result (binop_with_cast Bil.neq x y)
   let slt x y = bit_result (binop_with_cast Bil.slt x y)
   let sgt x y = bit_result (binop_with_cast Bil.slt y x)
-  let lshift = binop Bil.lshift
+  let lshift = binop_with_cast Bil.lshift
   let rshift = binop Bil.rshift
   let bit_and = binop_with_cast Bil.bit_and
   let bit_xor = binop_with_cast Bil.bit_xor
@@ -198,6 +200,8 @@ module Infix = struct
   let ( ^ )  = concat
   let ( < )  = lt
   let ( > )  = gt
+  let ( <= )  = le
+  let ( >= )  = ge
   let ( <$ ) = slt
   let ( >$ ) = sgt
   let ( = )  = eq

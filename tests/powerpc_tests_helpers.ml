@@ -141,27 +141,74 @@ let string_of_bytes bytes =
 
 type form = [
   | `D
+  | `M
+  | `MD
+  | `MDS
   | `X
-]
+  | `XS
+] [@@deriving sexp]
 
 let make_insn ?name ?(arch=`ppc) form fields =
+  let b0 = Word.b0 in
+  let word ~width n = Word.of_int ~width n in
   let bytes =
     match form, fields with
     | `D, [opcode; rt; ra; d] ->
       make_bytes [
-        Word.of_int ~width:6 opcode;
-        Word.of_int ~width:5 rt;
-        Word.of_int ~width:5 ra;
-        Word.of_int ~width:16 d;
+        word ~width:6 opcode;
+        word ~width:5 rt;
+        word ~width:5 ra;
+        word ~width:16 d;
+      ]
+    | `M, [opcode; rs; ra; sh; mb; me; rc] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rs;
+        word ~width:5 ra;
+        word ~width:5 sh;
+        word ~width:5 mb;
+        word ~width:5 me;
+        word ~width:1 rc;
+      ]
+    | `MD, [opcode; rs; ra; sh1; me; opt; sh2; rc] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rs;
+        word ~width:5 ra;
+        word ~width:5 sh1;
+        word ~width:6 me;
+        word ~width:3 opt;
+        word ~width:1 sh2;
+        word ~width:1 rc;
+      ]
+    | `MDS, [opcode; rs; ra; rb; mb; opt; rc] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rs;
+        word ~width:5 ra;
+        word ~width:5 rb;
+        word ~width:6 mb;
+        word ~width:4 opt;
+        word ~width:1 rc;
       ]
     | `X, [opcode; rt; ra; rb; opt_opcode] ->
       make_bytes [
-        Word.of_int ~width:6 opcode;
-        Word.of_int ~width:5 rt;
-        Word.of_int ~width:5 ra;
-        Word.of_int ~width:5 rb;
-        Word.of_int ~width:10 opt_opcode;
-        Word.b0;
+        word ~width:6 opcode;
+        word ~width:5 rt;
+        word ~width:5 ra;
+        word ~width:5 rb;
+        word ~width:10 opt_opcode;
+        b0;
+      ]
+    | `XS, [opcode; rs; ra; sh1; opt; sh2; rc] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rs;
+        word ~width:5 ra;
+        word ~width:5 sh1;
+        word ~width:8 opt;
+        word ~width:1 sh2;
+        word ~width:1 rc;
       ]
     | _ -> failwith "unexpected argument set for given insn form" in
   let () = match name with
