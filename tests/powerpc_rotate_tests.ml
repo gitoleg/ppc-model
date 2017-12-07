@@ -4,8 +4,6 @@ open Bap.Std
 
 open Powerpc_tests_helpers
 
-
-
 let circ_shift32 x sh =
   if sh = 0 then x
   else
@@ -272,5 +270,66 @@ let suite = "rotate" >::: [
     "rldimi sh:4 from:0"        >:: rldimi `ppc ~sh:4 ~from:0;
     "rldimi sh:0 from:25"       >:: rldimi `ppc ~sh:0 ~from:25;
     "rldimi sh:0 from:0"        >:: rldimi `ppc ~sh:0 ~from:0;
+
+    "rlwinm ppc64 sh:3 from:5 to:10"  >:: rlwinm `ppc64 ~sh:3 ~from:5 ~to_:10;
+    "rlwinm ppc64 sh:3 from:10 to:5"  >:: rlwinm `ppc64 ~sh:3 ~from:10 ~to_:5;
+    "rlwinm ppc64 sh:3 from:0 to:5"   >:: rlwinm `ppc64 ~sh:3 ~from:0 ~to_:5;
+    "rlwinm ppc64 sh:3 from:5 to:0"   >:: rlwinm `ppc64 ~sh:3 ~from:5 ~to_:0;
+    "rlwinm ppc64 sh:3 from:0 to:0"   >:: rlwinm `ppc64 ~sh:3 ~from:0 ~to_:0;
+    "rlwinm ppc64 sh:3 from:0 to:0"   >:: rlwinm `ppc64 ~sh:3 ~from:0 ~to_:0;
+    "rlwinm ppc64 sh:0 from:3 to:5"   >:: rlwinm `ppc64 ~sh:0 ~from:3 ~to_:5;
+
+    "rlwnm ppc64 sh:3 from:5 to:10"   >:: rlwnm `ppc64 ~sh:3 ~from:5 ~to_:10;
+    "rlwnm ppc64 sh:3 from:10 to:5"   >:: rlwnm `ppc64 ~sh:3 ~from:10 ~to_:5;
+    "rlwnm ppc64 sh:3 from:0 to:5"    >:: rlwnm `ppc64 ~sh:3 ~from:0 ~to_:5;
+    "rlwnm ppc64 sh:3 from:5 to:0"    >:: rlwnm `ppc64 ~sh:3 ~from:5 ~to_:0;
+    "rlwnm ppc64 sh:3 from:0 to:0"    >:: rlwnm `ppc64 ~sh:3 ~from:0 ~to_:0;
+    "rlwnm ppc64 sh:3 from:0 to:0"    >:: rlwnm `ppc64 ~sh:3 ~from:0 ~to_:0;
+    "rlwnm ppc64 sh:0 from:3 to:5"    >:: rlwnm `ppc64 ~sh:0 ~from:3 ~to_:5;
+
+    "rlwimi ppc64 sh:3 from:5 to:10"  >:: rlwimi `ppc64 ~sh:3 ~from:5 ~to_:10;
+    "rlwimi ppc64 sh:3 from:10 to:5"  >:: rlwimi `ppc64 ~sh:3 ~from:10 ~to_:5;
+    "rlwimi ppc64 sh:3 from:0 to:5"   >:: rlwimi `ppc64 ~sh:3 ~from:0 ~to_:5;
+    "rlwimi ppc64 sh:3 from:5 to:0"   >:: rlwimi `ppc64 ~sh:3 ~from:5 ~to_:0;
+    "rlwimi ppc64 sh:3 from:0 to:0"   >:: rlwimi `ppc64 ~sh:3 ~from:0 ~to_:0;
+    "rlwimi ppc64 sh:3 from:0 to:0"   >:: rlwimi `ppc64 ~sh:3 ~from:0 ~to_:0;
+    "rlwimi ppc64 sh:0 from:3 to:5"   >:: rlwimi `ppc64 ~sh:0 ~from:3 ~to_:5;
+
+    "rldicl ppc64 sh:4 from:25"       >:: rldicl `ppc64 ~sh:4 ~from:25;
+    "rldicl ppc64 sh:4 from:55"       >:: rldicl `ppc64 ~sh:4 ~from:55;
+    "rldicl ppc64 sh:4 from:0"        >:: rldicl `ppc64 ~sh:4 ~from:0;
+    "rldicl ppc64 sh:0 from:25"       >:: rldicl `ppc64 ~sh:0 ~from:25;
+    "rldicl ppc64 sh:0 from:0"        >:: rldicl `ppc64 ~sh:0 ~from:0;
+
+    "rldicr ppc64 sh:4 to:25"         >:: rldicr `ppc64 ~sh:4 ~to_:25;
+    "rldicr ppc64 sh:4 to:55"         >:: rldicr `ppc64 ~sh:4 ~to_:55;
+    "rldicr ppc64 sh:4 to:0"          >:: rldicr `ppc64 ~sh:4 ~to_:0;
+    "rldicr ppc64 sh:0 to:25"         >:: rldicr `ppc64 ~sh:0 ~to_:25;
+    "rldicr ppc64 sh:0 to:0"          >:: rldicr `ppc64 ~sh:0 ~to_:0;
+
+    "rldic ppc64 sh:4 from:25"        >:: rldic `ppc64 ~sh:4 ~from:25;
+    "rldic ppc64 sh:4 from:55"        >:: rldic `ppc64 ~sh:4 ~from:55;
+    "rldic ppc64 sh:4 from:0"         >:: rldic `ppc64 ~sh:4 ~from:0;
+    "rldic ppc64 sh:0 from:25"        >:: rldic `ppc64 ~sh:0 ~from:25;
+    "rldic ppc64 sh:0 from:0"         >:: rldic `ppc64 ~sh:0 ~from:0;
+
+    "rldcl ppc64 sh:4 from:25"        >:: rldcl `ppc64 ~sh:4 ~from:25;
+    "rldcl ppc64 sh:4 from:55"        >:: rldcl `ppc64 ~sh:4 ~from:55;
+    "rldcl ppc64 sh:4 from:0"         >:: rldcl `ppc64 ~sh:4 ~from:0;
+    "rldcl ppc64 sh:0 from:25"        >:: rldcl `ppc64 ~sh:0 ~from:25;
+    "rldcl ppc64 sh:0 from:0"         >:: rldcl `ppc64 ~sh:0 ~from:0;
+
+    "rldcr ppc64 sh:4 to:25"          >:: rldcr `ppc64 ~sh:4 ~to_:25;
+    "rldcr ppc64 sh:4 to:55"          >:: rldcr `ppc64 ~sh:4 ~to_:55;
+    "rldcr ppc64 sh:4 to:0"           >:: rldcr `ppc64 ~sh:4 ~to_:0;
+    "rldcr ppc64 sh:0 to:25"          >:: rldcr `ppc64 ~sh:0 ~to_:25;
+    "rldcr ppc64 sh:0 to:0"           >:: rldcr `ppc64 ~sh:0 ~to_:0;
+
+    "rldimi ppc64 sh:4 from:25"       >:: rldimi `ppc64 ~sh:4 ~from:25;
+    "rldimi ppc64 sh:4 from:55"       >:: rldimi `ppc64 ~sh:4 ~from:55;
+    "rldimi ppc64 sh:4 from:0"        >:: rldimi `ppc64 ~sh:4 ~from:0;
+    "rldimi ppc64 sh:0 from:25"       >:: rldimi `ppc64 ~sh:0 ~from:25;
+    "rldimi ppc64 sh:0 from:0"        >:: rldimi `ppc64 ~sh:0 ~from:0;
+
 
   ]

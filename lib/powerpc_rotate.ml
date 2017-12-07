@@ -1,8 +1,5 @@
 open Powerpc
 
-(** TODO: check extended mnemonic *)
-
-
 (** Fix-point Rotate Left Word Immediate then AND with Mask
     Page 102 of IBM Power ISATM Version 3.0 B
     example:
@@ -39,7 +36,6 @@ let rlwinm cpu ops =
     ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl sh) 0) land mask;
   ]
 
-(** TODO: must use only first  bits of RB  *)
 (** Fix-point Rotate Left Word then AND with Mask
     Page 103 of IBM Power ISATM Version 3.0 B
     example:
@@ -73,7 +69,7 @@ let rlwnm cpu ops =
       mask := mask1 lor mask2;
     ];
     tmp := nth word rs 1;
-    ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl rb) 0) land mask;
+    ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl (last rb 5)) 0) land mask;
   ]
 
 (** Fix-point Rotate Left Word Immediate then Mask Insert
@@ -168,7 +164,6 @@ let rldic cpu ops =
     ra := (nth doubleword ((rs ^ rs ^ rs) lsl sh) 0) land mask;
   ]
 
-(** TODO: must use only first  bits of RB  *)
 (** Fix-point Rotate Left Doubleword then Clear Left
     Page 105 of IBM Power ISATM Version 3.0 B
     example:
@@ -182,10 +177,9 @@ let rldcl cpu ops =
   RTL.[
     mask := zero;
     mask := (lnot mask) lsr mb;
-    ra := (nth doubleword ((rs ^ rs ^ rs) lsl rb) 0) land mask;
+    ra := (nth doubleword ((rs ^ rs ^ rs) lsl (last rb 6)) 0) land mask;
   ]
 
-(** TODO: must use only first  bits of RB  *)
 (** Fix-point Rotate Left Doubleword then Clear Right
     Page 106 of IBM Power ISATM Version 3.0 B
     example:
@@ -200,7 +194,7 @@ let rldcr cpu ops =
   RTL.[
     mask := zero;
     mask := (lnot mask) lsl (width - me - one);
-    ra := (nth doubleword ((rs ^ rs ^ rs) lsl rb) 0) land mask;
+    ra := (nth doubleword ((rs ^ rs ^ rs) lsl (last rb 6)) 0) land mask;
   ]
 
 (** Fix-point Rotate Left Doubleword Immediate then Mask Insert
@@ -237,6 +231,7 @@ type t = [
   | `RLDCR
   | `RLDIMI
 ] [@@deriving sexp, enumerate]
+
 
 let lift opcode cpu ops =
   match opcode with
