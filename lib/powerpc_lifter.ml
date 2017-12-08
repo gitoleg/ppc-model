@@ -9,6 +9,7 @@ let endian = BigEndian
 
 let lifters : (module Lifter) list = [
   (module Powerpc_add);
+  (module Powerpc_arith);
   (module Powerpc_branch);
   (module Powerpc_compare);
   (module Powerpc_load);

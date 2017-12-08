@@ -145,6 +145,7 @@ type form = [
   | `MD
   | `MDS
   | `X
+  | `XO
   | `XS
 ] [@@deriving sexp]
 
@@ -208,6 +209,16 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:5 rb;
         word ~width:10 opt_opcode;
         b0;
+      ]
+    | `XO, [opcode; rt; ra; rb; oe; opt_opcode; rc] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rt;
+        word ~width:5 ra;
+        word ~width:5 rb;
+        word ~width:1 oe;
+        word ~width:9 opt_opcode;
+        word ~width:1 rc;
       ]
     | `XS, [opcode; rs; ra; sh1; opt; sh2; rc] ->
       make_bytes [

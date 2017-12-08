@@ -65,6 +65,7 @@ type form = [
   | `MD
   | `MDS
   | `X
+  | `XO
   | `XS
 ]
 

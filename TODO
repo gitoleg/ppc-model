@@ -1,0 +1,2 @@
+ - implement beatiful registration for lifter functions
+ - remove X-register search from dsl, and just add aliases for them in model

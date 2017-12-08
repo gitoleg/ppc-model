@@ -19,6 +19,7 @@ Library powerpc_lifter
   FindLibName:    powerpc_lifter
   Modules:        Powerpc,
                   Powerpc_add,
+                  Powerpc_arith,
                   Powerpc_branch,
                   Powerpc_compare,
                   Powerpc_dsl,
@@ -41,6 +42,7 @@ Library powerpc_tests
   Install:        false
   CompiledObject: best
   Modules:        Powerpc_add_tests,
+                  Powerpc_arith_tests,
                   Powerpc_branch_tests,
                   Powerpc_compare_tests,
                   Powerpc_dsl_tests,
