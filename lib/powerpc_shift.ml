@@ -177,6 +177,7 @@ type t = [
   | `SRADI
   | `SRAD
 ] [@@deriving sexp, enumerate]
+(** TODO: add *_dot instructions *)
 
 let lift opcode cpu ops =
   match opcode with
