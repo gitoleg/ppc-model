@@ -102,8 +102,12 @@ module Exp = struct
   let le x y  = bit_result (binop_with_cast Bil.le x y)
   let ge x y  = bit_result (binop_with_cast Bil.le y x)
   let neq x y = bit_result (binop_with_cast Bil.neq x y)
+
+  (** TODO: what if x or_/and_ y unsigned ? cast signed?  *)
   let slt x y = bit_result (binop_with_cast Bil.slt x y)
   let sgt x y = bit_result (binop_with_cast Bil.slt y x)
+  let slte x y = bit_result (binop_with_cast Bil.sle x y)
+  let sgte x y = bit_result (binop_with_cast Bil.sle y x)
   let lshift = binop_with_cast Bil.lshift
   let rshift = binop Bil.rshift
   let bit_and = binop_with_cast Bil.bit_and
@@ -204,6 +208,8 @@ module Infix = struct
   let ( >= )  = ge
   let ( <$ ) = slt
   let ( >$ ) = sgt
+  let ( <=$ ) = slte
+  let ( >=$ ) = sgte
   let ( = )  = eq
   let ( <> )  = neq
   let ( lsl )  = lshift
@@ -252,6 +258,8 @@ module Translate = struct
     | None, Some right -> Bil.[v := middle ^ right]
     | Some left, Some right -> Bil.[ v := left ^ middle ^ right; ]
 
+  (** TODO: what is with lhs sign ? and why do we nees
+      an extra match clause bellow (in move function) *)
   let assign_vars vars ?hi ?lo rhs =
     let in_bounds x left right = x <= left && x >= right in
     let vars = List.rev vars in
@@ -324,18 +332,17 @@ module Translate = struct
       let iters = Exp.width e / Exp.width step_e in
       let step = Exp.width step_e in
       let has_assignments = has_assignments step_var code in
-      let rtl = List.concat
-          (List.init iters
-             ~f:(fun i ->
-                 let i = iters - i - 1 in
-                 let hi = (i + 1) * step - 1 in
-                 let lo = i * step in
-                 if has_assignments then
-                   let last = Infix.(Exp.extract hi lo e := step_e) in
-                   Infix.(step_e := Exp.extract hi lo e) :: code @ [last]
-                 else
-                   Infix.(step_e := Exp.extract hi lo e) :: code)) in
-      to_bil rtl
+      to_bil @@ List.concat
+        (List.init iters
+           ~f:(fun i ->
+               let i = iters - i - 1 in
+               let hi = (i + 1) * step - 1 in
+               let lo = i * step in
+               if has_assignments then
+                 let last = Infix.(Exp.extract hi lo e := step_e) in
+                 Infix.(step_e := Exp.extract hi lo e) :: code @ [last]
+               else
+                 Infix.(step_e := Exp.extract hi lo e) :: code))
   and
     to_bil (ts : t list)  =
     List.concat (List.map ~f:stmt_to_bil ts)

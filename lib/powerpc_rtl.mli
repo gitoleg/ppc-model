@@ -24,6 +24,8 @@ module Exp : sig
 
   val width : exp -> int
 
+  val concat : exp -> exp -> exp
+
 end
 
 val store : var -> exp -> exp -> endian -> size -> t
@@ -46,6 +48,8 @@ module Infix : sig
   val ( <> )  : exp -> exp -> exp
   val ( <$ ) : exp -> exp -> exp
   val ( >$ ) : exp -> exp -> exp
+  val ( <=$ )  : exp -> exp -> exp
+  val ( >=$ )  : exp -> exp -> exp
   val ( lsl )  : exp -> exp -> exp
   val ( lsr )  : exp -> exp -> exp
   val ( lor )  : exp -> exp -> exp

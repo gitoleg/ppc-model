@@ -215,7 +215,7 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:5 rs;
         word ~width:5 ra;
         word ~width:5 sh1;
-        word ~width:8 opt;
+        word ~width:9 opt;
         word ~width:1 sh2;
         word ~width:1 rc;
       ]
