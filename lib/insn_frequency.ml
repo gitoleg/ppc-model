@@ -15,7 +15,7 @@
    creqv      9           |
    bltlr      9           |
    andc.      13          | and with complement
-   sraw       19          |
+   sraw       19          | shift right word
    oris       21          | or_ imm shifted
    fadds      22          |
    lbzux      24          |
@@ -84,14 +84,14 @@
    fsub       1235        |
    addic      1238        | add imm complemented
    .long      1286        |
-   xori       1342        |
+   xori       1342        | xor imm
    mulli      1383        |
    addis      1435        | add imm shifted
    cntlzw     1470        | count leading zero
    subfe      1706        |
-   srawi      1749        |
-   srw        1831        |
-   rotlwi     1832        |
+   srawi      1749        | shift right algebraic imm
+   srw        1831        | shift right word
+   rotlwi     1832        | rotate left word imm
    mfcr       1862        |
    divwu      2008        |
    and        2033        | and
@@ -100,7 +100,7 @@
    addc       2225        | add complemented
    mtcrf      2235        |
    adde       2276        | add extended
-   slw        2304        |
+   slw        2304        | shift left word
    lbzu       2429        | load byte with update
    bdnz       2458        |
    xor.       2465        | xor
@@ -129,7 +129,7 @@
    mflr       9835        |
    ble        10935       |
    mtlr       11504       |
-   blr        12568       | branch to link register ??
+   blr        12568       |
    mtctr      13029       |
    cmplwi     13495       | compare logical
    stwu       14900       | store word with update

@@ -78,7 +78,6 @@ module Exp = struct
     {sign; width; body;}
 
   let binop_with_cast op lhs rhs =
-    let sign = derive_sign lhs.sign rhs.sign in
     let width = max lhs.width rhs.width in
     let lhs = cast lhs width sign in
     let rhs = cast rhs width sign in
@@ -102,12 +101,11 @@ module Exp = struct
   let le x y  = bit_result (binop_with_cast Bil.le x y)
   let ge x y  = bit_result (binop_with_cast Bil.le y x)
   let neq x y = bit_result (binop_with_cast Bil.neq x y)
-
-  (** TODO: what if x or_/and_ y unsigned ? cast signed?  *)
   let slt x y = bit_result (binop_with_cast Bil.slt x y)
   let sgt x y = bit_result (binop_with_cast Bil.slt y x)
   let slte x y = bit_result (binop_with_cast Bil.sle x y)
   let sgte x y = bit_result (binop_with_cast Bil.sle y x)
+
   let lshift = binop_with_cast Bil.lshift
   let rshift = binop Bil.rshift
   let bit_and = binop_with_cast Bil.bit_and
