@@ -8,7 +8,7 @@
    stwbrx     4           |
    stbux      4           | store word with update indexed
    lwzux      6           | load word zero with update indexed
-   rotlw      6           |
+   rotlw      6           | rotate left word
    extsh      7           |
    neg.       7           | neg
    trap       8           |

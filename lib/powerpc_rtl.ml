@@ -78,6 +78,7 @@ module Exp = struct
     {sign; width; body;}
 
   let binop_with_cast op lhs rhs =
+    let sign = derive_sign lhs.sign rhs.sign in
     let width = max lhs.width rhs.width in
     let lhs = cast lhs width sign in
     let rhs = cast rhs width sign in
