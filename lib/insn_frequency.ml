@@ -31,14 +31,14 @@
    fmsub      69          |
    fdiv       71          |
    crnot      73          |
-   divw       86          |
+   divw       86          | div word
    stwux      101         | store word with update indexed
    bso        102         |
    srawi.     106         |
    format     107         |
    addze.     107         | add to zero extended
    blelr      107         |
-   subfze     114         |
+   subfze     114         | substract from
    rlwimi     123         | rotate left imm then mask insert
    fsubs      127         |
    lhzu       154         | load halfword with update
@@ -55,7 +55,7 @@
    frsp       254         |
    subf.      260         |
    and.       289         | and
-   mulhw      292         |
+   mulhw      292         | mul high word
    addze      298         | add to zero extended
    fneg       332         |
    lhz        334         |
@@ -68,7 +68,7 @@
    or.        479          | or_
    addic.     480         | add imm complemented
    bcl        527         | branch conditional
-   subfc      610         |
+   subfc      610         | substract from
    fmul       615         |
    neg        616         | neg
    cror       617         |
@@ -77,23 +77,23 @@
    stbu       768         | store byte with update
    xoris      805         | xor imm shifted
    bctrl      813         |
-   mulhwu     839         |
+   mulhwu     839         | mul high word unsigned
    bdz        857         |
-   subfic     1180        |
+   subfic     1180        | substract from
    stwx       1180        | store word indexed
    fsub       1235        |
    addic      1238        | add imm complemented
    .long      1286        |
    xori       1342        | xor imm
-   mulli      1383        |
+   mulli      1383        | mul imm
    addis      1435        | add imm shifted
    cntlzw     1470        | count leading zero
-   subfe      1706        |
+   subfe      1706        | substract from
    srawi      1749        | shift right algebraic imm
    srw        1831        | shift right word
    rotlwi     1832        | rotate left word imm
    mfcr       1862        |
-   divwu      2008        |
+   divwu      2008        | div word unsigned
    and        2033        | and
    lfs        2039        |
    lbzx       2128        |
@@ -108,7 +108,7 @@
    fcmpu      3293        |
    stfd       3774        |
    fmr        4061        |
-   mullw      4116        |
+   mullw      4116        | mul word
    andi.      4147        | add immediate
    stbx       4285        | store byte indexed
    clrlwi     4387        | extended mnemonic for Rotate left imm + mask
@@ -123,7 +123,7 @@
    or         7808         | or_
    cmpw       8326        | compare
    bctr       8684        | branch conditional
-   subf       8883        |
+   subf       8883        | substract from
    stb        9331        | store byte
    bgt        9421        |
    mflr       9835        |
