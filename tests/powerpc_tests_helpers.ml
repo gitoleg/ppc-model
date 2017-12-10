@@ -144,6 +144,7 @@ type form = [
   | `M
   | `MD
   | `MDS
+  | `VA
   | `X
   | `XO
   | `XS
@@ -200,6 +201,15 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:5 rb;
         word ~width:10 opt_opcode;
         word ~width:1 rc;
+      ]
+    | `VA, [opcode; rt; ra; rb; rc; opt_opcode;] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rt;
+        word ~width:5 ra;
+        word ~width:5 rb;
+        word ~width:5 rc;
+        word ~width:6 opt_opcode;
       ]
     | `X, [opcode; rt; ra; rb; opt_opcode;] ->
       make_bytes [

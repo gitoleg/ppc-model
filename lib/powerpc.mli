@@ -9,6 +9,7 @@ val byte : bitwidth
 val word : bitwidth
 val halfword : bitwidth
 val doubleword : bitwidth
+val quadroword : bitwidth
 val bitwidth : int -> bitwidth
 
 type 'a p
@@ -33,6 +34,7 @@ module RTL : sig
   val ( / )  : exp -> exp -> exp
   val (/$) : exp -> exp -> exp
   val ( ^ )  : exp -> exp -> exp
+  val ( % ) : exp -> exp -> exp
   val ( < )  : exp -> exp -> exp
   val ( > )  : exp -> exp -> exp
   val ( <= )  : exp -> exp -> exp

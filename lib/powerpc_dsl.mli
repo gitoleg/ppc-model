@@ -11,6 +11,7 @@ val byte : bitwidth
 val halfword : bitwidth
 val word : bitwidth
 val doubleword : bitwidth
+val quadroword : bitwidth
 val bitwidth : int -> bitwidth
 
 val imm : (op -> exp) p

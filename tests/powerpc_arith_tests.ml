@@ -235,6 +235,109 @@ let divweu arch ctxt =
   let expected = extend (low Word.(x/y)) in
   check_gpr init bytes r1 expected arch ctxt
 
+
+let print_insn name bytes =
+  printf "\n%s %s\n" name (string_of_bytes bytes)
+
+(** TODO: it's not a test, but stub  *)
+let modsw arch ctxt =
+  let name = "MODSW" in
+  let bytes = make_insn ~name `X [31; 1; 2; 3; 779; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let moduw arch ctxt =
+  let name = "MODUW" in
+  let bytes = make_insn ~name `X [31; 1; 2; 3; 267; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let mulld arch ctxt =
+  let name = "MULLD" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 233; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let mulhd arch ctxt =
+  let name = "MULHD" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 73; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let mulhdu arch ctxt =
+  let name = "MULHDU" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 9; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let maddhd arch ctxt =
+  let name = "MADDHD" in
+  let bytes = make_insn ~name `VA [4; 1; 2; 3; 4; 48] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let maddhdu arch ctxt =
+  let name = "MADDHDU" in
+  let bytes = make_insn ~name `VA [4; 1; 2; 3; 4; 49] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let maddld arch ctxt =
+  let name = "MADDLD" in
+  let bytes = make_insn ~name `VA [4; 1; 2; 3; 4; 51] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let divd arch ctxt =
+  let name = "DIVD" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 489; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let divdu arch ctxt =
+  let name = "DIVDU" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 457; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let divde arch ctxt =
+  let name = "DIVDE" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 425; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let divdeu arch ctxt =
+  let name = "DIVDEU" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 393; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let modsd arch ctxt =
+  let name = "" in
+  let bytes = make_insn ~name `X [31; 1; 2; 3; 777; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+(** TODO: it's not a test, but stub  *)
+let modud arch ctxt =
+  let name = "MODUD" in
+  let bytes = make_insn ~name `X [31; 1; 2; 3; 265; 0] in
+  print_insn name bytes;
+  assert_bool "" true
+
+
 let suite = "arith" >::: [
     "subf"      >:: subf `ppc;
     "subfic"   >:: subfic `ppc;
@@ -252,4 +355,18 @@ let suite = "arith" >::: [
     "divwu"     >:: divwu `ppc;
     "divwe"     >:: divwe `ppc;
     "divweu"   >:: divweu `ppc;
+
+    "mulld"          >::  mulld `ppc;
+    "mulhd"         >::  mulhd `ppc;
+    "mulhdu"       >::  mulhdu `ppc;
+    (* "maddhd"     >::  maddhd `ppc; *)
+    (* "maddhdu"   >::  maddhdu `ppc; *)
+    (* "maddld"       >::  maddld `ppc; *)
+    "divd"             >::  divd `ppc;
+    "divdu"           >::  divdu `ppc;
+    "divde"           >::  divde `ppc;
+    "divdeu"         >::  divdeu `ppc;
+    (* "modsd"         >::  modsd `ppc; *)
+    (* "modud"         >::  modud `ppc; *)
+
   ]

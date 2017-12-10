@@ -176,6 +176,127 @@ let divweu cpu ops =
     low word rt :=  x / low word rb;
   ]
 
+let modsw cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[
+    rt :=  ra % rb;
+  ]
+
+let moduw cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  RTL.[
+    rt :=  ra % rb;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Multiply low doubleword
+     Page 79 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 19 d2   mulld r1, r2, r3 *)
+let mulld cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[
+    rt :=  ra * rb;
+  ]
+(** Fixed-Point Arithmetic Instructions - Multiply high doubleword
+     Page 79 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 18 92   mulhd r1, r2, r3 *)
+let mulhd cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let tm = signed var quadroword in
+  RTL.[
+    tm := ra * rb;
+    rt :=  high doubleword tm;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Multiply high doubleword unsigned
+     Page 79 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 18 12   mulhdu r1, r2, r3 *)
+let mulhdu cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let tm = unsigned var quadroword in
+  RTL.[
+    tm := ra * rb;
+    rt :=  high doubleword tm;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Divide doubleword
+     Page 81 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 1b d2   divd  r1, r2, r3 *)
+let divd cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[
+    rt :=  ra /$  rb;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Divide doubleword unsigned
+     Page 81 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 1b 92   divdu  r1, r2, r3 *)
+let divdu cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  RTL.[
+    rt :=  ra /  rb;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Divide doubleword extended
+     Page 82 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 1b 52   divde  r1, r2, r3 *)
+let divde cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let tm1 = signed var quadroword in
+  let tm2 = signed var quadroword in
+  RTL.[
+    tm1 := zero;
+    high doubleword tm1 := ra;
+    tm2 := tm1 /$ rb;
+    rt :=  low doubleword tm2;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Divide doubleword extended unsigned
+     Page 82 of IBM Power ISATM Version 3.0 B
+     example:
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
+let divdeu cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let tm1 = unsigned var quadroword in
+  let tm2 = unsigned var quadroword in
+  RTL.[
+    tm1 := zero;
+    high doubleword tm1 := ra;
+    tm2 := tm1 / rb;
+    rt :=  low doubleword tm2;
+  ]
+
+let maddhd cpu ops = []
+let maddhdu cpu ops = []
+let maddld cpu ops = []
+let modsd cpu ops = []
+let modud cpu ops = []
+
+
+(** TODO: think aboud division /$ *)
 type t = [
   | `SUBF
   | `SUBFIC
@@ -191,6 +312,20 @@ type t = [
   | `DIVWU
   | `DIVWE
   | `DIVWEU
+  | `MODSW
+  | `MODUW
+  | `MULLD
+  | `MULHD
+  | `MULHDU
+  | `MADDHD
+  | `MADDHDU
+  | `MADDLD
+  | `DIVD
+  | `DIVDU
+  | `DIVDE
+  | `DIVDEU
+  | `MODSD
+  | `MODUD
 ] [@@deriving sexp, enumerate]
 
 let lift t cpu ops = match t with
@@ -208,3 +343,17 @@ let lift t cpu ops = match t with
   | `DIVWU -> divwu cpu ops
   | `DIVWE -> divwe cpu ops
   | `DIVWEU -> divweu cpu ops
+  | `MODSW -> modsw cpu ops
+  | `MODUW -> moduw cpu ops
+  | `MULLD -> mulld cpu ops
+  | `MULHD -> mulhd cpu ops
+  | `MULHDU -> mulhdu cpu ops
+  | `MADDHD -> maddhd cpu ops
+  | `MADDHDU -> maddhdu cpu ops
+  | `MADDLD -> maddld cpu ops
+  | `DIVD -> divd cpu ops
+  | `DIVDU -> divdu cpu ops
+  | `DIVDE -> divde cpu ops
+  | `DIVDEU -> divdeu cpu ops
+  | `MODSD -> modsd cpu ops
+  | `MODUD -> modud cpu ops

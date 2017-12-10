@@ -97,6 +97,7 @@ module Exp = struct
   let times = binop_with_cast Bil.times
   let divide = binop_with_cast Bil.divide
   let sdivide = binop_with_cast Bil.sdivide
+  let modulo = binop_with_cast Bil.modulo
   let lt x y  = bit_result (binop_with_cast Bil.lt x y)
   let gt x y  = bit_result (binop_with_cast Bil.lt y x)
   let eq x y  = bit_result (binop_with_cast Bil.eq x y)
@@ -203,6 +204,7 @@ module Infix = struct
   let ( / )  = divide
   let ( /$) = sdivide
   let ( ^ )  = concat
+  let ( % ) = modulo
   let ( < )  = lt
   let ( > )  = gt
   let ( <= )  = le

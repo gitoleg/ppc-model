@@ -16,6 +16,7 @@ let byte = 8
 let halfword = 16
 let word = 32
 let doubleword = 64
+let quadroword = 128
 let bitwidth x = x
 
 let int_of_width = ident
