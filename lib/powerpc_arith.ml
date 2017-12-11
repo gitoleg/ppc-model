@@ -119,7 +119,7 @@ let mullw cpu ops =
   RTL.[
     tmp1 := low word ra;
     tmp2 := low word rb;
-    rt :=  tmp1 *  tmp2;
+    rt := tmp1 *  tmp2;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word
@@ -143,7 +143,7 @@ let divwu cpu ops =
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   RTL.[
-    low word rt :=  low word ra / low word rb;
+    low word rt := low word ra / low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word Extended
@@ -158,7 +158,7 @@ let divwe cpu ops =
   RTL.[
     x := zero;
     high word x := low word ra;
-    low word rt :=  x /$ low word rb;
+    low word rt := x /$ low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word Extended Unsigned
@@ -173,51 +173,49 @@ let divweu cpu ops =
   RTL.[
     x := zero;
     high word x := low word ra;
-    low word rt :=  x / low word rb;
+    low word rt := x / low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Modulo signed word
-     Page 77 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
+    Page 77 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1e 16   modsw r1, r2, r3 *)
 let modsw cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[
-    rt :=  low word ra % low word rb;
+    rt := low word ra %$ low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Modulo unsigned word
-     Page 77 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
+    Page 77 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1a 16   moduw  r1, r2, r3 *)
 let moduw cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   RTL.[
-    rt :=  low word ra % low word rb;
+    rt := low word ra % low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply low doubleword
-     Page 79 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 19 d2   mulld r1, r2, r3 *)
+    Page 79 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 19 d2   mulld r1, r2, r3 *)
 let mulld cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[
-    rt :=  ra * rb;
+    rt := ra * rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply high doubleword
-     Page 79 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 18 92   mulhd r1, r2, r3 *)
+    Page 79 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 18 92   mulhd r1, r2, r3 *)
 let mulhd cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -226,13 +224,13 @@ let mulhd cpu ops =
   RTL.[
     tm := ra;
     tm := tm * rb;
-    rt :=  high doubleword tm;
+    rt := high doubleword tm;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply high doubleword unsigned
-     Page 79 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 18 12   mulhdu r1, r2, r3 *)
+    Page 79 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 18 12   mulhdu r1, r2, r3 *)
 let mulhdu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -241,37 +239,37 @@ let mulhdu cpu ops =
   RTL.[
     tm := ra;
     tm := tm * rb;
-    rt :=  high doubleword tm;
+    rt := high doubleword tm;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide doubleword
-     Page 81 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 1b d2   divd  r1, r2, r3 *)
+    Page 81 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1b d2   divd  r1, r2, r3 *)
 let divd cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[
-    rt :=  ra /$  rb;
+    rt := ra /$  rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide doubleword unsigned
-     Page 81 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 1b 92   divdu  r1, r2, r3 *)
+    Page 81 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1b 92   divdu  r1, r2, r3 *)
 let divdu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   RTL.[
-    rt :=  ra /  rb;
+    rt := ra /  rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide doubleword extended
-     Page 82 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 1b 52   divde  r1, r2, r3 *)
+    Page 82 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1b 52   divde  r1, r2, r3 *)
 let divde cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -282,13 +280,13 @@ let divde cpu ops =
     tm1 := zero;
     high doubleword tm1 := ra;
     tm2 := tm1 /$ rb;
-    rt :=  low doubleword tm2;
+    rt := low doubleword tm2;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide doubleword extended unsigned
-     Page 82 of IBM Power ISATM Version 3.0 B
-     example:
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
+    Page 82 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1b 12   divdeu  r1, r2, r3 *)
 let divdeu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -299,91 +297,39 @@ let divdeu cpu ops =
     tm1 := zero;
     high doubleword tm1 := ra;
     tm2 := tm1 / rb;
-    rt :=  low doubleword tm2;
-  ]
-
-(** Fixed-Point Arithmetic Instructions - Multiply-Add high doubleword
-     Page 80 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
-let maddhd cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  let rc = signed reg ops.(3) in
-  let tmp1 = signed var quadroword in
-  let tmp2 = signed var quadroword in
-  RTL.[
-    tmp1 := ra;
-    tmp2 := rb;
-    rt := high doubleword (tmp1 * tmp2 + rc);
-  ]
-
-(** Fixed-Point Arithmetic Instructions - Multiply-Add high doubleword unsigned
-     Page 80 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
-let maddhdu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
-  let rc = unsigned reg ops.(3) in
-  let tmp1 = unsigned var quadroword in
-  let tmp2 = unsigned var quadroword in
-  RTL.[
-    tmp1 := ra;
-    tmp2 := rb;
-    rt := high doubleword (tmp1 * tmp2 + rc);
-  ]
-
-(** Fixed-Point Arithmetic Instructions - Multiply-Add low doubleword
-     Page 80 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
-let maddld cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  let rc = signed reg ops.(3) in
-  let tmp1 = signed var quadroword in
-  let tmp2 = signed var quadroword in
-  RTL.[
-    tmp1 := ra;
-    tmp2 := rb;
-    rt := low doubleword (tmp1 * tmp2 + rc);
+    rt := low doubleword tm2;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Modulo signed doubleword
-     Page 83 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
+    Page 83 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1e 12   modsd  r1, r2, r3 *)
 let modsd cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[
-    rt :=  ra % rb;
+    rt := ra %$ rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Modulo unsigned doubleword
-     Page 83 of IBM Power ISATM Version 3.0 B
-     example:
-TODO: wrong example
-     7c 22 1b 12   divdeu  r1, r2, r3 *)
-let modsd cpu ops =
+    Page 83 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1a 12  modud  r1, r2, r3 *)
+let modud cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   RTL.[
-    rt :=  ra % rb;
+    rt := ra % rb;
   ]
 
 (** TODO: think aboud division /$ - if I know that operands are
-    signed why do I need signed division? *)
+    signed why do I need signed division?
+
+    TODO: possible, I should avoid of assignment (here) like
+    [low word rt := ...] because Bil semantic will not allow us to
+    write a part of register *)
 type t = [
   | `SUBF
   | `SUBFIC
@@ -404,9 +350,6 @@ type t = [
   | `MULLD
   | `MULHD
   | `MULHDU
-  | `MADDHD
-  | `MADDHDU
-  | `MADDLD
   | `DIVD
   | `DIVDU
   | `DIVDE
@@ -435,9 +378,6 @@ let lift t cpu ops = match t with
   | `MULLD -> mulld cpu ops
   | `MULHD -> mulhd cpu ops
   | `MULHDU -> mulhdu cpu ops
-  | `MADDHD -> maddhd cpu ops
-  | `MADDHDU -> maddhdu cpu ops
-  | `MADDLD -> maddld cpu ops
   | `DIVD -> divd cpu ops
   | `DIVDU -> divdu cpu ops
   | `DIVDE -> divde cpu ops

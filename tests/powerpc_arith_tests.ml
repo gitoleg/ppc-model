@@ -5,6 +5,15 @@ open OUnit2
 open Powerpc
 open Powerpc_tests_helpers
 
+let extend ?(upto=64) x = Word.extract_exn ~hi:(upto - 1) x
+let low ?(len=32) x = Word.extract_exn ~hi:(len - 1) x
+
+let high ?(len=32) x =
+  let width = Word.bitwidth x in
+  let hi = width - 1 in
+  let lo = width - len in
+  Word.extract_exn ~hi ~lo x
+
 let subf arch ctxt =
   let name = "SUBF" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 40; 0] in
@@ -93,15 +102,7 @@ let subfze arch ctxt =
   let expected = Word.((lnot x) + b1) in
   check_gpr init bytes r1 expected arch ctxt
 
-let extend ?(upto=64) x = Word.extract_exn ~hi:(upto - 1) x
-let low ?(len=32) x = Word.extract_exn ~hi:(len - 1) x
-let high ?(len=32) x =
-  let width = Word.bitwidth x in
-  let hi = width - 1 in
-  let lo = width - len in
-  Word.extract_exn ~hi ~lo x
-
-let  mulli arch ctxt =
+let mulli arch ctxt =
   let name = "MULLI" in
   let y = 0b1_1111_1111_1111 in
   let bytes = make_insn ~name `D [7; 1; 2; y] in
@@ -238,14 +239,9 @@ let divweu arch ctxt =
   let expected = extend (low Word.(x/y)) in
   check_gpr init bytes r1 expected arch ctxt
 
-let print_insn name bytes =
-  printf "\n%s %s\n" name (string_of_bytes bytes)
-
-(** TODO: it's not a test, but stub  *)
 let modsw arch ctxt =
   let name = "MODSW" in
   let bytes = make_insn ~name `X [31; 1; 2; 3; 779; 0] in
-  print_insn name bytes;
   let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
   let y = Word.of_int64 0x12345678_91234567L in
   let r1 = find_gpr "R1" in
@@ -255,15 +251,25 @@ let modsw arch ctxt =
       r2 := int x;
       r3 := int y;
     ] in
-  let expected = Word.(x mod y) in
+  let x = Word.signed (low x) in
+  let y = Word.signed (low y) in
+  let expected = extend (Word.signed Word.(x mod y)) in
   check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let moduw arch ctxt =
   let name = "MODUW" in
   let bytes = make_insn ~name `X [31; 1; 2; 3; 267; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let expected = extend Word.(low x mod low y) in
+  check_gpr init bytes r1 expected arch ctxt
 
 let mulld arch ctxt =
   let name = "MULLD" in
@@ -315,27 +321,6 @@ let mulhdu arch ctxt =
   let y = extend ~upto:128 y in
   let expected = high ~len:64 Word.(x * y) in
   check_gpr init bytes r1 expected arch ctxt
-
-(** TODO: it's not a test, but stub  *)
-let maddhd arch ctxt =
-  let name = "MADDHD" in
-  let bytes = make_insn ~name `VA [4; 1; 2; 3; 4; 48] in
-  print_insn name bytes;
-  assert_bool "" true
-
-(** TODO: it's not a test, but stub  *)
-let maddhdu arch ctxt =
-  let name = "MADDHDU" in
-  let bytes = make_insn ~name `VA [4; 1; 2; 3; 4; 49] in
-  print_insn name bytes;
-  assert_bool "" true
-
-(** TODO: it's not a test, but stub  *)
-let maddld arch ctxt =
-  let name = "MADDLD" in
-  let bytes = make_insn ~name `VA [4; 1; 2; 3; 4; 51] in
-  print_insn name bytes;
-  assert_bool "" true
 
 let divd arch ctxt =
   let name = "DIVD" in
@@ -406,49 +391,63 @@ let divdeu arch ctxt =
   let expected = low ~len:64 Word.(x / y) in
   check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let modsd arch ctxt =
-  let name = "" in
+  let name = "MODSD" in
   let bytes = make_insn ~name `X [31; 1; 2; 3; 777; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let x = Word.signed x in
+  let y = Word.signed y in
+  let expected = Word.(x mod y) in
+  check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let modud arch ctxt =
   let name = "MODUD" in
   let bytes = make_insn ~name `X [31; 1; 2; 3; 265; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let expected = Word.(x mod y) in
+  check_gpr init bytes r1 expected arch ctxt
 
 let suite = "arith" >::: [
-    "subf"      >:: subf `ppc;
+    "subf"     >:: subf `ppc;
     "subfic"   >:: subfic `ppc;
     "subfc"    >:: subfc `ppc;
     "subfe"    >:: subfe `ppc;
-    "subme"  >:: subfme `ppc;
-    "subze"   >:: subfze `ppc;
-
-    "mulli"      >:: mulli `ppc;
-    "mulhw"   >:: mulhw `ppc;
-    "mulhwu" >:: mulhwu `ppc;
-    "mullw"     >:: mullw `ppc;
-
-    "divw"       >:: divw `ppc;
-    "divwu"     >:: divwu `ppc;
-    "divwe"     >:: divwe `ppc;
+    "subme"    >:: subfme `ppc;
+    "subze"    >:: subfze `ppc;
+    "mulli"    >:: mulli `ppc;
+    "mulhw"    >:: mulhw `ppc;
+    "mulhwu"   >:: mulhwu `ppc;
+    "mullw"    >:: mullw `ppc;
+    "divw"     >:: divw `ppc;
+    "divwu"    >:: divwu `ppc;
+    "divwe"    >:: divwe `ppc;
     "divweu"   >:: divweu `ppc;
-
-    "mulld"          >::  mulld `ppc;
-    "mulhd"         >::  mulhd `ppc;
-    "mulhdu"       >::  mulhdu `ppc;
-    (* "maddhd"     >::  maddhd `ppc; *)
-    (* "maddhdu"   >::  maddhdu `ppc; *)
-    (* "maddld"       >::  maddld `ppc; *)
-    "divd"             >::  divd `ppc;
-    "divdu"           >::  divdu `ppc;
-    "divde"           >::  divde `ppc;
-    "divdeu"         >::  divdeu `ppc;
-    (* "modsd"         >::  modsd `ppc; *)
-    (* "modud"         >::  modud `ppc; *)
+    "modsw"    >:: modsw `ppc;
+    "moduw"    >:: moduw `ppc;
+    "mulld"    >:: mulld `ppc;
+    "mulhd"    >:: mulhd `ppc;
+    "mulhdu"   >:: mulhdu `ppc;
+    "divd"     >:: divd `ppc;
+    "divdu"    >:: divdu `ppc;
+    "divde"    >:: divde `ppc;
+    "divdeu"   >:: divdeu `ppc;
+    "modsd"    >:: modsd `ppc;
+    "modud"    >:: modud `ppc;
 
   ]

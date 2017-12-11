@@ -35,6 +35,7 @@ module RTL : sig
   val (/$) : exp -> exp -> exp
   val ( ^ )  : exp -> exp -> exp
   val ( % ) : exp -> exp -> exp
+  val ( %$) : exp -> exp -> exp
   val ( < )  : exp -> exp -> exp
   val ( > )  : exp -> exp -> exp
   val ( <= )  : exp -> exp -> exp
