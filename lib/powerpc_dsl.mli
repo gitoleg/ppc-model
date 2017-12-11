@@ -65,6 +65,28 @@ val when_ : exp -> rtl list -> rtl
 (** [ifnot cond rtl] = if_ cond [] rtl *)
 val ifnot : exp -> rtl list -> rtl
 
+(** switch clause  *)
+type clause
+
+(** [switch x clauses] - create a switch construction.
+    Example:
+    ...
+    ra := <...>
+    switch (x) [
+      case one   [ rs := <...>; ];
+      case zero  [ rt := <...>; rs := <...> ];
+      default [rs := zero];
+    ]
+    ...
+ *)
+val switch  : exp -> clause list -> rtl
+
+(** [case exp code] - creates a switch case *)
+val case    : exp -> rtl list -> clause
+
+(** [default code] - creates a switch default *)
+val default : rtl list -> clause
+
 type cpu = {
   load      : exp -> bitwidth -> exp;
   store     : exp -> exp -> bitwidth -> rtl;

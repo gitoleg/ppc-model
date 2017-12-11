@@ -146,6 +146,7 @@ type form = [
   | `MDS
   | `VA
   | `X
+  | `XFX
   | `XO
   | `XS
 ] [@@deriving sexp]
@@ -193,15 +194,6 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:4 opt;
         word ~width:1 rc;
       ]
-    | `X, [opcode; rt; ra; rb; opt_opcode; rc] ->
-      make_bytes [
-        word ~width:6 opcode;
-        word ~width:5 rt;
-        word ~width:5 ra;
-        word ~width:5 rb;
-        word ~width:10 opt_opcode;
-        word ~width:1 rc;
-      ]
     | `VA, [opcode; rt; ra; rb; rc; opt_opcode;] ->
       make_bytes [
         word ~width:6 opcode;
@@ -211,6 +203,15 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:5 rc;
         word ~width:6 opt_opcode;
       ]
+    | `X, [opcode; rt; ra; rb; opt_opcode; rc] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rt;
+        word ~width:5 ra;
+        word ~width:5 rb;
+        word ~width:10 opt_opcode;
+        word ~width:1 rc;
+      ]
     | `X, [opcode; rt; ra; rb; opt_opcode;] ->
       make_bytes [
         word ~width:6 opcode;
@@ -219,6 +220,24 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:5 rb;
         word ~width:10 opt_opcode;
         b0;
+      ]
+    | `XFX, [opcode; rs; x; data; y; opt_opcode; z] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rs;
+        word ~width:1 x;
+        word ~width:8 data;
+        word ~width:1 x;
+        word ~width:10 opt_opcode;
+        word ~width:1 z;
+      ]
+    | `XFX, [opcode; rs; data; opt_opcode; x] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 rs;
+        word ~width:10 data;
+        word ~width:10 opt_opcode;
+        word ~width:1 x;
       ]
     | `XO, [opcode; rt; ra; rb; oe; opt_opcode; rc] ->
       make_bytes [

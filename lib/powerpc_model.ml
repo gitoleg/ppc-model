@@ -74,7 +74,7 @@ module Hardware_vars = struct
   let tar = Var.create "TAR" (Type.imm tar_bitwidth)
 
   (** fixed point exception register  *)
-  let xer = Var.create "TAR" (Type.imm xer_bitwidth)
+  let xer = Var.create "XER" (Type.imm xer_bitwidth)
 
   (** fixed precision flags  *)
   let so = flag "SO" (** summary overflow *)

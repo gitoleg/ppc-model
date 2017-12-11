@@ -126,11 +126,11 @@
    subf       8883        | substract from
    stb        9331        | store byte
    bgt        9421        |
-   mflr       9835        |
+   mflr       9835        | mfspr - move from link register
    ble        10935       |
-   mtlr       11504       |
+   mtlr       11504       | mtspr - move to link register
    blr        12568       |
-   mtctr      13029       |
+   mtctr      13029       | mtspr - move to cnt register
    cmplwi     13495       | compare logical
    stwu       14900       | store word with update
    lbz        17430       | load byte and zero

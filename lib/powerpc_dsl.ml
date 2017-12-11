@@ -136,6 +136,32 @@ let ifnot cond else_ = if_ cond [] else_
 
 let foreach = foreach
 
+type clause = [
+  | `Case of (exp * rtl list)
+  | `Default of rtl list
+]
+
+let case x y = `Case (x,y)
+let default y = `Default y
+
+let switch exp cases =
+  let default = List.filter_map ~f:(function
+      | `Default y -> Some y
+      |  _ -> None) cases in
+  let default = Option.value ~default:[] (List.hd default) in
+  let cases = List.filter_map ~f:(function
+      | `Case (x,y) -> Some (x,y)
+      | _ -> None) cases in
+  let cond x = Infix.(exp = x) in
+  match cases with
+  | [] -> ppc_fail "empty switch"
+  | (x, code) :: [] -> (if_ (cond x) code default;)
+  | (x, code) :: cases ->
+    let else_ =
+      List.fold (List.rev cases) ~init:default ~f:(fun acc (x,code) ->
+          [if_ (cond x) code acc;]) in
+    (if_ (cond x) code else_)
+
 type cpu = {
   load      : exp -> bitwidth -> exp;
   store     : exp -> exp -> bitwidth -> rtl;
