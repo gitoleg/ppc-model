@@ -15,54 +15,69 @@ let subf cpu ops =
     Page 70 of IBM Power ISATM Version 3.0 B
     example:
     20 22 10 92    subfic r1, r2, 4242 *)
-(** TODO: carry flags  *)
 let subfic cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let si = unsigned imm ops.(2) in
-  RTL.[rt := (lnot ra) + si + one]
+  RTL.[
+    rt := (lnot ra) + si + one;
+    cpu.ca   := low cpu.addr_size si < low cpu.addr_size ra;
+    cpu.ca32 := low word si < low word ra;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Substract From Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 18 10    subfc r1, r2, r3 *)
-(** TODO: carry flags  *)
 let subfc cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  RTL.[rt := (lnot ra) + rb + one]
+  RTL.[
+    rt := (lnot ra) + rb + one;
+    cpu.ca   := low cpu.addr_size rb < low cpu.addr_size ra;
+    cpu.ca32 := low word rb < low word ra;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Substract From Extended
     Page 71 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 19 10    subfe r1, r2, r3 *)
-(** TODO: carry flags  *)
 let subfe cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  RTL.[rt := (lnot ra) + rb + cpu.ca]
+  RTL.[
+    rt := (lnot ra) + rb + cpu.ca;
+    cpu.ca32 := low word rb < low word (ra + one - cpu.ca);
+    cpu.ca   := low cpu.addr_size rb < low cpu.addr_size (ra + one - cpu.ca);
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Substract From Minus One Extended
     Page 71 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 01 d0    subfme r1, r2 *)
-(** TODO: carry flags  *)
 let subfme cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
-  RTL.[rt := (lnot ra) + cpu.ca - one]
+  RTL.[
+    rt := (lnot ra) + cpu.ca - one;
+    cpu.ca32 := one;
+    cpu.ca   := one;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Substract From Zero Extended
     Page 71 of IBM Power ISATM Version 3.0 B
     example:
     7c 22 01 90    subfze r1, r2 *)
-(** TODO: carry flags  *)
 let subfze cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
-  RTL.[rt := (lnot ra) + cpu.ca]
+  RTL.[
+    rt := (lnot ra) + cpu.ca;
+    cpu.ca32 := one;
+    cpu.ca   := one;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply Low Immediate
     Page 73 of IBM Power ISATM Version 3.0 B
@@ -72,7 +87,9 @@ let mulli cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let si = signed imm ops.(2) in
-  RTL.[rt :=  ra *  si]
+  RTL.[
+    rt := ra *  si;
+  ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply High Word
     Page 73 of IBM Power ISATM Version 3.0 B
@@ -87,7 +104,7 @@ let mulhw cpu ops =
   RTL.[
     tmp1 := low word ra;
     tmp2 := low word rb;
-    low word rt :=  high word (tmp1 * tmp2);
+    rt := high word (tmp1 * tmp2);
   ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply High Word Unsigned
@@ -103,7 +120,7 @@ let mulhwu cpu ops =
   RTL.[
     tmp1 := low word ra;
     tmp2 := low word rb;
-    low word rt :=  high word (tmp1 * tmp2);
+    rt := high word (tmp1 * tmp2);
   ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply Low Word
@@ -119,7 +136,7 @@ let mullw cpu ops =
   RTL.[
     tmp1 := low word ra;
     tmp2 := low word rb;
-    rt := tmp1 *  tmp2;
+    rt := tmp1 * tmp2;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word
@@ -131,7 +148,7 @@ let divw cpu ops =
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[
-    low word rt := low word ra /$ low word rb;
+    rt := low word ra /$ low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word Unsigned
@@ -143,7 +160,7 @@ let divwu cpu ops =
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   RTL.[
-    low word rt := low word ra / low word rb;
+    rt := low word ra / low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word Extended
@@ -158,7 +175,7 @@ let divwe cpu ops =
   RTL.[
     x := zero;
     high word x := low word ra;
-    low word rt := x /$ low word rb;
+    rt := low word (x /$ low word rb);
   ]
 
 (** Fixed-Point Arithmetic Instructions - Divide Word Extended Unsigned
@@ -173,7 +190,7 @@ let divweu cpu ops =
   RTL.[
     x := zero;
     high word x := low word ra;
-    low word rt := x / low word rb;
+    rt := low word (x / low word rb);
   ]
 
 (** Fixed-Point Arithmetic Instructions - Modulo signed word
@@ -324,12 +341,11 @@ let modud cpu ops =
     rt := ra % rb;
   ]
 
-(** TODO: think aboud division /$ - if I know that operands are
-    signed why do I need signed division?
+(** TODO: carry flag in substract insns
 
-    TODO: possible, I should avoid of assignment (here) like
-    [low word rt := ...] because Bil semantic will not allow us to
-    write a part of register *)
+    TODO: think aboud division /$ - if I know that operands are
+    signed why do I need signed division?
+ *)
 type t = [
   | `SUBF
   | `SUBFIC

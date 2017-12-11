@@ -75,7 +75,7 @@ let lis cpu ops =
 
 (** Fixed-Point Arithmetic Instructions - Add
     Page 69 of IBM Power ISATM Version 3.0 B
-
+    examples:
     7d 62 5a 14 add   r11, r2, r11
     7d 62 5a 15 add.  r11, r2, r11 *)
 let add cpu ops =

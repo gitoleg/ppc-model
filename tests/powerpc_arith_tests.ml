@@ -29,20 +29,27 @@ let subf arch ctxt =
   let expected = Word.(x - y) in
   check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: add carry flags testing *)
 let subfic arch ctxt =
   let name = "SUBFIC" in
-  let x = 4242 in
+  let x = 42 in
   let bytes = make_insn ~name `D [8; 1; 2; x] in
   let x = Word.of_int ~width:64 x in
-  let y = Word.of_int64 42L in
+  let y = Word.of_int64 43L in
   let r1 = find_gpr "R1" in
   let r2 = find_gpr "R2" in
   let init = Bil.[
       r2 := int y;
   ] in
   let expected = Word.(x - y) in
-  check_gpr init bytes r1 expected arch ctxt
+  let ctxt = eval init bytes arch in
+  let r1_val = lookup_var ctxt r1 in
+  let ca_val = lookup_var ctxt ca in
+  let ca32_val = lookup_var ctxt ca32 in
+  let ca_exp = Word.b1 in
+  let ca32_exp = Word.b1 in
+  assert_bool "subfic failed, result" (is_equal_words expected r1_val);
+  assert_bool "subfic failed, ca" (is_equal_words ca_exp ca_val);
+  assert_bool "subfic failed, ca32" (is_equal_words ca32_exp ca32_val)
 
 (** TODO: add carry flags testing *)
 let subfc arch ctxt =
@@ -58,6 +65,22 @@ let subfc arch ctxt =
       r2 := int y;
     ] in
   let expected = Word.(x - y) in
+  check_gpr init bytes r1 expected arch ctxt
+
+let subfe arch ctxt =
+  let name = "SUBFE" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 136; 0] in
+  let x = Word.of_int64 0xABCDEF42_12345678L in
+  let y = Word.of_int64 0x42L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r3 := int x;
+      r2 := int y;
+      ca := int Word.b1
+    ] in
+  let expected = Word.((lnot y) + x + b1) in
   check_gpr init bytes r1 expected arch ctxt
 
 let subfe arch ctxt =
@@ -130,7 +153,8 @@ let mulhw arch ctxt =
       r2 := int y;
       r3 := int z;
     ] in
-  let expected = Word.concat (high x) (high Word.(y * z)) in
+  let left = Word.of_int64 ~width:32 0xFFFFFFFFL in
+  let expected = Word.concat left (high Word.(y * z)) in
   check_gpr init bytes r1 expected arch ctxt
 
 let mulhwu  arch ctxt =
@@ -147,7 +171,8 @@ let mulhwu  arch ctxt =
       r2 := int y;
       r3 := int z;
     ] in
-  let expected = Word.concat (high x) (high Word.(y * z)) in
+  let left = Word.zero 32 in
+  let expected = Word.concat left (high Word.(y * z)) in
   check_gpr init bytes r1 expected arch ctxt
 
 let mullw  arch ctxt =
@@ -179,12 +204,12 @@ let divw arch ctxt =
       r2 := int x;
       r3 := int y;
     ] in
-  let x,y = Word.signed (low x), Word.signed (low y) in
-  let z = Word.(x / y) in
-  let expected = extend z in
+  let x = Word.signed (low x) in
+  let y = Word.signed (low y) in
+  let expected = extend Word.(signed (x / y)) in
   check_gpr init bytes r1 expected arch ctxt
 
-let divwu  arch ctxt =
+let divwu arch ctxt =
   let name = "DIVWU" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 459; 0] in
   let x = Word.of_int64 0xABCDEFAA_88888888L in
@@ -217,7 +242,7 @@ let divwe arch ctxt =
   let shift = Word.of_int64 32L in
   let x = Word.(signed (x lsl shift)) in
   let y = Word.signed (low y) in
-  let expected = extend (low Word.(x/y)) in
+  let expected = extend @@ Word.signed (low Word.(x/y)) in
   check_gpr init bytes r1 expected arch ctxt
 
 let divweu arch ctxt =
@@ -423,6 +448,30 @@ let modud arch ctxt =
   let expected = Word.(x mod y) in
   check_gpr init bytes r1 expected arch ctxt
 
+let subfe' arch x y z ctxt =
+  let name = "SUBFE" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 136; 0] in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r3 := int @@ Word.of_int ~width:64 x;
+      r2 := int @@ Word.of_int ~width:64 y;
+      ca := int @@ Word.of_int ~width:1 z;
+    ] in
+  let ctxt = eval init bytes arch in
+  let r1_val = lookup_var ctxt r1 in
+  let ca_val = lookup_var ctxt ca in
+  let ca32_val = lookup_var ctxt ca32 in
+
+  let tos = function
+    | None -> "none"
+    | Some w -> Word.to_string w in
+  printf "\nx %d; y %d; ca: %d ---> res: %s ca: %s; ca32: %s;\n"
+    x y z (tos r1_val) (tos ca_val) (tos ca32_val);
+
+  assert_bool "" true
+
 let suite = "arith" >::: [
     "subf"     >:: subf `ppc;
     "subfic"   >:: subfic `ppc;
@@ -449,5 +498,16 @@ let suite = "arith" >::: [
     "divdeu"   >:: divdeu `ppc;
     "modsd"    >:: modsd `ppc;
     "modud"    >:: modud `ppc;
+
+    "subfic 64" >:: subfic `ppc64;
+
+
+    "subfe 1" >:: subfe' `ppc 43 42 1;
+    "subfe 1" >:: subfe' `ppc 42 42 1;
+    "subfe 1" >:: subfe' `ppc 41 42 1;
+    "subfe 1" >:: subfe' `ppc 43 42 1;
+    "subfe 1" >:: subfe' `ppc 43 42 0;
+    "subfe 1" >:: subfe' `ppc 42 42 0;
+    "subfe 1" >:: subfe' `ppc 41 42 0;
 
   ]
