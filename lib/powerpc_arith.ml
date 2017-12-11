@@ -176,20 +176,30 @@ let divweu cpu ops =
     low word rt :=  x / low word rb;
   ]
 
+(** Fixed-Point Arithmetic Instructions - Modulo signed word
+     Page 77 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
 let modsw cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[
-    rt :=  ra % rb;
+    rt :=  low word ra % low word rb;
   ]
 
+(** Fixed-Point Arithmetic Instructions - Modulo unsigned word
+     Page 77 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
 let moduw cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
   RTL.[
-    rt :=  ra % rb;
+    rt :=  low word ra % low word rb;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Multiply low doubleword
@@ -203,6 +213,7 @@ let mulld cpu ops =
   RTL.[
     rt :=  ra * rb;
   ]
+
 (** Fixed-Point Arithmetic Instructions - Multiply high doubleword
      Page 79 of IBM Power ISATM Version 3.0 B
      example:
@@ -213,7 +224,8 @@ let mulhd cpu ops =
   let rb = signed reg ops.(2) in
   let tm = signed var quadroword in
   RTL.[
-    tm := ra * rb;
+    tm := ra;
+    tm := tm * rb;
     rt :=  high doubleword tm;
   ]
 
@@ -227,7 +239,8 @@ let mulhdu cpu ops =
   let rb = unsigned reg ops.(2) in
   let tm = unsigned var quadroword in
   RTL.[
-    tm := ra * rb;
+    tm := ra;
+    tm := tm * rb;
     rt :=  high doubleword tm;
   ]
 
@@ -289,14 +302,88 @@ let divdeu cpu ops =
     rt :=  low doubleword tm2;
   ]
 
-let maddhd cpu ops = []
-let maddhdu cpu ops = []
-let maddld cpu ops = []
-let modsd cpu ops = []
-let modud cpu ops = []
+(** Fixed-Point Arithmetic Instructions - Multiply-Add high doubleword
+     Page 80 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
+let maddhd cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let rc = signed reg ops.(3) in
+  let tmp1 = signed var quadroword in
+  let tmp2 = signed var quadroword in
+  RTL.[
+    tmp1 := ra;
+    tmp2 := rb;
+    rt := high doubleword (tmp1 * tmp2 + rc);
+  ]
 
+(** Fixed-Point Arithmetic Instructions - Multiply-Add high doubleword unsigned
+     Page 80 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
+let maddhdu cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  let rc = unsigned reg ops.(3) in
+  let tmp1 = unsigned var quadroword in
+  let tmp2 = unsigned var quadroword in
+  RTL.[
+    tmp1 := ra;
+    tmp2 := rb;
+    rt := high doubleword (tmp1 * tmp2 + rc);
+  ]
 
-(** TODO: think aboud division /$ *)
+(** Fixed-Point Arithmetic Instructions - Multiply-Add low doubleword
+     Page 80 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
+let maddld cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let rc = signed reg ops.(3) in
+  let tmp1 = signed var quadroword in
+  let tmp2 = signed var quadroword in
+  RTL.[
+    tmp1 := ra;
+    tmp2 := rb;
+    rt := low doubleword (tmp1 * tmp2 + rc);
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Modulo signed doubleword
+     Page 83 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
+let modsd cpu ops =
+  let rt = signed reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  RTL.[
+    rt :=  ra % rb;
+  ]
+
+(** Fixed-Point Arithmetic Instructions - Modulo unsigned doubleword
+     Page 83 of IBM Power ISATM Version 3.0 B
+     example:
+TODO: wrong example
+     7c 22 1b 12   divdeu  r1, r2, r3 *)
+let modsd cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  let rb = unsigned reg ops.(2) in
+  RTL.[
+    rt :=  ra % rb;
+  ]
+
+(** TODO: think aboud division /$ - if I know that operands are
+    signed why do I need signed division? *)
 type t = [
   | `SUBF
   | `SUBFIC

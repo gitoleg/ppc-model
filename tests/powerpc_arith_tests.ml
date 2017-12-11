@@ -93,9 +93,13 @@ let subfze arch ctxt =
   let expected = Word.((lnot x) + b1) in
   check_gpr init bytes r1 expected arch ctxt
 
-let extend x = Word.extract_exn ~hi:63 x
-let low x = Word.extract_exn ~hi:31 x
-let high x = Word.extract_exn ~hi:63 ~lo:32 x
+let extend ?(upto=64) x = Word.extract_exn ~hi:(upto - 1) x
+let low ?(len=32) x = Word.extract_exn ~hi:(len - 1) x
+let high ?(len=32) x =
+  let width = Word.bitwidth x in
+  let hi = width - 1 in
+  let lo = width - len in
+  Word.extract_exn ~hi ~lo x
 
 let  mulli arch ctxt =
   let name = "MULLI" in
@@ -196,7 +200,6 @@ let divwu  arch ctxt =
   let expected = extend z in
   check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: write test, it's just a stub  *)
 let divwe arch ctxt =
   let name = "DIVWE" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 427; 0] in
@@ -235,7 +238,6 @@ let divweu arch ctxt =
   let expected = extend (low Word.(x/y)) in
   check_gpr init bytes r1 expected arch ctxt
 
-
 let print_insn name bytes =
   printf "\n%s %s\n" name (string_of_bytes bytes)
 
@@ -244,7 +246,17 @@ let modsw arch ctxt =
   let name = "MODSW" in
   let bytes = make_insn ~name `X [31; 1; 2; 3; 779; 0] in
   print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let expected = Word.(x mod y) in
+  check_gpr init bytes r1 expected arch ctxt
 
 (** TODO: it's not a test, but stub  *)
 let moduw arch ctxt =
@@ -253,26 +265,56 @@ let moduw arch ctxt =
   print_insn name bytes;
   assert_bool "" true
 
-(** TODO: it's not a test, but stub  *)
 let mulld arch ctxt =
   let name = "MULLD" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 233; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let expected = Word.(x * y) in
+  check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let mulhd arch ctxt =
   let name = "MULHD" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 73; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let x = Word.signed x in
+  let y = Word.signed y in
+  let x = extend ~upto:128 x in
+  let y = extend ~upto:128 y in
+  let expected = high ~len:64 Word.(x * y) in
+  check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let mulhdu arch ctxt =
   let name = "MULHDU" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 9; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let x = extend ~upto:128 x in
+  let y = extend ~upto:128 y in
+  let expected = high ~len:64 Word.(x * y) in
+  check_gpr init bytes r1 expected arch ctxt
 
 (** TODO: it's not a test, but stub  *)
 let maddhd arch ctxt =
@@ -295,33 +337,74 @@ let maddld arch ctxt =
   print_insn name bytes;
   assert_bool "" true
 
-(** TODO: it's not a test, but stub  *)
 let divd arch ctxt =
   let name = "DIVD" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 489; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let x = Word.signed x in
+  let y = Word.signed y in
+  let expected = Word.(x / y) in
+  check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let divdu arch ctxt =
   let name = "DIVDU" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 457; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let expected = Word.(x / y) in
+  check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let divde arch ctxt =
   let name = "DIVDE" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 425; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let shift = Word.of_int64 64L in
+  let x = extend ~upto:128 x in
+  let x = Word.(x lsl shift) in
+  let x = Word.signed x in
+  let expected = low ~len:64 Word.(x / y) in
+  check_gpr init bytes r1 expected arch ctxt
 
-(** TODO: it's not a test, but stub  *)
 let divdeu arch ctxt =
   let name = "DIVDEU" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 393; 0] in
-  print_insn name bytes;
-  assert_bool "" true
+  let x = Word.of_int64 0xABCDEFAB_CDEFABCDL in
+  let y = Word.of_int64 0x12345678_91234567L in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let init = Bil.[
+      r2 := int x;
+      r3 := int y;
+    ] in
+  let shift = Word.of_int64 64L in
+  let x = extend ~upto:128 x in
+  let x = Word.(x lsl shift) in
+  let expected = low ~len:64 Word.(x / y) in
+  check_gpr init bytes r1 expected arch ctxt
 
 (** TODO: it's not a test, but stub  *)
 let modsd arch ctxt =
@@ -336,7 +419,6 @@ let modud arch ctxt =
   let bytes = make_insn ~name `X [31; 1; 2; 3; 265; 0] in
   print_insn name bytes;
   assert_bool "" true
-
 
 let suite = "arith" >::: [
     "subf"      >:: subf `ppc;
