@@ -1,2 +1,7 @@
  - implement beatiful registration for lifter functions
  - remove X-register search from dsl, and just add aliases for them in model
+ - consider to remove explicit sign binary operations.
+   as a positive effect - it eliminate syntax cases. as a negative it
+   may introduce new bugs, because an expression (low word ra > zero)
+   will not have a desired effect. so one will have to assign to a
+   signed variable (low word ra) and then compare to zero.
