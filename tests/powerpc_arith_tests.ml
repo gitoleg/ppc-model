@@ -5,6 +5,8 @@ open OUnit2
 open Powerpc
 open Powerpc_tests_helpers
 
+(** TODO: add ca flags testing  *)
+
 let extend ?(upto=64) x = Word.extract_exn ~hi:(upto - 1) x
 let low ?(len=32) x = Word.extract_exn ~hi:(len - 1) x
 
@@ -51,7 +53,6 @@ let subfic arch ctxt =
   assert_bool "subfic failed, ca" (is_equal_words ca_exp ca_val);
   assert_bool "subfic failed, ca32" (is_equal_words ca32_exp ca32_val)
 
-(** TODO: add carry flags testing *)
 let subfc arch ctxt =
   let name = "SUBFC" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 8; 0] in
@@ -448,30 +449,6 @@ let modud arch ctxt =
   let expected = Word.(x mod y) in
   check_gpr init bytes r1 expected arch ctxt
 
-let subfe' arch x y z ctxt =
-  let name = "SUBFE" in
-  let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 136; 0] in
-  let r1 = find_gpr "R1" in
-  let r2 = find_gpr "R2" in
-  let r3 = find_gpr "R3" in
-  let init = Bil.[
-      r3 := int @@ Word.of_int ~width:64 x;
-      r2 := int @@ Word.of_int ~width:64 y;
-      ca := int @@ Word.of_int ~width:1 z;
-    ] in
-  let ctxt = eval init bytes arch in
-  let r1_val = lookup_var ctxt r1 in
-  let ca_val = lookup_var ctxt ca in
-  let ca32_val = lookup_var ctxt ca32 in
-
-  let tos = function
-    | None -> "none"
-    | Some w -> Word.to_string w in
-  printf "\nx %d; y %d; ca: %d ---> res: %s ca: %s; ca32: %s;\n"
-    x y z (tos r1_val) (tos ca_val) (tos ca32_val);
-
-  assert_bool "" true
-
 let suite = "arith" >::: [
     "subf"     >:: subf `ppc;
     "subfic"   >:: subfic `ppc;
@@ -499,15 +476,32 @@ let suite = "arith" >::: [
     "modsd"    >:: modsd `ppc;
     "modud"    >:: modud `ppc;
 
-    "subfic 64" >:: subfic `ppc64;
+    "subf 64"     >:: subf `ppc64;
+    "subfic 64"   >:: subfic `ppc64;
+    "subfc 64"    >:: subfc `ppc64;
+    "subfe 64"    >:: subfe `ppc64;
+    "subme 64"    >:: subfme `ppc64;
+    "subze 64"    >:: subfze `ppc64;
+    "mulli 64"    >:: mulli `ppc64;
+    "mulhw 64"    >:: mulhw `ppc64;
+    "mulhwu 64"   >:: mulhwu `ppc64;
+    "mullw 64"    >:: mullw `ppc64;
+    "divw 64"     >:: divw `ppc64;
+    "divwu 64"    >:: divwu `ppc64;
+    "divwe 64"    >:: divwe `ppc64;
+    "divweu 64"   >:: divweu `ppc64;
+    "modsw 64"    >:: modsw `ppc64;
+    "moduw 64"    >:: moduw `ppc64;
+    "mulld 64"    >:: mulld `ppc64;
+    "mulhd 64"    >:: mulhd `ppc64;
+    "mulhdu 64"   >:: mulhdu `ppc64;
+    "divd 64"     >:: divd `ppc64;
+    "divdu 64"    >:: divdu `ppc64;
+    "divde 64"    >:: divde `ppc64;
+    "divdeu 64"   >:: divdeu `ppc64;
+    "modsd 64"    >:: modsd `ppc64;
+    "modud 64"    >:: modud `ppc64;
 
 
-    "subfe 1" >:: subfe' `ppc 43 42 1;
-    "subfe 1" >:: subfe' `ppc 42 42 1;
-    "subfe 1" >:: subfe' `ppc 41 42 1;
-    "subfe 1" >:: subfe' `ppc 43 42 1;
-    "subfe 1" >:: subfe' `ppc 43 42 0;
-    "subfe 1" >:: subfe' `ppc 42 42 0;
-    "subfe 1" >:: subfe' `ppc 41 42 0;
 
   ]

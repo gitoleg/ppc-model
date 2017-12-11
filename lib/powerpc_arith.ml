@@ -341,11 +341,6 @@ let modud cpu ops =
     rt := ra % rb;
   ]
 
-(** TODO: carry flag in substract insns
-
-    TODO: think aboud division /$ - if I know that operands are
-    signed why do I need signed division?
- *)
 type t = [
   | `SUBF
   | `SUBFIC
