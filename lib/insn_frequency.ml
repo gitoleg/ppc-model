@@ -1,9 +1,9 @@
 (**
    sthx       1           | store halfword indexed
-   bclr+      2           |
+   bclr+      2           | branch conditional to LR with branch prediction
    lhau       2           | load halfword algebraic with update
    nor        2           | not_ or_
-   bnelr      3           |
+   bnelr      3           | branch to LR if not equal
    mullw.     3           |
    stwbrx     4           |
    stbux      4           | store word with update indexed
@@ -13,7 +13,7 @@
    neg.       7           | neg
    trap       8           |
    creqv      9           |
-   bltlr      9           |
+   bltlr      9           | branch to LR is less than
    andc.      13          | and with complement
    sraw       19          | shift right word
    oris       21          | or_ imm shifted
@@ -33,11 +33,11 @@
    crnot      73          |
    divw       86          | div word
    stwux      101         | store word with update indexed
-   bso        102         |
+   bso        102         | branch if summary overflow
    srawi.     106         |
    format     107         |
    addze.     107         | add to zero extended
-   blelr      107         |
+   blelr      107         | branch to LR if less than or equal
    subfze     114         | substract from
    rlwimi     123         | rotate left imm then mask insert
    fsubs      127         |
@@ -62,7 +62,7 @@
    andis.     337         | and imm shifted
    lhzx       338         | load halfword zero indexed
    not        378           | not_
-   beqlr      390         |
+   beqlr      390         | branch to LR if equal
    mcrf       434         |
    sth        452         | store halfword
    or.        479          | or_
@@ -76,9 +76,9 @@
    fadd       742         |
    stbu       768         | store byte with update
    xoris      805         | xor imm shifted
-   bctrl      813         |
+   bctrl      813         | branch to CTR unconditionally
    mulhwu     839         | mul high word unsigned
-   bdz        857         |
+   bdz        857         | branch conditional extended
    subfic     1180        | substract from
    stwx       1180        | store word indexed
    fsub       1235        |
@@ -102,7 +102,7 @@
    adde       2276        | add extended
    slw        2304        | shift left word
    lbzu       2429        | load byte with update
-   bdnz       2458        |
+   bdnz       2458        | branch conditional extended
    xor.       2465        | xor
    lwzu       2474        | load word with update
    fcmpu      3293        |
@@ -113,23 +113,23 @@
    stbx       4285        | store byte indexed
    clrlwi     4387        | extended mnemonic for Rotate left imm + mask
    mr.        4847        | or_dot (extended)
-   blt        4910        |
+   blt        4910        | branch if less than
    ori        5288        | ori
    lwzx       5330        | load word indexed
    lfd        5433        |
    xor        6147        | xor
-   bge        6910        |
+   bge        6910        | branch if greater than or equal
    crclr      7127        |
    or         7808         | or_
    cmpw       8326        | compare
-   bctr       8684        | branch conditional
+   bctr       8684        | branch to CTR unconditionally
    subf       8883        | substract from
    stb        9331        | store byte
-   bgt        9421        |
+   bgt        9421        | branch if greater than
    mflr       9835        | mfspr - move from link register
-   ble        10935       |
+   ble        10935       | branch is less than or equal
    mtlr       11504       | mtspr - move to link register
-   blr        12568       |
+   blr        12568       | branch to LR unconditionally
    mtctr      13029       | mtspr - move to cnt register
    cmplwi     13495       | compare logical
    stwu       14900       | store word with update
@@ -139,7 +139,7 @@
    rlwinm     27103       | rotate left imm then and mask
    bne        40300       | branch (extended)
    lis        43125       | addis (extended)
-   beq        55306       | branch (extended)
+   beq        55306       | branch if equal
    b          59781       | branch
    cmpwi      65197       | compare
    bl         66624       | branch

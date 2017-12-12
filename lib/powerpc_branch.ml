@@ -91,6 +91,17 @@ let bca cpu ops =
 let bcl cpu ops = bc cpu ops @ update_link_register cpu
 let bcla cpu ops = bca cpu ops @ update_link_register cpu
 
+(** bdz  target = bc 18,0, target *)
+let bdz cpu ops =
+  let bd = unsigned imm ops.(0) in
+  let sh = unsigned const byte 2 in
+  RTL.[
+    cpu.ctr := cpu.ctr - one;
+    when_ (low cpu.addr_size cpu.ctr = zero) [
+      cpu.jmp (cpu.addr + (bd lsl sh))
+    ]
+  ]
+
 (** bdnz  target = bc 16,0, target *)
 let bdnz cpu ops =
   let bd = unsigned imm ops.(0) in
@@ -128,6 +139,24 @@ let bclr cpu ops =
 
 let bclrl cpu ops = bclr cpu ops @ update_link_register cpu
 
+(** Branch Instructions extended mnemonic, branch to LR unconditionally.
+    Page 792 of IBM Power ISATM Version 3.0 B
+    examples:
+    4e 80 00 20   blr
+    4e 80 00 21   blrl *)
+let blr cpu ops =
+  let sh = unsigned const byte 2 in
+  RTL.[
+    cpu.jmp (cpu.lr lsl sh)
+  ]
+
+let blrl cpu ops =
+  let sh = unsigned const byte 2 in
+  RTL.[
+    cpu.jmp (cpu.lr lsl sh);
+    cpu.lr := cpu.addr + unsigned const byte 4
+  ]
+
 (** bdnzlr = bclr 16,0,0  *)
 let bdnzlr cpu ops =
   let sh = unsigned const byte 2 in
@@ -160,12 +189,29 @@ let bcctr cpu ops =
 let bcctrl cpu ops =
   bcctr cpu ops @ update_link_register cpu
 
+(** Branch Instructions extended mnemonic, branch to CTR unconditionally.
+    Page 792 of IBM Power ISATM Version 3.0 B
+    examples:
+    4e 80 04 20   bctr
+    4e 80 04 21   bctrl *)
+let bctr cpu ops =
+  let sh = unsigned const byte 2 in
+  RTL.[
+    cpu.jmp (cpu.cr lsl sh)
+  ]
+
+let bctrl cpu ops =
+  let sh = unsigned const byte 2 in
+  RTL.[
+    cpu.jmp (cpu.cr lsl sh);
+    cpu.lr := cpu.addr + unsigned const byte 4
+  ]
+
 (** Branch Instructions, Branch Conditional to Target Register
     Page 39 of IBM Power ISATM Version 3.0 B
     examples:
     4e 9f 04 60    bctar
-    4e 9f 04 61    bctarl
-    bctar insn isn't implemented ny llvm right now *)
+    4e 9f 04 61    bctarl *)
 let bctar cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned reg ops.(1) in
@@ -188,6 +234,7 @@ let bctar cpu ops =
 let bctarl cpu ops =
   bctar cpu ops @ update_link_register cpu
 
+
 type b = [
   | `B
   | `BA
@@ -200,25 +247,40 @@ type bc = [
   | `gBCA
   | `gBCL
   | `gBCLA
+  | `BDZ
   | `BDNZ
+  | `BCC
+  | `BCCL
+  | `BCCLA
 ] [@@deriving sexp, enumerate]
 
-type bc_reg = [
+type bc_lr = [
   | `gBCLR
   | `gBCLRL
-  | `gBCCTR
-  | `gBCCTRL
-  | `gBCTAR
-  | `gBCTARL
   | `BDNZLR
+  | `BLR
+  | `BLRL
+  | `BCCLR
+  | `BCCLRL
 ] [@@deriving sexp, enumerate]
 
-type t = [ b | bc | bc_reg] [@@deriving sexp, enumerate]
+type bc_ctr = [
+  | `gBCCTR
+  | `gBCCTRL
+  | `BCTR
+  | `BCTRL
+  | `BCCCTR
+  | `BCCCTRL
+] [@@deriving sexp, enumerate]
 
-let string_of_opcode op = Sexp.to_string (sexp_of_t op)
+type bc_tar = [
+  | `gBCTAR
+  | `gBCTARL
+] [@@deriving sexp, enumerate]
 
-let lift opcode cpu ops =
-  match opcode with
+type t = [ b | bc | bc_lr | bc_ctr | bc_tar ] [@@deriving sexp, enumerate]
+
+let lift opcode cpu ops = match opcode with
   | `B       -> b cpu ops
   | `BA      -> ba cpu ops
   | `BL      -> bl cpu ops
@@ -227,7 +289,11 @@ let lift opcode cpu ops =
   | `gBCA    -> bca cpu ops
   | `gBCL    -> bcl cpu ops
   | `gBCLA   -> bcla cpu ops
+  | `BDZ     -> bdz cpu ops
   | `BDNZ    -> bdnz cpu ops
+  | `BCC     -> bc cpu ops
+  | `BCCL    -> bcl cpu ops
+  | `BCCLA   -> bcla cpu ops
   | `gBCLR   -> bclr cpu ops
   | `gBCLRL  -> bclrl cpu ops
   | `gBCCTR  -> bcctr cpu ops
@@ -235,3 +301,11 @@ let lift opcode cpu ops =
   | `BDNZLR  -> bdnzlr cpu ops
   | `gBCTAR  -> bctar cpu ops
   | `gBCTARL -> bctarl cpu ops
+  | `BLR     -> blr cpu ops
+  | `BLRL    -> blrl cpu ops
+  | `BCTR    -> bctr cpu ops
+  | `BCTRL   -> bctrl cpu ops
+  | `BCCLR   -> bclr cpu ops
+  | `BCCLRL  -> bclrl cpu ops
+  | `BCCCTR  -> bcctr cpu ops
+  | `BCCCTRL -> bcctrl cpu ops
