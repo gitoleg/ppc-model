@@ -9,7 +9,7 @@
    stbux      4           | store word with update indexed
    lwzux      6           | load word zero with update indexed
    rotlw      6           | rotate left word
-   extsh      7           |
+   extsh      7           | extend sign halfword
    neg.       7           | neg
    trap       8           |
    creqv      9           | CR eqv
@@ -18,13 +18,13 @@
    sraw       19          | shift right word
    oris       21          | or_ imm shifted
    fadds      22          |
-   lbzux      24          |
+   lbzux      24          | load byte zero update indexed
    nand       30          | not_ and
-   extsb.     31          |
+   extsb.     31          | extend sign byte
    orc        38          | or_ with complement
    lwbrx      38          |
    lha        40          | load halfword algebraic
-   extsb      40          |
+   extsb      40          | extend sign byte
    fdivs      44          |
    add.       44          | add
    addme      67          | add minus one
@@ -58,7 +58,7 @@
    mulhw      292         | mul high word
    addze      298         | add to zero extended
    fneg       332         |
-   lhz        334         |
+   lhz        334         | load halfword zero
    andis.     337         | and imm shifted
    lhzx       338         | load halfword zero indexed
    not        378           | not_
@@ -96,7 +96,7 @@
    divwu      2008        | div word unsigned
    and        2033        | and
    lfs        2039        |
-   lbzx       2128        |
+   lbzx       2128        | load byte zero indexed
    addc       2225        | add complemented
    mtcrf      2235        | move to CR field
    adde       2276        | add extended
