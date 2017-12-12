@@ -357,6 +357,37 @@ let ldux_big_addr ctxt =
   let expected_addr = ea in
   check_gpr init bytes r8 expected_addr arch ctxt
 
+let lbrx name opt_opcode size arch ctxt =
+  let bytes = make_insn ~name `X [31; 1; 2; 3; opt_opcode; 0] in
+  let mem, addr_size = env_of_arch arch in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let addr = 0xABCDEF00 in
+  let d_addr = 0x42 in
+  let ea = Word.of_int ~width:addr_size (addr + d_addr) in
+  let data = Word.of_int64 0xABCDEFAB_CCDDEEFFL in
+  let init = Bil.[
+      mem := store ~mem:(var mem) ~addr:(int ea) (int data) endian size;
+      r2 := int (Word.of_int ~width:64 addr);
+      r3 := int (Word.of_int ~width:64 d_addr);
+    ] in
+  let bits = Size.in_bits size in
+  let data = Word.extract_exn ~hi:(bits - 1) data in
+  let expected =
+    Seq.to_list_rev (Word.enum_bytes data endian) |>
+    List.fold ~init:None ~f:(fun acc b ->
+           match acc with
+            | None -> Some b
+            | Some p -> Some (Word.concat p b)) |>
+    Option.value_exn in
+  let expected = Word.extract_exn ~hi:63 expected in
+  check_gpr init bytes r1 expected arch ctxt
+
+let lhbrx = lbrx "LHBRX" 790 `r16
+let lwbrx = lbrx "LWBRX" 534 `r32
+let ldbrx = lbrx "LDBRX" 532 `r64
+
 let suite = "load" >::: [
     "lbz32 +imm"     >:: lbz `ppc ~d_addr:20 ~value:0x42;
     "lbz32 -imm"     >:: lbz `ppc ~d_addr:(-16) ~value:0x42;
@@ -398,6 +429,10 @@ let suite = "load" >::: [
     "ldu32"          >:: ldu `ppc;
     "ldux32"         >:: ldux `ppc;
 
+    "lhbrx32"        >:: lhbrx `ppc;
+    "lwbrx32"        >:: lwbrx `ppc;
+    "ldbrx32"        >:: ldbrx `ppc;
+
     "lbz64 +imm"     >:: lbz `ppc64 ~d_addr:20 ~value:0x42;
     "lbz64 -imm"     >:: lbz `ppc64 ~d_addr:(-16) ~value:0x42;
     "lbz64 0 reg"    >:: lbz_zero_reg `ppc64 ~d_addr:20 ~value:0x42;
@@ -438,4 +473,8 @@ let suite = "load" >::: [
     "ldu64"          >:: ldu `ppc64;
     "ldux64"         >:: ldux `ppc64;
     "ldux64a"        >:: ldux_big_addr;
+
+    "lhbrx64"        >:: lhbrx `ppc64;
+    "lwbrx64"        >:: lwbrx `ppc64;
+    "ldbrx64"        >:: ldbrx `ppc64;
   ]

@@ -267,6 +267,50 @@ let ldux cpu ops =
     ra := ra + rb;
   ]
 
+(** Fixed-point Load Halfword Byte-Reverse Indexed
+    Pages 60-61 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1e 2c    lhbrx r1, r2, r3  *)
+let lhbrx cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let x = unsigned var halfword in
+  RTL.[
+    x := cpu.load (ra + rb) halfword;
+    rt := nth byte x 1 ^ nth byte x 0;
+  ]
+
+(** Fixed-point Load Word Byte-Reverse Indexed
+    Pages 60-61 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1c 2c    lwbrx r1, r2, r3 *)
+let lwbrx cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let x = unsigned var word in
+  RTL.[
+    x := cpu.load (ra + rb) word;
+    rt := nth byte x 3 ^ nth byte x 2 ^ nth byte x 1 ^ nth byte x 0;
+  ]
+
+(** Fixed-point Load Doubleword Byte-Reverse Indexed
+    Pages 60-61 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1c 28    ldbrx r1, r2, r3  *)
+let ldbrx cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let x = unsigned var doubleword in
+  RTL.[
+    x := cpu.load (ra + rb) doubleword;
+    rt :=
+      nth byte x 7 ^ nth byte x 6 ^ nth byte x 5 ^ nth byte x 4 ^
+      nth byte x 3 ^ nth byte x 2 ^ nth byte x 1 ^ nth byte x 0;
+  ]
+
 type lz = [
   | `LBZ
   | `LHZ
@@ -317,7 +361,13 @@ type ld = [
   | `LDUX
 ] [@@deriving sexp, enumerate]
 
-type t = [ lz | lzx | lzu | lzux | la | lax | lhau | laux | ld ] [@@deriving sexp, enumerate]
+type lrev = [
+  | `LHBRX
+  | `LWBRX
+  | `LDBRX
+] [@@deriving sexp, enumerate]
+
+type t = [ lz | lzx | lzu | lzux | la | lax | lhau | laux | ld | lrev ] [@@deriving sexp, enumerate]
 
 let lift opcode cpu ops =
   match opcode with
@@ -344,3 +394,6 @@ let lift opcode cpu ops =
   | `LDX  -> ldx cpu ops
   | `LDU  -> ldu cpu ops
   | `LDUX -> ldux cpu ops
+  | `LHBRX -> lhbrx cpu ops
+  | `LWBRX -> lwbrx cpu ops
+  | `LDBRX -> ldbrx cpu ops

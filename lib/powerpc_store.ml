@@ -172,6 +172,56 @@ let stdu cpu ops =
     ra := ea;
   ]
 
+(** Fixed-point Store Halfword Byte-Reverse Indexed
+    Pages 60-61 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1f 2c    sthbrx r1, r2, r3  *)
+let sthbrx cpu ops =
+  let rs = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let ea = unsigned var doubleword in
+  let x = unsigned var halfword in
+  RTL.[
+    ea := ra + rb;
+    x := nth byte rs 7 ^ nth byte rs 6;
+    cpu.store ea x halfword;
+  ]
+
+(** Fixed-point Store Word Byte-Reverse Indexed
+    Pages 60-61 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1d 2c    stwbrx r1, r2, r3  *)
+let stwbrx cpu ops =
+  let rs = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let ea = unsigned var doubleword in
+  let x = unsigned var word in
+  RTL.[
+    ea := ra + rb;
+    x := nth byte rs 7 ^ nth byte rs 6 ^ nth byte rs 5 ^ nth byte rs 4;
+    cpu.store ea x word;
+  ]
+
+(** Fixed-point Store Doubleword Byte-Reverse Indexed
+    Pages 60-61 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 1d 28    stdbrx r1, r2, r3  *)
+let stdbrx cpu ops =
+  let rs = unsigned reg ops.(0) in
+  let ra = signed reg ops.(1) in
+  let rb = signed reg ops.(2) in
+  let ea = unsigned var doubleword in
+  let x = unsigned var doubleword in
+  RTL.[
+    ea := ra + rb;
+    x :=
+      nth byte rs 7 ^ nth byte rs 6 ^ nth byte rs 5 ^ nth byte rs 4 ^
+      nth byte rs 3 ^ nth byte rs 2 ^ nth byte rs 1 ^ nth byte rs 0;
+    cpu.store ea x doubleword;
+  ]
+
 type st = [
   | `STB
   | `STH
@@ -203,7 +253,13 @@ type std = [
   | `STDU
 ] [@@deriving sexp, enumerate]
 
-type t = [ st | stx | stu | stux | std ] [@@deriving sexp, enumerate]
+type strev = [
+  | `STHBRX
+  | `STWBRX
+  | `STDBRX
+]  [@@deriving sexp, enumerate]
+
+type t = [ st | stx | stu | stux | std | strev ] [@@deriving sexp, enumerate]
 
 let size_of_t = function
   | `STB | `STBX | `STBU | `STBUX -> `r8
@@ -228,3 +284,6 @@ let lift opcode cpu ops = match opcode with
   | `STDUX -> stdux cpu ops
   | `STD  -> std cpu ops
   | `STDU -> stdu cpu ops
+  | `STHBRX -> sthbrx cpu ops
+  | `STWBRX -> stwbrx cpu ops
+  | `STDBRX -> stdbrx cpu ops

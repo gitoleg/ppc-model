@@ -5,7 +5,7 @@
    nor        2           | not_ or_
    bnelr      3           | branch to LR if not equal
    mullw.     3           |
-   stwbrx     4           |
+   stwbrx     4           | store word byte reversed indexed
    stbux      4           | store word with update indexed
    lwzux      6           | load word zero with update indexed
    rotlw      6           | rotate left word
@@ -22,7 +22,7 @@
    nand       30          | not_ and
    extsb.     31          | extend sign byte
    orc        38          | or_ with complement
-   lwbrx      38          |
+   lwbrx      38          | load word byte reversed indexed
    lha        40          | load halfword algebraic
    extsb      40          | extend sign byte
    fdivs      44          |

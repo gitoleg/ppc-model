@@ -228,6 +228,35 @@ let stdux_big_addr ctxt =
   let expected_addr = ea in
   check_gpr init bytes r8 expected_addr `ppc64 ctxt
 
+let stbrx name opt_opcode size arch ctxt =
+  let bytes = make_insn ~name `X [31; 1; 2; 3; opt_opcode; 0] in
+  let mem, addr_size = env_of_arch arch in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let r3 = find_gpr "R3" in
+  let addr = 0xABCDEF00 in
+  let disp = 0x42 in
+  let ea = Word.of_int ~width:addr_size (addr + disp) in
+  let data = Word.of_int64 0xCCABDD42_ABCDEF42L in
+  let init = Bil.[
+      r1 := int data;
+      r2 := int (Word.of_int ~width:64 addr);
+      r3 := int (Word.of_int ~width:64 disp);
+    ] in
+  let expected =
+    Seq.to_list_rev (Word.enum_bytes data BigEndian) |>
+    List.fold ~init:None ~f:(fun acc b ->
+        match acc with
+        | None -> Some b
+        | Some p -> Some (Word.concat p b)) |>
+    Option.value_exn |>
+    Word.extract_exn ~hi:63 ~lo:(64 - Size.in_bits size) in
+  check_mem init bytes mem ~addr:ea ~size expected arch ctxt
+
+let sthbrx = stbrx "STHBRX" 918 `r16
+let stwbrx = stbrx "STWBRX" 662 `r32
+let stdbrx = stbrx "STDBRX" 660 `r64
+
 let suite = "store" >::: [
     "stb32 +imm"    >:: stb `ppc ~d_addr:16;
     "stb32 -imm"    >:: stb `ppc ~d_addr:(-16);
@@ -262,6 +291,10 @@ let suite = "store" >::: [
     "stdu32"   >:: stdu `ppc;
     "stdux32"  >:: stdux `ppc;
 
+    "sthbrx32" >:: sthbrx `ppc;
+    "stwbrx32" >:: stwbrx `ppc;
+    "stdbrx32" >:: stdbrx `ppc;
+
     "stb64 +imm"    >:: stb `ppc64 ~d_addr:16;
     "stb64 -imm"    >:: stb `ppc64 ~d_addr:(-16);
     "stb64 0reg"    >:: stb_zero_reg `ppc64 ~d_addr:16;
@@ -295,4 +328,8 @@ let suite = "store" >::: [
     "stdu64"   >:: stdu `ppc64;
     "stdux64"  >:: stdux `ppc64;
     "stdux64a" >:: stdux_big_addr;
+
+    "sthbrx64" >:: sthbrx `ppc64;
+    "stwbrx64" >:: stwbrx `ppc64;
+    "stdbrx64" >:: stdbrx `ppc64;
   ]
