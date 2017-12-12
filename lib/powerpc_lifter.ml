@@ -12,6 +12,7 @@ let lifters : (module Lifter) list = [
   (module Powerpc_arith);
   (module Powerpc_branch);
   (module Powerpc_compare);
+  (module Powerpc_cr);
   (module Powerpc_load);
   (module Powerpc_logical);
   (module Powerpc_move);

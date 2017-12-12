@@ -16,9 +16,6 @@ open Powerpc_tests_helpers
 module Model = Powerpc_model
 open Model
 
-let print_insn name bytes =
-  printf "\n%s %s\n" name (string_of_bytes bytes)
-
 let mtspr arch ctxt =
   let name = "MTSPR" in
   let anybit = 0 in
