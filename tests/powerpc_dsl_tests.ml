@@ -5,14 +5,18 @@ open OUnit2
 open Powerpc_tests_helpers
 open Powerpc_rtl
 
+module Model = Powerpc_model
 module Dsl = Powerpc_dsl
 module Exp = Powerpc_rtl.Exp
+
 module RTL = struct
   include Powerpc_rtl
   include Infix
 end
 
 open Dsl
+open Model.Hardware
+
 
 let eval_rtl rtl =
   let bil = bil_of_t rtl in
@@ -296,6 +300,23 @@ let nth_hw_with_assign ctxt =
   let value = lookup_var ctxt var in
   assert_bool "nth halfword failed" (is_equal_words expected value)
 
+let cr_assign ctxt =
+  let ones = Exp.of_word @@ Word.ones 8 in
+  let rtl = RTL.[
+      cr := zero;
+      nth byte cr 2 := ones;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let crs = Model.Hardware_vars.cri in
+  let range = List.range 0 32 in
+  List.iter range ~f:(fun i ->
+      let expected = if i >= 16 && i <= 23 then
+          Word.b1 else Word.b0 in
+      let cr_bit = Int.Map.find_exn crs i in
+      let value = lookup_var ctxt cr_bit in
+      let err = sprintf "cr assign to bit %d failed\n" i in
+      assert_bool err (is_equal_words expected value))
+
 let foreach ctxt =
   let w = 40 in
   let x1 = Exp.of_word @@ Word.of_int ~width:w 0xAA_CC_BB_CC_DD in
@@ -403,7 +424,6 @@ let circ_shift_32 ctxt =
   let value = lookup_var ctxt z' in
   assert_bool "circ_shift failed" (is_equal_words expected value)
 
-
 let suite = "Dsl" >::: [
     "extract"                                >:: dsl_extract;
     "low"                                    >:: low;
@@ -424,6 +444,7 @@ let suite = "Dsl" >::: [
     "nth byte"                               >:: nth_byte;
     "nth halfword"                           >:: nth_hw;
     "nth doubleword"                         >:: nth_dw;
+    "cr assign"                              >:: cr_assign;
     "foreach"                                >:: foreach;
     "foreach with assign"                    >:: foreach_with_assign;
     "circ shift"                             >:: circ_shift_32;

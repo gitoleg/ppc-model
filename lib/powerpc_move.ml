@@ -73,16 +73,26 @@ let mtcrf cpu ops =
       ];
       ind := ind + one;
     ];
-    rs := mask
+    cpu.cr := (low word rs land mask) lor (cpu.cr land (lnot mask));
   ]
+
+(** Fixed-Point Move From CR
+    Page 122 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 20 00 26  mfcr  r1 *)
+let mfcr cpu ops =
+  let rt = unsigned reg ops.(0) in
+  RTL.[ rt := cpu.cr ]
 
 type t = [
   | `MTSPR
   | `MFSPR
   | `MTCRF
+  | `MFCR
 ] [@@deriving sexp, enumerate]
 
 let lift t cpu ops = match t with
   | `MTSPR -> mtspr cpu ops
   | `MFSPR -> mfspr cpu ops
   | `MTCRF -> mtcrf cpu ops
+  | `MFCR  -> mfcr  cpu ops

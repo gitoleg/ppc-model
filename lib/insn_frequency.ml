@@ -92,13 +92,13 @@
    srawi      1749        | shift right algebraic imm
    srw        1831        | shift right word
    rotlwi     1832        | rotate left word imm
-   mfcr       1862        |
+   mfcr       1862        | move from CR
    divwu      2008        | div word unsigned
    and        2033        | and
    lfs        2039        |
    lbzx       2128        |
    addc       2225        | add complemented
-   mtcrf      2235        |
+   mtcrf      2235        | move to CR field
    adde       2276        | add extended
    slw        2304        | shift left word
    lbzu       2429        | load byte with update
