@@ -12,7 +12,7 @@
    extsh      7           |
    neg.       7           | neg
    trap       8           |
-   creqv      9           |
+   creqv      9           | CR eqv
    bltlr      9           | branch to LR is less than
    andc.      13          | and with complement
    sraw       19          | shift right word
@@ -30,7 +30,7 @@
    addme      67          | add minus one
    fmsub      69          |
    fdiv       71          |
-   crnot      73          |
+   crnot      73          | CR not (extended for crnor)
    divw       86          | div word
    stwux      101         | store word with update indexed
    bso        102         | branch if summary overflow
@@ -49,7 +49,7 @@
    mtfsf      173         |
    mffs       173         |
    mtfsb0     173         |
-   crset      200         |
+   crset      200         | CR set (extended for creqv)
    fabs       230         |
    fmuls      232         |
    frsp       254         |
@@ -63,7 +63,7 @@
    lhzx       338         | load halfword zero indexed
    not        378           | not_
    beqlr      390         | branch to LR if equal
-   mcrf       434         |
+   mcrf       434         | move CR field
    sth        452         | store halfword
    or.        479          | or_
    addic.     480         | add imm complemented
@@ -71,7 +71,7 @@
    subfc      610         | substract from
    fmul       615         |
    neg        616         | neg
-   cror       617         |
+   cror       617         | CR or
    fctiwz     635         |
    fadd       742         |
    stbu       768         | store byte with update
@@ -119,7 +119,7 @@
    lfd        5433        |
    xor        6147        | xor
    bge        6910        | branch if greater than or equal
-   crclr      7127        |
+   crclr      7127        | CR clear (extended for creqv)
    or         7808         | or_
    cmpw       8326        | compare
    bctr       8684        | branch to CTR unconditionally

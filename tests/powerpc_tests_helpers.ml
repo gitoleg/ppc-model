@@ -222,6 +222,17 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:10 opt_opcode;
         b0;
       ]
+    | `XL, [opcode; bf; x; bfa; y; z; opt_opcode; w;] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:3 bf;
+        word ~width:2 x;
+        word ~width:3 bfa;
+        word ~width:2 y;
+        word ~width:5 z;
+        word ~width:10 opt_opcode;
+        word ~width:1 w;
+      ]
     | `XL, [opcode; bt; ba; bb; opt_opcode; x] ->
       make_bytes [
         word ~width:6 opcode;

@@ -14,6 +14,7 @@ let suite = "PPC" >::: [
     Powerpc_arith_tests.suite;
     Powerpc_branch_tests.suite;
     Powerpc_compare_tests.suite;
+    Powerpc_cr_tests.suite;
     Powerpc_dsl_tests.suite;
     Powerpc_logical_tests.suite;
     Powerpc_load_tests.suite;

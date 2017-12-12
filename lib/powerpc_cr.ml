@@ -96,6 +96,17 @@ let crorc cpu ops =
     bt := ba lor (lnot bb);
   ]
 
+(** Conditional Register Instructions - Move CR Field
+    Pages 40-41 of IBM Power ISATM Version 3.0 B
+    example:
+    4c 88 00 00   mcrf 1,2 *)
+let mcrf cpu ops =
+  let bt = unsigned reg ops.(0) in
+  let bs = unsigned reg ops.(1) in
+  RTL.[
+    bt := bs;
+  ]
+
 type t = [
   | `CRAND
   | `CRNAND
@@ -105,14 +116,16 @@ type t = [
   | `CREQV
   | `CRANDC
   | `CRORC
+  | `MCRF
 ] [@@deriving sexp, enumerate]
 
 let lift opcode cpu ops = match opcode with
-  | `CRAND   -> crand cpu ops
-  | `CRNAND  -> crnand cpu ops
-  | `CROR    -> cror cpu ops
-  | `CRXOR   -> crxor cpu ops
-  | `CRNOR   -> crnor cpu ops
-  | `CREQV   -> creqv cpu ops
-  | `CRANDC  -> crandc cpu ops
-  | `CRORC   -> crorc cpu ops
+  | `CRAND  -> crand cpu ops
+  | `CRNAND -> crnand cpu ops
+  | `CROR   -> cror cpu ops
+  | `CRXOR  -> crxor cpu ops
+  | `CRNOR  -> crnor cpu ops
+  | `CREQV  -> creqv cpu ops
+  | `CRANDC -> crandc cpu ops
+  | `CRORC  -> crorc cpu ops
+  | `MCRF   -> mcrf cpu ops
