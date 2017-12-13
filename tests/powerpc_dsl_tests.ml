@@ -317,6 +317,24 @@ let cr_assign ctxt =
       let err = sprintf "cr assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))
 
+let cr_field_assign ctxt =
+  let ones = Exp.of_word @@ Word.ones 4 in
+  let crf = String.Map.find_exn cr_fields "CR2" in
+  let rtl = RTL.[
+      cr := zero;
+      crf := ones;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let crs = Model.Hardware_vars.cri in
+  let range = List.range 0 32 in
+  List.iter range ~f:(fun i ->
+      let expected = if i >= 8 && i <= 11 then
+          Word.b1 else Word.b0 in
+      let cr_bit = Int.Map.find_exn crs i in
+      let value = lookup_var ctxt cr_bit in
+      let err = sprintf "cr field assign to bit %d failed\n" i in
+      assert_bool err (is_equal_words expected value))
+
 let foreach ctxt =
   let w = 40 in
   let x1 = Exp.of_word @@ Word.of_int ~width:w 0xAA_CC_BB_CC_DD in
@@ -445,6 +463,7 @@ let suite = "Dsl" >::: [
     "nth halfword"                           >:: nth_hw;
     "nth doubleword"                         >:: nth_dw;
     "cr assign"                              >:: cr_assign;
+    "cr_field_assign"                        >:: cr_field_assign;
     "foreach"                                >:: foreach;
     "foreach with assign"                    >:: foreach_with_assign;
     "circ shift"                             >:: circ_shift_32;
