@@ -193,7 +193,7 @@
    blr        15          | branch to LR
    mtlr       16          | mtspr - move to link register
    mtctr      17          | mtspr - move to counter register
-   mflr       18          |
+   mflr       18          | mfspr - move from link register
    b          18          | branch
    add        20          | add
    rlwinm     20          | Rotate Left Word Immediate then AND with Mask

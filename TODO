@@ -5,3 +5,9 @@
    may introduce new bugs, because an expression (low word ra > zero)
    will not have a desired effect. so one will have to assign to a
    signed variable (low word ra) and then compare to zero.
+ - implement one or few vector instructions to check that our model
+   fits well to this purpose
+ - add to model xer register
+ - add to model floating point flags (or whatever there is)
+ - check move insn - if there is some suitable numbers for registers
+   that we didn't use
