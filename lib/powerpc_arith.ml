@@ -4,7 +4,8 @@ open Powerpc
 (** Fixed-Point Arithmetic Instructions - Negate
     Page 72 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 00 d0   neg r1, r2 *)
+    7c 22 00 d0   neg  r1, r2
+    7c 22 00 d1   neg. r1, r2 *)
 let neg cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -13,7 +14,8 @@ let neg cpu ops =
 (** Fixed-Point Arithmetic Instructions - Substract From
     Page 69 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 18 50    subf r1, r2, r3 *)
+    7c 22 18 50    subf  r1, r2, r3
+    7c 22 18 51    subf. r1, r2, r3 *)
 let subf cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -37,7 +39,8 @@ let subfic cpu ops =
 (** Fixed-Point Arithmetic Instructions - Substract From Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 18 10    subfc r1, r2, r3 *)
+    7c 22 18 10    subfc  r1, r2, r3
+    7c 22 18 11    subfc. r1, r2, r3 *)
 let subfc cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -51,7 +54,8 @@ let subfc cpu ops =
 (** Fixed-Point Arithmetic Instructions - Substract From Extended
     Page 71 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 19 10    subfe r1, r2, r3 *)
+    7c 22 19 10    subfe  r1, r2, r3
+    7c 22 19 11    subfe. r1, r2, r3 *)
 let subfe cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -65,7 +69,8 @@ let subfe cpu ops =
 (** Fixed-Point Arithmetic Instructions - Substract From Minus One Extended
     Page 71 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 01 d0    subfme r1, r2 *)
+    7c 22 01 d0    subfme  r1, r2
+    7c 22 01 d1    subfme. r1, r2 *)
 let subfme cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -78,7 +83,8 @@ let subfme cpu ops =
 (** Fixed-Point Arithmetic Instructions - Substract From Zero Extended
     Page 71 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 01 90    subfze r1, r2 *)
+    7c 22 01 90    subfze  r1, r2
+    7c 22 01 91    subfze. r1, r2 *)
 let subfze cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -103,7 +109,8 @@ let mulli cpu ops =
 (** Fixed-Point Arithmetic Instructions - Multiply High Word
     Page 73 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 18 96    mulhw r1, r2, r3 *)
+    7c 22 18 96    mulhw  r1, r2, r3
+    7c 22 18 97    mulhw. r1, r2, r3 *)
 let mulhw cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -119,7 +126,8 @@ let mulhw cpu ops =
 (** Fixed-Point Arithmetic Instructions - Multiply High Word Unsigned
     Page 73 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 18 16    mulhwu r1, r2, r3 *)
+    7c 22 18 16    mulhwu  r1, r2, r3
+    7c 22 18 17    mulhwu. r1, r2, r3 *)
 let mulhwu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -135,7 +143,8 @@ let mulhwu cpu ops =
 (** Fixed-Point Arithmetic Instructions - Multiply Low Word
     Page 73 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 19 d6   mullw r1, r2, r3 *)
+    7c 22 19 d6   mullw  r1, r2, r3
+    7c 22 19 d7   mullw. r1, r2, r3 *)
 let mullw cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -151,7 +160,8 @@ let mullw cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide Word
     Page 74 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b d6    divw r1, r2, r3 *)
+    7c 22 1b d6    divw  r1, r2, r3
+    7c 22 1b d7    divw. r1, r2, r3 *)
 let divw cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -163,7 +173,8 @@ let divw cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide Word Unsigned
     Page 74 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b 96    divwu r1, r2, r3 *)
+    7c 22 1b 96    divwu  r1, r2, r3
+    7c 22 1b 97    divwu. r1, r2, r3 *)
 let divwu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -175,7 +186,8 @@ let divwu cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide Word Extended
     Page 75 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b 56    divwe r1, r2, r3 *)
+    7c 22 1b 56    divwe  r1, r2, r3
+    7c 22 1b 57    divwe. r1, r2, r3 *)
 let divwe cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -190,7 +202,8 @@ let divwe cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide Word Extended Unsigned
     Page 75 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b 16    divweu r1, r2, r3 *)
+    7c 22 1b 16    divweu  r1, r2, r3
+    7c 22 1b 17    divweu. r1, r2, r3 *)
 let divweu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -217,7 +230,8 @@ let modsw cpu ops =
 (** Fixed-Point Arithmetic Instructions - Modulo unsigned word
     Page 77 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1a 16   moduw  r1, r2, r3 *)
+    7c 22 1a 16   moduw  r1, r2, r3
+    7c 22 1a 17   moduw. r1, r2, r3 *)
 let moduw cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -229,7 +243,8 @@ let moduw cpu ops =
 (** Fixed-Point Arithmetic Instructions - Multiply low doubleword
     Page 79 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 19 d2   mulld r1, r2, r3 *)
+    7c 22 19 d2   mulld  r1, r2, r3
+    7c 22 19 d3   mulld. r1, r2, r3 *)
 let mulld cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -241,7 +256,8 @@ let mulld cpu ops =
 (** Fixed-Point Arithmetic Instructions - Multiply high doubleword
     Page 79 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 18 92   mulhd r1, r2, r3 *)
+    7c 22 18 92   mulhd  r1, r2, r3
+    7c 22 18 93   mulhd. r1, r2, r3 *)
 let mulhd cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -256,7 +272,8 @@ let mulhd cpu ops =
 (** Fixed-Point Arithmetic Instructions - Multiply high doubleword unsigned
     Page 79 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 18 12   mulhdu r1, r2, r3 *)
+    7c 22 18 12   mulhdu  r1, r2, r3
+    7c 22 18 13   mulhdu. r1, r2, r3 *)
 let mulhdu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -271,7 +288,8 @@ let mulhdu cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide doubleword
     Page 81 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b d2   divd  r1, r2, r3 *)
+    7c 22 1b d2   divd  r1, r2, r3
+    7c 22 1b d3   divd. r1, r2, r3 *)
 let divd cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -283,7 +301,8 @@ let divd cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide doubleword unsigned
     Page 81 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b 92   divdu  r1, r2, r3 *)
+    7c 22 1b 92   divdu  r1, r2, r3
+    7c 22 1b 93   divdu. r1, r2, r3 *)
 let divdu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -295,7 +314,8 @@ let divdu cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide doubleword extended
     Page 82 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b 52   divde  r1, r2, r3 *)
+    7c 22 1b 52   divde  r1, r2, r3
+    7c 22 1b 53   divde. r1, r2, r3 *)
 let divde cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -312,7 +332,8 @@ let divde cpu ops =
 (** Fixed-Point Arithmetic Instructions - Divide doubleword extended unsigned
     Page 82 of IBM Power ISATM Version 3.0 B
     example:
-    7c 22 1b 12   divdeu  r1, r2, r3 *)
+    7c 22 1b 12   divdeu  r1, r2, r3
+    7c 22 1b 13   divdeu. r1, r2, r3 *)
 let divdeu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
@@ -351,29 +372,49 @@ let modud cpu ops =
   ]
 
 let () =
-  "NEG"    >: neg;
-  "SUBF"   >: subf;
-  "SUBFIC" >: subfic;
-  "SUBFC"  >: subfc;
-  "SUBFE"  >: subfe;
-  "SUBFME" >: subfme;
-  "SUBFZE" >: subfze;
-  "MULLI"  >: mulli;
-  "MULHW"  >: mulhw;
-  "MULHWU" >: mulhwu;
-  "MULLW"  >: mullw;
-  "DIVW"   >: divw;
-  "DIVWU"  >: divwu;
-  "DIVWE"  >: divwe;
-  "DIVWEU" >: divweu;
-  "MODSW"  >: modsw;
-  "MODUW"  >: moduw;
-  "MULLD"  >: mulld;
-  "MULHD"  >: mulhd;
-  "MULHDU" >: mulhdu;
-  "DIVD"   >: divd;
-  "DIVDU"  >: divdu;
-  "DIVDE"  >: divde;
-  "DIVDEU" >: divdeu;
-  "MODSD"  >: modsd;
-  "MODUD"  >: modud;
+  "NEG"     >> neg;
+  "NEGo"    >. neg;
+  "SUBF"    >> subf;
+  "SUBFo"   >. subf;
+  "SUBFIC"  >> subfic;
+  "SUBFC"   >> subfc;
+  "SUBFCo"  >. subfc;
+  "SUBFE"   >> subfe;
+  "SUBFEo"  >. subfe;
+  "SUBFME"  >> subfme;
+  "SUBFMEo" >. subfme;
+  "SUBFZE"  >> subfze;
+  "SUBFZEo" >. subfze;
+  "MULLI"   >> mulli;
+  "MULHW"   >> mulhw;
+  "MULHWo"  >. mulhw;
+  "MULHWU"  >> mulhwu;
+  "MULHWUo" >. mulhwu;
+  "MULLW"   >> mullw;
+  "MULLWo"  >. mullw;
+  "DIVW"    >> divw;
+  "DIVWo"   >. divw;
+  "DIVWU"   >> divwu;
+  "DIVWUo"  >. divwu;
+  "DIVWE"   >> divwe;
+  "DIVWEo"  >. divwe;
+  "DIVWEU"  >> divweu;
+  "DIVWEUo" >. divweu;
+  "MODSW"   >> modsw;
+  "MODUW"   >> moduw;
+  "MULLD"   >> mulld;
+  "MULLDo"  >. mulld;
+  "MULHD"   >> mulhd;
+  "MULHDo"  >. mulhd;
+  "MULHDU"  >> mulhdu;
+  "MULHDUo" >. mulhdu;
+  "DIVD"    >> divd;
+  "DIVDo"   >. divd;
+  "DIVDU"   >> divdu;
+  "DIVDUo"  >. divdu;
+  "DIVDE"   >> divde;
+  "DIVDEo"  >. divde;
+  "DIVDEU"  >> divdeu;
+  "DIVDEUo" >. divdeu;
+  "MODSD"   >> modsd;
+  "MODUD"   >> modud;

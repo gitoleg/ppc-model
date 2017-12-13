@@ -3,7 +3,8 @@ open Powerpc
 (** Fix-point Shift Left Word
     Page 107 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 58 30     slw r10, r9, r11 *)
+    7d 2a 58 30     slw  r10, r9, r11
+    7d 2a 58 31     slw. r10, r9, r11  *)
 let slw cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -19,7 +20,8 @@ let slw cpu ops =
 (** Fix-point Shift Right Word
     Page 107 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 5c 30     srw r10, r9, r11 *)
+    7d 2a 5c 30     srw  r10, r9, r11
+    7d 2a 5c 31     srw. r10, r9, r11 *)
 let srw cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -35,7 +37,8 @@ let srw cpu ops =
 (** Fix-point Shift Right Algebraic Word Immediate
     Page 108 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 5e 70     srawi r10, r9, 11 *)
+    7d 2a 5e 70     srawi  r10, r9, 11
+    7d 2a 5e 71     srawi. r10, r9, 11 *)
 let srawi cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -60,7 +63,8 @@ let srawi cpu ops =
 (** Fix-point Shift Right Algebraic Word
     Page 108 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 5e 30     sraw r10, r9, r11 *)
+    7d 2a 5e 30     sraw  r10, r9, r11
+    7d 2a 5e 31     sraw. r10, r9, r11 *)
 let sraw cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -91,7 +95,8 @@ let sraw cpu ops =
 (** Fix-point Shift Left Doubleword
     Page 109 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 58 36     sld r10, r9, r11 *)
+    7d 2a 58 36     sld  r10, r9, r11
+    7d 2a 58 37     sld. r10, r9, r11 *)
 let sld cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -103,7 +108,8 @@ let sld cpu ops =
 (** Fix-point Shift Right Doubleword
     Page 109 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 5c 35     srd r10, r9, r11 *)
+    7d 2a 5c 36     srd  r10, r9, r11
+    7d 2a 5c 37     srd. r10, r9, r11 *)
 let srd cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -112,11 +118,11 @@ let srd cpu ops =
     ra := rs lsr (last rb 6)
   ]
 
-
 (** Fix-point Shift Right Algebraic Doubleword Immediate
     Page 110 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 26 74     sradi r10, r9, 4 *)
+    7d 2a 26 74     sradi  r10, r9, 4
+    7d 2a 26 75     sradi. r10, r9, 4 *)
 let sradi cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -140,7 +146,8 @@ let sradi cpu ops =
 (** Fix-point Shift Right Algebraic Doubleword
     Page 110 of IBM Power ISATM Version 3.0 B
     example:
-    7d 2a 5e 34     srad r10, r9, r11 *)
+    7d 2a 5e 34     srad  r10, r9, r11
+    7d 2a 5e 35     srad. r10, r9, r11 *)
 let srad cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -168,19 +175,19 @@ let srad cpu ops =
   ]
 
 let () =
-  "SLW"    >: slw;
-  "SRW"    >: srw;
-  "SRAWI"  >: srawi;
-  "SRAW"   >: sraw;
-  "SLD"    >: sld;
-  "SRD"    >: srd;
-  "SRADI"  >: sradi;
-  "SRAD"   >: srad;
-  "SLWo"   >! slw;
-  "SRWo"   >! srw;
-  "SRAWIo" >! srawi;
-  "SRAWo"  >! sraw;
-  "SLDo"   >! sld;
-  "SRDo"   >! srd;
-  "SRADIo" >! sradi;
-  "SRADo"  >! srad;
+  "SLW"    >> slw;
+  "SRW"    >> srw;
+  "SRAWI"  >> srawi;
+  "SRAW"   >> sraw;
+  "SLD"    >> sld;
+  "SRD"    >> srd;
+  "SRADI"  >> sradi;
+  "SRAD"   >> srad;
+  "SLWo"   >. slw;
+  "SRWo"   >. srw;
+  "SRAWIo" >. srawi;
+  "SRAWo"  >. sraw;
+  "SLDo"   >. sld;
+  "SRDo"   >. srd;
+  "SRADIo" >. sradi;
+  "SRADo"  >. srad;

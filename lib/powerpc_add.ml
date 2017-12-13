@@ -169,20 +169,20 @@ let addze cpu ops =
   ]
 
 let () =
-  "ADD4"   >: add;
-  "ADD4o"  >! add;
-  "ADDI"   >: addi;
-  "ADDIS"  >: addis;
-  "ADDIC"  >: addic;
-  "ADDICo" >! addic;
-  "ADDC"   >: addc;
-  "ADDCo"  >! addc;
-  "ADDE"   >: adde;
-  "ADDEo"  >! adde;
-  "ADDME"  >: addme;
-  "ADDMEo" >! addme;
-  "ADDZE"  >: addze;
-  "ADDZEo" >! addze;
-  "LI"     >: li;
-  "LIS"    >: lis;
-  "LA"     >: addi;
+  "ADD4"   >> add;
+  "ADD4o"  >. add;
+  "ADDI"   >> addi;
+  "ADDIS"  >> addis;
+  "ADDIC"  >> addic;
+  "ADDICo" >. addic;
+  "ADDC"   >> addc;
+  "ADDCo"  >. addc;
+  "ADDE"   >> adde;
+  "ADDEo"  >. adde;
+  "ADDME"  >> addme;
+  "ADDMEo" >. addme;
+  "ADDZE"  >> addze;
+  "ADDZEo" >. addze;
+  "LI"     >> li;
+  "LIS"    >> lis;
+  "LA"     >> addi;

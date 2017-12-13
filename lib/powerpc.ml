@@ -24,7 +24,7 @@ let lifters = String.Table.create ()
 let register name lifter =
   String.Table.change lifters name ~f:(fun _ -> Some lifter)
 
-let (>:) = register
+let (>>) = register
 
 let dot fc cpu ops =
   let res = signed reg ops.(0) in
@@ -37,12 +37,20 @@ let dot fc cpu ops =
 
 let register_dot name lifter = register name (dot lifter)
 
-let (>!) = register_dot
+let (>.) = register_dot
 
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
 
+let once = ref true
+
+let print () =
+  if !once then
+    printf "insns number is %d\n" (Hashtbl.length lifters);
+  once := false
+
 let lift addr_size mem insn =
+  print ();
   let insn = Insn.of_basic insn in
   let insn_name = Insn.name insn in
   let cpu = make_cpu addr_size endian mem  in

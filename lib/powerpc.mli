@@ -188,7 +188,6 @@ type cpu = {
   ov32      : exp; (** overflow of 32 bits     *)
 }
 
-
 type lift = cpu -> op array -> rtl list
 
 val make_cpu : addr_size -> endian -> mem -> cpu
@@ -197,11 +196,11 @@ val make_cpu : addr_size -> endian -> mem -> cpu
 val register : string -> lift -> unit
 
 (** [name >: lift]  - registers a lifter for instruction [name]  *)
-val (>:) : string -> lift -> unit
+val (>>) : string -> lift -> unit
 
 (** [dot insn cr_field res] - returns a lift for dot version of [insn],
     with an additinal code for writing {lt,gt,eq} bits of [cr_field] *)
 val dot : lift -> cpu -> op array -> rtl list
 
 (** [name >: lift] - registers a lifter for instruction [name]  *)
-val (>!) : string -> lift -> unit
+val (>.) : string -> lift -> unit

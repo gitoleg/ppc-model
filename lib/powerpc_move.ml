@@ -83,7 +83,7 @@ let mfcr cpu ops =
   RTL.[ rt := cpu.cr ]
 
 let () =
-  "MTSPR" >: mtspr;
-  "MFSPR" >: mfspr;
-  "MTCRF" >: mtcrf;
-  "MFCR"  >: mfcr;
+  "MTSPR" >> mtspr;
+  "MFSPR" >> mfspr;
+  "MTCRF" >> mtcrf;
+  "MFCR"  >> mfcr;
