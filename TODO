@@ -11,3 +11,4 @@
  - add to model floating point flags (or whatever there is)
  - check move insn - if there is some suitable numbers for registers
    that we didn't use
+ - consider update_link_register in branch insns - weird ?
