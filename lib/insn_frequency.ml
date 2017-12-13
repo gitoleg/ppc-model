@@ -1,4 +1,4 @@
-(**
+(** coreutils
    sthx       1           | store halfword indexed
    bclr+      2           | branch conditional to LR with branch prediction
    lhau       2           | load halfword algebraic with update
@@ -83,7 +83,7 @@
    stwx       1180        | store word indexed
    fsub       1235        |
    addic      1238        | add imm complemented
-   .long      1286        |
+   .long      1286        | suspicious thing, encoded as 00 00 00 00
    xori       1342        | xor imm
    mulli      1383        | mul imm
    addis      1435        | add imm shifted
@@ -150,4 +150,61 @@
    stw        105118      | store word
    lwz        159459      | load word and zero
 
+*)
+
+
+(** echo:
+   stdux      1           | store doubleword update indexed
+   stwux      1           | store word update indexed
+   bge        1           | branch if great or equal then
+   cmplwi     1           | compare logical imm
+   srawi.     1           |
+   addze.     1           | add zero extended (dot)
+   lwzx       1           | load word zero indexed
+   blelr      1           | branch to LR if less then
+   cmpld      1           | compare logical
+   clrlwi     2           | extended mnemonic for Rotate left imm + mask
+   cmpdi      2           | compare logical imm
+   clrldi     2           | extended mnemonic for Rotate left imm + mask
+   neg        2           |
+   beqlr      3           | branch to LR if equal
+   extsw      3           | Extend Sign Byte/Halfword/Word
+   stb        3           | store byte
+   bcl        3           | branch conditional
+   srawi      3           | shift right algebraic imm
+   stdu       3           | store doubleword update
+   rldicl     4           | Rotate Left Doubleword Immediate then Clear Left
+   addis      4           | add imm shifted
+   bctrl      4           | branch to CTR
+   or         4            | or_
+   lwzu       4           | load word zero updated
+   cmplw      4           | compare logical
+   lbz        5           | load byte zero
+   subf       6           | substract from
+   cmpw       6           | compare
+   beq        6           | branch if equal
+   blt        7           | branch if less then
+   bne        8           | branch if not equal
+   cmpwi      10          | compare logical imm
+   stwu       13          | store word update
+   bctr       13          | branch to CTR
+   lwa        13          | load word algebraic
+   rldicr     14          | Rotate Left Doubleword Immediate then Clear Right
+   blr        15          | branch to LR
+   mtlr       16          | mtspr - move to link register
+   mtctr      17          | mtspr - move to counter register
+   mflr       18          |
+   b          18          | branch
+   add        20          | add
+   rlwinm     20          | Rotate Left Word Immediate then AND with Mask
+   std        24          | store doubleword
+   lis        26          | add imm shifted (extended)
+   bl         32          | branch
+   li         33          | add imm (extended)
+   ld         39          | load doubleword
+   nop        48          |
+   mr         65          | or_ (extended)
+   addi       71          | add imm
+   stw        71          | store word
+   lwz        122         | load word zero
 *)
