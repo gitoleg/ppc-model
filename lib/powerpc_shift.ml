@@ -167,7 +167,6 @@ let srad cpu ops =
     ]
   ]
 
-(** TODO: add *_dot instructions *)
 let () =
   "SLW"   >: slw;
   "SRW"   >: srw;
@@ -177,3 +176,11 @@ let () =
   "SRD"   >: srd;
   "SRADI" >: sradi;
   "SRAD"  >: srad;
+  "SLW"   >! slw;
+  "SRW"   >! srw;
+  "SRAWI" >! srawi;
+  "SRAW"  >! sraw;
+  "SLD"   >! sld;
+  "SRD"   >! srd;
+  "SRADI" >! sradi;
+  "SRAD"  >! srad;

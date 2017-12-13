@@ -62,7 +62,8 @@ module Hardware : sig
   val cr : exp
 
   (** condition register fields *)
-  val cr_fields : exp String.Map.t
+  val cr_fields  : exp String.Map.t
+  val cri_fields : exp Int.Map.t
 end
 
 (** 32-bit addressed memory *)

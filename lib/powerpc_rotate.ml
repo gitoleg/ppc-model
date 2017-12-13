@@ -230,3 +230,12 @@ let () =
   "RLDCL"  >: rldcl;
   "RLDCR"  >: rldcr;
   "RLDIMI" >: rldimi;
+  "RLWINM" >! rlwinm;
+  "RLWNM"  >! rlwnm;
+  "RLWIMI" >! rlwimi;
+  "RLDICL" >! rldicl;
+  "RLDICR" >! rldicr;
+  "RLDIC"  >! rldic;
+  "RLDCL"  >! rldcl;
+  "RLDCR"  >! rldcr;
+  "RLDIMI" >! rldimi;

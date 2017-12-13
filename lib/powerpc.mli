@@ -21,27 +21,27 @@ val reg : (op -> exp) p
 val var : (bitwidth -> exp) p
 val const : (bitwidth -> int -> exp) p
 
-(** those function return exp of appropriative bitwidth
+(** those functions return exp of appropriative bitwidth
     from a given integer or operand *)
 val signed : 'a p -> 'a
 val unsigned : 'a p -> 'a
 
 module RTL : sig
-  val ( := )  : exp -> exp -> rtl
-  val ( + )  : exp -> exp -> exp
-  val ( - )  : exp -> exp -> exp
-  val ( * )  : exp -> exp -> exp
-  val ( / )  : exp -> exp -> exp
-  val (/$) : exp -> exp -> exp
-  val ( ^ )  : exp -> exp -> exp
+  val ( := ) : exp -> exp -> rtl
+  val ( + ) : exp -> exp -> exp
+  val ( - ) : exp -> exp -> exp
+  val ( * ) : exp -> exp -> exp
+  val ( / ) : exp -> exp -> exp
+  val ( /$ ) : exp -> exp -> exp
+  val ( ^ ) : exp -> exp -> exp
   val ( % ) : exp -> exp -> exp
-  val ( %$) : exp -> exp -> exp
-  val ( < )  : exp -> exp -> exp
-  val ( > )  : exp -> exp -> exp
-  val ( <= )  : exp -> exp -> exp
-  val ( >= )  : exp -> exp -> exp
-  val ( = )  : exp -> exp -> exp
-  val ( <> )  : exp -> exp -> exp
+  val ( %$ ) : exp -> exp -> exp
+  val ( < ) : exp -> exp -> exp
+  val ( > ) : exp -> exp -> exp
+  val ( <= ) : exp -> exp -> exp
+  val ( >= ) : exp -> exp -> exp
+  val ( = ) : exp -> exp -> exp
+  val ( <> ) : exp -> exp -> exp
   val ( <$ ) : exp -> exp -> exp
   val ( >$ ) : exp -> exp -> exp
   val ( <=$ )  : exp -> exp -> exp
@@ -171,6 +171,14 @@ type cpu = {
   lr        : exp;       (** link register       *)
   tar       : exp;       (** target register     *)
   cr        : exp;       (** condition register  *)
+  cr0       : exp;       (** condition register field 0 *)
+  cr1       : exp;       (** condition register field 1 *)
+  cr2       : exp;       (** condition register field 2 *)
+  cr3       : exp;       (** condition register field 3 *)
+  cr4       : exp;       (** condition register field 4 *)
+  cr5       : exp;       (** condition register field 5 *)
+  cr6       : exp;       (** condition register field 6 *)
+  cr7       : exp;       (** condition register field 7 *)
 
   (** fixed precision flags *)
   so        : exp; (** summary overflow        *)
@@ -180,6 +188,20 @@ type cpu = {
   ov32      : exp; (** overflow of 32 bits     *)
 }
 
+
+type lift = cpu -> op array -> rtl list
+
 val make_cpu : addr_size -> endian -> mem -> cpu
 
-val (>:) : string -> (cpu -> op array -> rtl list) -> unit
+(** [register name lift] - registers a lifter for instruction [name] *)
+val register : string -> lift -> unit
+
+(** [name >: lift]  - registers a lifter for instruction [name]  *)
+val (>:) : string -> lift -> unit
+
+(** [dot insn cr_field res] - returns a lift for dot version of [insn],
+    with an additinal code for writing {lt,gt,eq} bits of [cr_field] *)
+val dot : lift -> cpu -> op array -> rtl list
+
+(** [name >: lift] - registers a lifter for instruction [name]  *)
+val (>!) : string -> lift -> unit

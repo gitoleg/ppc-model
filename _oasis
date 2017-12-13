@@ -22,6 +22,7 @@ Library powerpc_lifter
                   Powerpc_arith,
                   Powerpc_branch,
                   Powerpc_compare,
+                  Powerpc_cpu,
                   Powerpc_cr,
                   Powerpc_dsl,
                   Powerpc_load,

@@ -49,17 +49,6 @@ let and_ cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[ ra := rs land rb; ]
 
-let and_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := rs land rb;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 (** Fixed-point AND with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
@@ -70,17 +59,6 @@ let andc cpu ops =
   let rs = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[ ra := rs land (lnot rb); ]
-
-let andc_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := rs land (lnot rb);
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
 
 (** Fixed-point OR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -114,17 +92,6 @@ let or_ cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[ ra := rs lor rb; ]
 
-let or_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := rs lor rb;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 (** Fixed-point OR with Complement
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
@@ -135,18 +102,6 @@ let orc cpu ops =
   let rs = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[ ra := rs lor (lnot rb); ]
-
-let orc_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := rs lor (lnot rb);
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 
 (** Fixed-point XOR Immediate
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -161,8 +116,7 @@ let xori cpu ops =
 (** Fixed-point XOR Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
-    6d 2a 04 00     xoris   r10,r9,1024
- *)
+    6d 2a 04 00     xoris   r10,r9,1024 *)
 let xoris cpu ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
@@ -175,22 +129,11 @@ let xoris cpu ops =
     examples:
     7c 6a 52 78     xor     r10,r3,r10
     7d 4a 4a 79     xor.    r10,r10,r9 *)
-let xor_ cpu ops =
+let xor cpu ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[ ra := rs lxor rb; ]
-
-let xor_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := rs lxor rb;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
 
 (** Fixed-point NAND
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -203,18 +146,6 @@ let nand cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[ ra := lnot (rs land rb); ]
 
-let nand_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := lnot (rs land rb);
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
-
 (** Fixed-point NOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
@@ -226,17 +157,6 @@ let nor cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[ ra := lnot (rs lor rb); ]
 
-let nor_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := lnot (rs lor rb);
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 (** Fixed-point Equivalent
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
@@ -247,17 +167,6 @@ let eqv cpu ops =
   let rs = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
   RTL.[ ra := lnot (rs lxor rb); ]
-
-let eqv_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    ra := lnot (rs lxor rb);
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
 
 (** Fixed-point Extend Sign Byte/Halfword/Word
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -273,45 +182,15 @@ let extsb cpu ops =
   let rs = signed reg ops.(1) in
   RTL.[ ra := low byte rs;]
 
-let extsb_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  RTL.[
-    ra := low byte rs;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 let extsh cpu ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   RTL.[ ra := low halfword rs;]
 
-let extsh_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  RTL.[
-    ra := low halfword rs;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 let extsw cpu ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
   RTL.[ ra := low word rs;]
-
-let extsw_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  RTL.[
-    ra := low word rs;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
 
 (** Fixed-point Count Leading Zeros Word/Doubleword
     Pages 92-99 of IBM Power ISATM Version 3.0 B
@@ -341,30 +220,6 @@ let cntlzw cpu ops =
     ra := cnt;
   ]
 
-let cntlzw_dot cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let xv = unsigned var word in
-  let cnt = unsigned var byte in
-  let has_no_ones = unsigned var bit in
-  let biti = unsigned var bit in
-  RTL.[
-    xv := low word rs;
-    cnt := zero;
-    has_no_ones := one;
-    foreach biti xv [
-          if_ (has_no_ones land (biti = zero)) [
-            cnt := cnt + one;
-          ] [
-            has_no_ones := zero;
-          ]
-        ];
-    ra := cnt;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 let cntlzd cpu ops =
   let ra = unsigned reg ops.(0) in
   let rs = unsigned reg ops.(1) in
@@ -384,30 +239,6 @@ let cntlzd cpu ops =
           ]
         ];
     ra := cnt;
-  ]
-
-let cntlzd_dot cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let xv = unsigned var doubleword in
-  let cnt = unsigned var byte in
-  let has_no_ones = unsigned var bit in
-  let biti = unsigned var bit in
-  RTL.[
-    xv := rs;
-    cnt := zero;
-    has_no_ones := one;
-    foreach biti xv [
-          if_ (has_no_ones land (biti = zero)) [
-            cnt := cnt + one;
-          ] [
-            has_no_ones := zero;
-          ]
-        ];
-    ra := cnt;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Count Trailing Zeros Word
@@ -436,28 +267,6 @@ let cnttzw cpu ops =
     ra := cnt;
   ]
 
-let cnttzw_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let xv = unsigned var word in
-  let cnt = unsigned var word in
-  let biti = unsigned var bit in
-  RTL.[
-    xv := low word rs;
-    cnt := zero;
-    foreach biti xv [
-      if_ (biti = zero) [
-        cnt := cnt + one;
-      ] [
-        cnt := zero;
-      ]
-    ];
-    ra := cnt;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
-  ]
-
 let cnttzd cpu ops =
   let ra = signed reg ops.(0) in
   let rs = signed reg ops.(1) in
@@ -475,28 +284,6 @@ let cnttzd cpu ops =
       ]
     ];
     ra := cnt;
-  ]
-
-let cnttzd_dot cpu ops =
-  let ra = signed reg ops.(0) in
-  let rs = signed reg ops.(1) in
-  let xv = unsigned var doubleword in
-  let cnt = unsigned var word in
-  let biti = unsigned var bit in
-  RTL.[
-    xv := rs;
-    cnt := zero;
-    foreach biti xv [
-      if_ (biti = zero) [
-        cnt := cnt + one;
-      ] [
-        cnt := zero;
-      ]
-    ];
-    ra := cnt;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
   ]
 
 (** Fixed-point Compare Bytes
@@ -614,39 +401,39 @@ let () =
   "ANDIo"   >: andi_dot;
   "ANDISo"  >: andis_dot;
   "AND"     >: and_;
-  "ANDo"    >: and_dot;
+  "ANDo"    >! and_;
   "ANDC"    >: andc;
-  "ANDCo"   >: andc_dot;
+  "ANDCo"   >! andc;
   "ORI"     >: ori;
   "ORIS"    >: oris;
   "OR"      >: or_;
-  "ORo"     >: or_dot;
+  "ORo"     >! or_;
   "ORC"     >: orc;
-  "ORCo"    >: orc_dot;
+  "ORCo"    >! orc;
   "XORI"    >: xori;
   "XORIS"   >: xoris;
-  "XOR"     >: xor_;
-  "XORo"    >: xor_dot;
+  "XOR"     >: xor;
+  "XORo"    >! xor;
   "NAND"    >: nand;
-  "NANDo"   >: nand_dot;
+  "NANDo"   >! nand;
   "NOR"     >: nor;
-  "NORo"    >: nor_dot;
+  "NORo"    >! nor;
   "EQV"     >: eqv;
-  "EQVo"    >: eqv_dot;
+  "EQVo"    >! eqv;
   "EXTSB"   >: extsb;
-  "EXTSBo"  >: extsb_dot;
+  "EXTSBo"  >! extsb;
   "EXTSH"   >: extsh;
-  "EXTSHo"  >: extsh_dot;
+  "EXTSHo"  >! extsh;
   "EXTSW"   >: extsw;
-  "EXTSWo"  >: extsw_dot;
+  "EXTSWo"  >! extsw;
   "CNTLZW"  >: cntlzw;
-  "CNTLZWo" >: cntlzw_dot;
+  "CNTLZWo" >! cntlzw;
   "CNTLZD"  >: cntlzd;
-  "CNTLZDo" >: cntlzd_dot;
+  "CNTLZDo" >! cntlzd;
   "CNTTZW"  >: cnttzw;
-  "CNTTZWo" >: cnttzw_dot;
+  "CNTTZWo" >! cnttzw;
   "CNTTZD"  >: cnttzd;
-  "CNTTZDo" >: cnttzd_dot;
+  "CNTTZDo" >! cnttzd;
   "CMPB"    >: cmpb;
   "POPCNTW" >: popcntw;
   "POPCNTD" >: popcntd;

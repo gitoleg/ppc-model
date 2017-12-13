@@ -2,9 +2,11 @@ open Core_kernel.Std
 open Bap.Std
 
 module Model = Powerpc_model
+open Powerpc_rtl
 
 include Powerpc_dsl
 include Powerpc_utils
+include Powerpc_cpu
 
 module RTL = struct
   include Powerpc_rtl
@@ -13,15 +15,29 @@ end
 
 type rtl = RTL.rtl
 type exp = RTL.exp
+type lift = cpu -> op array -> rtl list
 
 let bil_of_rtl = RTL.bil_of_t
 
 let lifters = String.Table.create ()
 
-let add name lifter =
+let register name lifter =
   String.Table.change lifters name ~f:(fun _ -> Some lifter)
 
-let (>:) = add
+let (>:) = register
+
+let dot fc cpu ops =
+  let res = signed reg ops.(0) in
+  fc cpu ops @
+  RTL.[
+    nth bit cpu.cr 0 := low cpu.addr_size res <$ zero;
+    nth bit cpu.cr 1 := low cpu.addr_size res >$ zero;
+    nth bit cpu.cr 2 := low cpu.addr_size res = zero;
+  ]
+
+let register_dot name lifter = register name (dot lifter)
+
+let (>!) = register_dot
 
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian

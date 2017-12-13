@@ -13,6 +13,7 @@ val word : bitwidth
 val doubleword : bitwidth
 val quadroword : bitwidth
 val bitwidth : int -> bitwidth
+val int_of_bitwidth : bitwidth -> int
 
 val imm : (op -> exp) p
 val reg : (op -> exp) p
@@ -86,30 +87,3 @@ val case    : exp -> rtl list -> clause
 
 (** [default code] - creates a switch default *)
 val default : rtl list -> clause
-
-type cpu = {
-  load      : exp -> bitwidth -> exp;
-  store     : exp -> exp -> bitwidth -> rtl;
-  jmp       : exp -> rtl;
-  addr      : exp;
-  addr_size : bitwidth;
-
-  (** registers  *)
-  gpr       : int -> exp; (** general purpose registers 0..31 *)
-  fpr       : int -> exp; (** floating-point registers 0..31  *)
-  vr        : int -> exp; (** vector register 0..31           *)
-  xer       : exp;       (** fixed point exception register  *)
-  ctr       : exp;       (** count register      *)
-  lr        : exp;       (** link register       *)
-  tar       : exp;       (** target register     *)
-  cr        : exp;       (** condition register  *)
-
-  (** fixed precision flags *)
-  so        : exp; (** summary overflow        *)
-  ca        : exp; (** carry flag              *)
-  ov        : exp; (** overflow flag           *)
-  ca32      : exp; (** carry out of 32 bits    *)
-  ov32      : exp; (** overflow of 32 bits     *)
-}
-
-val make_cpu : addr_size -> endian -> mem -> cpu

@@ -19,14 +19,9 @@ let doubleword = 64
 let quadroword = 128
 let bitwidth x = x
 
-let int_of_width = ident
+let int_of_bitwidth = ident
 
 let width_of_size = Size.in_bits
-
-let size_of_width x =
-  match Size.of_int x with
-  | Ok s -> s
-  | Error _ -> ppc_fail "invalid size: %d" x
 
 let find_reg regs reg = String.Map.find regs (Reg.name reg)
 let find_gpr = find_reg gpr
@@ -59,7 +54,7 @@ let signed f = f true
 let unsigned f = f false
 
 let var signed width =
-  let e = Exp.tmp (int_of_width width) in
+  let e = Exp.tmp (int_of_bitwidth width) in
   if signed then Exp.signed e
   else Exp.unsigned e
 
@@ -74,7 +69,7 @@ let reg signed op = match op with
     else Exp.unsigned e
 
 let const signed width value =
-  let width = int_of_width width in
+  let width = int_of_bitwidth width in
   let x = Word.of_int ~width value in
   let e = Exp.of_word x in
   if signed then Exp.signed e
@@ -88,8 +83,8 @@ let first e bits =
   Exp.extract (w - 1) (w - bits) e
 
 let last e bits = Exp.extract (bits - 1) 0 e
-let high w e = first e (int_of_width w)
-let low w e = last e (int_of_width w)
+let high w e = first e (int_of_bitwidth w)
+let low w e = last e (int_of_bitwidth w)
 
 let msb e =
   let h = Exp.width e - 1 in
@@ -99,7 +94,7 @@ let lsb e = Exp.extract 0 0 e
 
 let nth w e index =
   let width = Exp.width e in
-  let step = int_of_width w in
+  let step = int_of_bitwidth w in
   let x = width / step - index - 1 in
   let hi = (x + 1) * step - 1 in
   let lo = x * step in
@@ -151,54 +146,3 @@ let switch exp cases =
       List.fold (List.rev cases) ~init:default ~f:(fun acc (x,code) ->
           [if_ (cond x) code acc;]) in
     (if_ (cond x) code else_)
-
-type cpu = {
-  load      : exp -> bitwidth -> exp;
-  store     : exp -> exp -> bitwidth -> rtl;
-  jmp       : exp -> rtl;
-  addr      : exp;
-  addr_size : bitwidth;
-  gpr       : int -> exp;
-  fpr       : int -> exp;
-  vr        : int -> exp;
-  xer       : exp;
-  ctr       : exp;
-  lr        : exp;
-  tar       : exp;
-  cr        : exp;
-  so        : exp;
-  ca        : exp;
-  ov        : exp;
-  ca32      : exp;
-  ov32      : exp;
-}
-
-(** TODO: probably, it's not right place for this function *)
-let make_cpu addr_size endian memory =
-  let extract_addr a = match addr_size with
-    | `r32 -> low word a
-    | `r64 -> a in
-  let mem,addr_size = match addr_size with
-    | `r32 -> mem32, word
-    | `r64 -> mem64, doubleword in
-  let load exp width =
-    let size = size_of_width width in
-    let addr = extract_addr exp in
-    Exp.load mem addr endian size in
-  let store addr data width =
-    let size = size_of_width width in
-    let addr = extract_addr addr in
-    store mem addr data endian size in
-  let addr = Exp.of_word @@ Memory.min_addr memory in
-  let jmp e = jmp (low addr_size e) in
-  let find name regs n =
-    try
-      Int.Map.find_exn regs n
-    with _ ->
-      ppc_fail "%s with number %d not found" name n in
-  let gpr n = find "GPR" gpri n in
-  let fpr n = find "FPR" fpri n in
-  let vr n = find "VR" vri n in
-  { load; store; jmp; addr; addr_size;
-    gpr; fpr; vr; cr; xer; ctr; lr; tar;
-    so; ca; ov; ca32; ov32; }

@@ -151,19 +151,24 @@ module Hardware_vars = struct
       ~f:(fun ~key ~data:var acc ->
           String.Map.add acc (Var.name var) var)
 
+  let fields = [
+    "CR0", 0, (cr28, cr29, cr30, cr31);
+    "CR1", 1, (cr24, cr25, cr26, cr27);
+    "CR2", 2, (cr20, cr21, cr22, cr23);
+    "CR3", 3, (cr16, cr17, cr18, cr19);
+    "CR4", 4, (cr12, cr13, cr14, cr15);
+    "CR5", 5, (cr8,  cr9,  cr10, cr11);
+    "CR6", 6, (cr4,  cr5,  cr6,  cr7);
+    "CR7", 7, (cr0,  cr1,  cr2,  cr3);
+  ]
+
   let cr_fields =
-    let fields = [
-      "CR0", (cr28, cr29, cr30, cr31);
-      "CR1", (cr24, cr25, cr26, cr27);
-      "CR2", (cr20, cr21, cr22, cr23);
-      "CR3", (cr16, cr17, cr18, cr19);
-      "CR4", (cr12, cr13, cr14, cr15);
-      "CR5", (cr8,  cr9,  cr10, cr11);
-      "CR6", (cr4,  cr5,  cr6,  cr7);
-      "CR7", (cr0,  cr1,  cr2,  cr3);
-    ] in
-    List.fold fields ~init:String.Map.empty ~f:(fun fs (name, fd) ->
+    List.fold fields ~init:String.Map.empty ~f:(fun fs (name, _, fd) ->
         String.Map.add fs name fd)
+
+  let cri_fields =
+    List.fold fields ~init:Int.Map.empty ~f:(fun fs (_, index, fd) ->
+        Int.Map.add fs index fd)
 
 end
 
@@ -204,6 +209,9 @@ module Hardware = struct
 
   let cr_fields =
     String.Map.map cr_fields ~f:(fun (b3,b2,b1,b0) -> Exp.of_vars [b0;b1;b2;b3])
+
+  let cri_fields =
+    Int.Map.map cri_fields ~f:(fun (b3,b2,b1,b0) -> Exp.of_vars [b0;b1;b2;b3])
 
 end
 

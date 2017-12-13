@@ -81,22 +81,15 @@ let add cpu ops =
   let rb = signed reg ops.(2) in
   RTL.[rt := ra + rb]
 
-let add_dot cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  RTL.[
-    rt := ra + rb;
-    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
-  ]
-
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
     Page 69 of IBM Power ISATM Version 3.0 B
     examples:
     30 21 00 10    addic r1, r1, 16
-    33 de fd 28    addic r30, r30, -728  *)
+    33 de fd 28    addic r30, r30, -728
+
+    Add Immediate Carrying and Record:
+    34 21 00 10    addic. r1, r1, 16
+    37 de fd 28    addic. r30, r30, -728 *)
 let addic cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
@@ -107,26 +100,6 @@ let addic cpu ops =
     rt := ra + im;
     cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
     cpu.ca32 := low word rt < low word tm;
-  ]
-
-(** Fixed-Point Arithmetic Instructions - Add Immediate Carrying and Record
-    Page 69 of IBM Power ISATM Version 3.0 B
-    examples:
-    34 21 00 10    addic. r1, r1, 16
-    37 de fd 28    addic. r30, r30, -728  *)
-let addic_dot cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let im = signed imm ops.(2) in
-  let tm = signed var doubleword in
-  RTL.[
-    tm := ra;
-    rt := ra + im;
-    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    cpu.ca32 := low word rt < low word tm;
-    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add Cpu.Carrying
@@ -146,22 +119,6 @@ let addc cpu ops =
     cpu.ca32 := low word rt < low word tm;
   ]
 
-let addc_dot cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  let tm = signed var doubleword in
-  RTL.[
-    tm := ra;
-    rt := ra + rb;
-    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    cpu.ca32 := low word rt < low word tm;
-    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
-  ]
-
-
 (** Fixed-Point Arithmetic Instructions - Add Extend
     Page 71 of IBM Power ISATM Version 3.0 B
     examples:
@@ -177,21 +134,6 @@ let adde cpu ops =
     rt := ra + rb + cpu.ca;
     cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
     cpu.ca32 := low word rt < low word tm;
-  ]
-
-let adde_dot cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
-  let tm = signed var doubleword in
-  RTL.[
-    tm := ra;
-    rt := ra + rb + cpu.ca;
-    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    cpu.ca32 := low word rt < low word tm;
-    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
 (** Fixed-Point Arithmetic Instructions - Add to Minus One Extend
@@ -210,20 +152,6 @@ let addme cpu ops =
     cpu.ca32 := low word rt < low word tm;
   ]
 
-let addme_dot cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let tm = signed var doubleword in
-  RTL.[
-    tm := ra;
-    rt := ra + cpu.ca - one;
-    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    cpu.ca32 := low word rt < low word tm;
-    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
-  ]
-
 (** Fixed-Point Arithmetic Instructions - Add to Zero extended
     Page 72 of IBM Power ISATM Version 3.0 B
     example:
@@ -240,35 +168,21 @@ let addze cpu ops =
     cpu.ca32 := low word rt < low word tm;
   ]
 
-let addze_dot cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let tm = signed var doubleword in
-  RTL.[
-    tm := ra;
-    rt := ra + cpu.ca;
-    cpu.ca := low cpu.addr_size rt < low cpu.addr_size tm;
-    cpu.ca32 := low word rt < low word tm;
-    nth bit cpu.cr 0 := low cpu.addr_size rt <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size rt >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
-  ]
-
 let () =
   "ADD4"   >: add;
-  "ADD4o"  >: add_dot;
+  "ADD4o"  >! add;
   "ADDI"   >: addi;
   "ADDIS"  >: addis;
   "ADDIC"  >: addic;
-  "ADDICo" >: addic_dot;
+  "ADDICo" >! addic;
   "ADDC"   >: addc;
-  "ADDCo"  >: addc_dot;
+  "ADDCo"  >! addc;
   "ADDE"   >: adde;
-  "ADDEo"  >: adde_dot;
+  "ADDEo"  >! adde;
   "ADDME"  >: addme;
-  "ADDMEo" >: addme_dot;
+  "ADDMEo" >! addme;
   "ADDZE"  >: addze;
-  "ADDZEo" >: addze_dot;
+  "ADDZEo" >! addze;
   "LI"     >: li;
   "LIS"    >: lis;
   "LA"     >: addi;
