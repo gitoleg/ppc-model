@@ -10,7 +10,7 @@
    lwzux      6           | load word zero with update indexed
    rotlw      6           | rotate left word
    extsh      7           | extend sign halfword
-   neg.       7           | neg
+   neg.       7           |
    trap       8           |
    creqv      9           | CR eqv
    bltlr      9           | branch to LR is less than
@@ -166,7 +166,7 @@
    clrlwi     2           | extended mnemonic for Rotate left imm + mask
    cmpdi      2           | compare logical imm
    clrldi     2           | extended mnemonic for Rotate left imm + mask
-   neg        2           |
+   neg        2           | negate
    beqlr      3           | branch to LR if equal
    extsw      3           | Extend Sign Byte/Halfword/Word
    stb        3           | store byte

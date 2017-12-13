@@ -16,6 +16,17 @@ let high ?(len=32) x =
   let lo = width - len in
   Word.extract_exn ~hi ~lo x
 
+let neg arch ctxt =
+  let name = "NEG" in
+  let bytes = make_insn ~name `XO [31; 1; 2; 0; 0; 104; 0] in
+  let r1 = find_gpr "R1" in
+  let r2 = find_gpr "R2" in
+  let x = Word.of_int64 0x80000000_00000000L in
+  let init = Bil.[
+      r2 := int x;
+    ] in
+  check_gpr init bytes r1 x arch ctxt
+
 let subf arch ctxt =
   let name = "SUBF" in
   let bytes = make_insn ~name `XO [31; 1; 2; 3; 0; 40; 0] in
@@ -450,6 +461,7 @@ let modud arch ctxt =
   check_gpr init bytes r1 expected arch ctxt
 
 let suite = "arith" >::: [
+    "neg"      >:: neg `ppc;
     "subf"     >:: subf `ppc;
     "subfic"   >:: subfic `ppc;
     "subfc"    >:: subfc `ppc;
@@ -476,6 +488,7 @@ let suite = "arith" >::: [
     "modsd"    >:: modsd `ppc;
     "modud"    >:: modud `ppc;
 
+    "neg 64"      >:: neg `ppc64;
     "subf 64"     >:: subf `ppc64;
     "subfic 64"   >:: subfic `ppc64;
     "subfc 64"    >:: subfc `ppc64;

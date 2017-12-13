@@ -1,6 +1,15 @@
 
 open Powerpc
 
+(** Fixed-Point Arithmetic Instructions - Negate
+    Page 72 of IBM Power ISATM Version 3.0 B
+    example:
+    7c 22 00 d0   neg r1, r2 *)
+let neg cpu ops =
+  let rt = unsigned reg ops.(0) in
+  let ra = unsigned reg ops.(1) in
+  RTL.[ rt := lnot ra + one ]
+
 (** Fixed-Point Arithmetic Instructions - Substract From
     Page 69 of IBM Power ISATM Version 3.0 B
     example:
@@ -342,6 +351,7 @@ let modud cpu ops =
   ]
 
 let () =
+  "NEG"    >: neg;
   "SUBF"   >: subf;
   "SUBFIC" >: subfic;
   "SUBFC"  >: subfc;
