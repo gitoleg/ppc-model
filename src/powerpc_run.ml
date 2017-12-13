@@ -3,8 +3,7 @@ open Bap.Std
 open Bap_plugins.Std
 
 module Dis = Disasm_expert.Basic
-
-module Lifter = Powerpc_lifter
+open Powerpc
 
 let () =
   match Plugins.load () |> Result.all with
