@@ -1,7 +1,3 @@
-open Core_kernel.Std
-open Bap.Std
-open Op
-
 open Powerpc
 
 (** Fixed-point Store Byte/Halfword/Word
@@ -222,68 +218,23 @@ let stdbrx cpu ops =
     cpu.store ea x doubleword;
   ]
 
-type st = [
-  | `STB
-  | `STH
-  | `STW
-] [@@deriving sexp, enumerate ]
-
-type stx = [
-  | `STBX
-  | `STHX
-  | `STWX
-  | `STDX
-] [@@deriving sexp, enumerate ]
-
-type stu = [
-  | `STBU
-  | `STHU
-  | `STWU
-] [@@deriving sexp, enumerate ]
-
-type stux = [
-  | `STBUX
-  | `STHUX
-  | `STWUX
-  | `STDUX
-] [@@deriving sexp, enumerate]
-
-type std = [
-  | `STD
-  | `STDU
-] [@@deriving sexp, enumerate]
-
-type strev = [
-  | `STHBRX
-  | `STWBRX
-  | `STDBRX
-]  [@@deriving sexp, enumerate]
-
-type t = [ st | stx | stu | stux | std | strev ] [@@deriving sexp, enumerate]
-
-let size_of_t = function
-  | `STB | `STBX | `STBU | `STBUX -> `r8
-  | `STH | `STHX | `STHU | `STHUX -> `r16
-  | `STW | `STWX | `STWU | `STWUX -> `r32
-  | `STD | `STDX | `STDU | `STDUX -> `r64
-
-let lift opcode cpu ops = match opcode with
-  | `STB -> stb cpu ops
-  | `STH -> sth cpu ops
-  | `STW -> stw cpu ops
-  | `STBX -> stbx cpu ops
-  | `STHX -> sthx cpu ops
-  | `STWX -> stwx cpu ops
-  | `STDX -> stdx cpu ops
-  | `STBU -> stbu cpu ops
-  | `STHU -> sthu cpu ops
-  | `STWU -> stwu cpu ops
-  | `STBUX -> stbux cpu ops
-  | `STHUX -> sthux cpu ops
-  | `STWUX -> stwux cpu ops
-  | `STDUX -> stdux cpu ops
-  | `STD  -> std cpu ops
-  | `STDU -> stdu cpu ops
-  | `STHBRX -> sthbrx cpu ops
-  | `STWBRX -> stwbrx cpu ops
-  | `STDBRX -> stdbrx cpu ops
+let () =
+  "STB"    >: stb;
+  "STH"    >: sth;
+  "STW"    >: stw;
+  "STBX"   >: stbx;
+  "STHX"   >: sthx;
+  "STWX"   >: stwx;
+  "STDX"   >: stdx;
+  "STBU"   >: stbu;
+  "STHU"   >: sthu;
+  "STWU"   >: stwu;
+  "STBUX"  >: stbux;
+  "STHUX"  >: sthux;
+  "STWUX"  >: stwux;
+  "STDUX"  >: stdux;
+  "STD"    >: std;
+  "STDU"   >: stdu;
+  "STHBRX" >: sthbrx;
+  "STWBRX" >: stwbrx;
+  "STDBRX" >: stdbrx;

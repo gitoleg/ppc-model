@@ -24,9 +24,6 @@
     contains "o" suffix in thers llvm names: ADDo ADDeo ADDMEo ADDZEo,
     where "o" stands for .(dot) . *)
 
-open Core_kernel.Std
-open Bap.Std
-
 open Powerpc
 
 (** Extended mnemonics:
@@ -257,41 +254,21 @@ let addze_dot cpu ops =
     nth bit cpu.cr 2 := low cpu.addr_size rt = zero;
   ]
 
-type t = [
-  | `ADD4
-  | `ADD4o
-  | `ADDI
-  | `ADDIS
-  | `ADDIC
-  | `ADDICo
-  | `ADDC
-  | `ADDCo
-  | `ADDE
-  | `ADDEo
-  | `ADDME
-  | `ADDMEo
-  | `ADDZE
-  | `ADDZEo
-  | `LI
-  | `LIS
-  | `LA
-] [@@deriving sexp, enumerate]
-
-let lift t cpu ops = match t with
-  | `ADD4   -> add cpu ops
-  | `ADD4o  -> add_dot cpu ops
-  | `ADDI   -> addi cpu ops
-  | `ADDIS  -> addis cpu ops
-  | `ADDIC  -> addic cpu ops
-  | `ADDICo -> addic_dot cpu ops
-  | `ADDC   -> addc cpu ops
-  | `ADDCo  -> addc_dot cpu ops
-  | `ADDE   -> adde cpu ops
-  | `ADDEo  -> adde_dot cpu ops
-  | `ADDME  -> addme cpu ops
-  | `ADDMEo -> addme_dot cpu ops
-  | `ADDZE  -> addze cpu ops
-  | `ADDZEo -> addze_dot cpu ops
-  | `LI     -> li cpu ops
-  | `LIS    -> lis cpu ops
-  | `LA     -> addi cpu ops
+let () =
+  "ADD4"   >: add;
+  "ADD4o"  >: add_dot;
+  "ADDI"   >: addi;
+  "ADDIS"  >: addis;
+  "ADDIC"  >: addic;
+  "ADDICo" >: addic_dot;
+  "ADDC"   >: addc;
+  "ADDCo"  >: addc_dot;
+  "ADDE"   >: adde;
+  "ADDEo"  >: adde_dot;
+  "ADDME"  >: addme;
+  "ADDMEo" >: addme_dot;
+  "ADDZE"  >: addze;
+  "ADDZEo" >: addze_dot;
+  "LI"     >: li;
+  "LIS"    >: lis;
+  "LA"     >: addi;

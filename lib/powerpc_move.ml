@@ -1,7 +1,5 @@
 
-open Core_kernel.Std
 open Powerpc
-
 
 (** Fixed-Point Move To Special Purpose Register
     Page 116 of IBM Power ISATM Version 3.0 B
@@ -84,15 +82,8 @@ let mfcr cpu ops =
   let rt = unsigned reg ops.(0) in
   RTL.[ rt := cpu.cr ]
 
-type t = [
-  | `MTSPR
-  | `MFSPR
-  | `MTCRF
-  | `MFCR
-] [@@deriving sexp, enumerate]
-
-let lift t cpu ops = match t with
-  | `MTSPR -> mtspr cpu ops
-  | `MFSPR -> mfspr cpu ops
-  | `MTCRF -> mtcrf cpu ops
-  | `MFCR  -> mfcr  cpu ops
+let () =
+  "MTSPR" >: mtspr;
+  "MFSPR" >: mfspr;
+  "MTCRF" >: mtcrf;
+  "MFCR"  >: mfcr;

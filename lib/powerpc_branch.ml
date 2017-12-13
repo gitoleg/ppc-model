@@ -1,6 +1,3 @@
-open Core_kernel.Std
-open Bap.Std
-
 open Powerpc
 
 let update_link_register cpu =
@@ -234,78 +231,32 @@ let bctar cpu ops =
 let bctarl cpu ops =
   bctar cpu ops @ update_link_register cpu
 
-
-type b = [
-  | `B
-  | `BA
-  | `BL
-  | `BLA
-] [@@deriving sexp, enumerate]
-
-type bc = [
-  | `gBC
-  | `gBCA
-  | `gBCL
-  | `gBCLA
-  | `BDZ
-  | `BDNZ
-  | `BCC
-  | `BCCL
-  | `BCCLA
-] [@@deriving sexp, enumerate]
-
-type bc_lr = [
-  | `gBCLR
-  | `gBCLRL
-  | `BDNZLR
-  | `BLR
-  | `BLRL
-  | `BCCLR
-  | `BCCLRL
-] [@@deriving sexp, enumerate]
-
-type bc_ctr = [
-  | `gBCCTR
-  | `gBCCTRL
-  | `BCTR
-  | `BCTRL
-  | `BCCCTR
-  | `BCCCTRL
-] [@@deriving sexp, enumerate]
-
-type bc_tar = [
-  | `gBCTAR
-  | `gBCTARL
-] [@@deriving sexp, enumerate]
-
-type t = [ b | bc | bc_lr | bc_ctr | bc_tar ] [@@deriving sexp, enumerate]
-
-let lift opcode cpu ops = match opcode with
-  | `B       -> b cpu ops
-  | `BA      -> ba cpu ops
-  | `BL      -> bl cpu ops
-  | `BLA     -> bla cpu ops
-  | `gBC     -> bc cpu ops
-  | `gBCA    -> bca cpu ops
-  | `gBCL    -> bcl cpu ops
-  | `gBCLA   -> bcla cpu ops
-  | `BDZ     -> bdz cpu ops
-  | `BDNZ    -> bdnz cpu ops
-  | `BCC     -> bc cpu ops
-  | `BCCL    -> bcl cpu ops
-  | `BCCLA   -> bcla cpu ops
-  | `gBCLR   -> bclr cpu ops
-  | `gBCLRL  -> bclrl cpu ops
-  | `gBCCTR  -> bcctr cpu ops
-  | `gBCCTRL -> bcctrl cpu ops
-  | `BDNZLR  -> bdnzlr cpu ops
-  | `gBCTAR  -> bctar cpu ops
-  | `gBCTARL -> bctarl cpu ops
-  | `BLR     -> blr cpu ops
-  | `BLRL    -> blrl cpu ops
-  | `BCTR    -> bctr cpu ops
-  | `BCTRL   -> bctrl cpu ops
-  | `BCCLR   -> bclr cpu ops
-  | `BCCLRL  -> bclrl cpu ops
-  | `BCCCTR  -> bcctr cpu ops
-  | `BCCCTRL -> bcctrl cpu ops
+let () =
+  "B"       >: b;
+  "BA"      >: ba;
+  "BL"      >: bl;
+  "BLA"     >: bla;
+  "gBC"     >: bc;
+  "gBCA"    >: bca;
+  "gBCL"    >: bcl;
+  "gBCLA"   >: bcla;
+  "BDZ"     >: bdz;
+  "BDNZ"    >: bdnz;
+  "BCC"     >: bc;
+  "BCCL"    >: bcl;
+  "BCCLA"   >: bcla;
+  "gBCLR"   >: bclr;
+  "gBCLRL"  >: bclrl;
+  "gBCCTR"  >: bcctr;
+  "gBCCTRL" >: bcctrl;
+  "BDNZLR"  >: bdnzlr;
+  "gBCTAR"  >: bctar;
+  "gBCTARL" >: bctarl;
+  "BLR"     >: blr;
+  "BLRL"    >: blrl;
+  "BCTR"    >: bctr;
+  "BCTRL"   >: bctrl;
+  "BCCLR"   >: bclr;
+  "BCCLRL"  >: bclrl;
+  "BCCCTR"  >: bcctr;
+  "BCCCTRL" >: bcctrl;

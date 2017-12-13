@@ -220,28 +220,13 @@ let rldimi cpu ops =
     ra := (tmp land mask) lor (ra land (lnot mask));
   ]
 
-type t = [
-  | `RLWINM
-  | `RLWNM
-  | `RLWIMI
-  | `RLDICL
-  | `RLDICR
-  | `RLDIC
-  | `RLDCL
-  | `RLDCR
-  | `RLDIMI
-] [@@deriving sexp, enumerate]
-(** TODO: add *_dot instructions *)
-
-
-let lift opcode cpu ops =
-  match opcode with
-  | `RLWINM -> rlwinm cpu ops
-  | `RLWNM  -> rlwnm cpu ops
-  | `RLWIMI -> rlwimi cpu ops
-  | `RLDICL -> rldicl cpu ops
-  | `RLDICR -> rldicr cpu ops
-  | `RLDIC  -> rldic cpu ops
-  | `RLDCL  -> rldcl cpu ops
-  | `RLDCR  -> rldcr cpu ops
-  | `RLDIMI -> rldimi cpu ops
+let () =
+  "RLWINM" >: rlwinm;
+  "RLWNM"  >: rlwnm;
+  "RLWIMI" >: rlwimi;
+  "RLDICL" >: rldicl;
+  "RLDICR" >: rldicr;
+  "RLDIC"  >: rldic;
+  "RLDCL"  >: rldcl;
+  "RLDCR"  >: rldcr;
+  "RLDIMI" >: rldimi;

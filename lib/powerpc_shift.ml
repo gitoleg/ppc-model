@@ -167,25 +167,13 @@ let srad cpu ops =
     ]
   ]
 
-type t = [
-  | `SLW
-  | `SRW
-  | `SRAWI
-  | `SRAW
-  | `SLD
-  | `SRD
-  | `SRADI
-  | `SRAD
-] [@@deriving sexp, enumerate]
 (** TODO: add *_dot instructions *)
-
-let lift opcode cpu ops =
-  match opcode with
-  | `SLW   -> slw cpu ops
-  | `SRW   -> srw cpu ops
-  | `SRAWI -> srawi cpu ops
-  | `SRAW  -> sraw cpu ops
-  | `SLD   -> sld cpu ops
-  | `SRD   -> srd cpu ops
-  | `SRADI -> sradi cpu ops
-  | `SRAD  -> srad cpu ops
+let () =
+  "SLW"   >: slw;
+  "SRW"   >: srw;
+  "SRAWI" >: srawi;
+  "SRAW"  >: sraw;
+  "SLD"   >: sld;
+  "SRD"   >: srd;
+  "SRADI" >: sradi;
+  "SRAD"  >: srad;

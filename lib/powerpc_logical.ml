@@ -1,6 +1,3 @@
-open Core_kernel.Std
-open Bap.Std
-
 open Powerpc
 
 (** Extended mnemonics:
@@ -613,110 +610,44 @@ let bpermd cpu ops =
     ra := tmp;
 ]
 
-type and_ = [
-  | `ANDIo
-  | `ANDISo
-  | `AND
-  | `ANDo
-  | `ANDC
-  | `ANDCo
-  | `NAND
-  | `NANDo
-] [@@deriving sexp,enumerate]
-
-type or_ = [
-  | `ORI
-  | `ORIS
-  | `OR
-  | `ORo
-  | `ORC
-  | `ORCo
-  | `NOR
-  | `NORo
-] [@@deriving sexp,enumerate]
-
-type xor = [
-  | `XORI
-  | `XORIS
-  | `XOR
-  | `XORo
-] [@@deriving sexp,enumerate]
-
-type eqv = [
-  | `EQV
-  | `EQVo
-] [@@deriving sexp,enumerate]
-
-type exts = [
-  | `EXTSB
-  | `EXTSBo
-  | `EXTSH
-  | `EXTSHo
-  | `EXTSW
-  | `EXTSWo
-] [@@deriving sexp,enumerate]
-
-type cntz = [
-  | `CNTLZW
-  | `CNTLZWo
-  | `CNTLZD
-  | `CNTLZDo
-  | `CNTTZW
-  | `CNTTZWo
-  | `CNTTZD
-  | `CNTTZDo
-] [@@deriving sexp,enumerate]
-
-type cmpb = [ `CMPB ] [@@deriving sexp,enumerate]
-
-type popcnt = [
-  | `POPCNTW
-  | `POPCNTD
-] [@@deriving sexp,enumerate]
-
-type bperm = [ `BPERMD ] [@@deriving sexp,enumerate]
-
-type t = [ and_ | or_ | xor | eqv | exts | cntz | cmpb | popcnt | bperm ] [@@deriving sexp,enumerate]
-
-let lift t cpu ops = match t with
-  | `ANDIo   -> andi_dot cpu ops
-  | `ANDISo  -> andis_dot cpu ops
-  | `AND     -> and_ cpu ops
-  | `ANDo    -> and_dot cpu ops
-  | `ANDC    -> andc cpu ops
-  | `ANDCo   -> andc_dot cpu ops
-  | `ORI     -> ori cpu ops
-  | `ORIS    -> oris cpu ops
-  | `OR      -> or_ cpu ops
-  | `ORo     -> or_dot cpu ops
-  | `ORC     -> orc cpu ops
-  | `ORCo    -> orc_dot cpu ops
-  | `XORI    -> xori cpu ops
-  | `XORIS   -> xoris cpu ops
-  | `XOR     -> xor_ cpu ops
-  | `XORo    -> xor_dot cpu ops
-  | `NAND    -> nand cpu ops
-  | `NANDo   -> nand_dot cpu ops
-  | `NOR     -> nor cpu ops
-  | `NORo    -> nor_dot cpu ops
-  | `EQV     -> eqv cpu ops
-  | `EQVo    -> eqv_dot cpu ops
-  | `EXTSB   -> extsb cpu ops
-  | `EXTSBo  -> extsb_dot cpu ops
-  | `EXTSH   -> extsh cpu ops
-  | `EXTSHo  -> extsh_dot cpu ops
-  | `EXTSW   -> extsw cpu ops
-  | `EXTSWo  -> extsw_dot cpu ops
-  | `CNTLZW  -> cntlzw cpu ops
-  | `CNTLZWo -> cntlzw_dot cpu ops
-  | `CNTLZD  -> cntlzd cpu ops
-  | `CNTLZDo -> cntlzd_dot cpu ops
-  | `CNTTZW  -> cnttzw cpu ops
-  | `CNTTZWo -> cnttzw_dot cpu ops
-  | `CNTTZD  -> cnttzd cpu ops
-  | `CNTTZDo -> cnttzd_dot cpu ops
-  | `CMPB    -> cmpb cpu ops
-  | `POPCNTW -> popcntw cpu ops
-  | `POPCNTD -> popcntd cpu ops
-  | `BPERMD  -> bpermd cpu ops
-  | _ -> ppc_fail "oops"
+let () =
+  "ANDIo"   >: andi_dot;
+  "ANDISo"  >: andis_dot;
+  "AND"     >: and_;
+  "ANDo"    >: and_dot;
+  "ANDC"    >: andc;
+  "ANDCo"   >: andc_dot;
+  "ORI"     >: ori;
+  "ORIS"    >: oris;
+  "OR"      >: or_;
+  "ORo"     >: or_dot;
+  "ORC"     >: orc;
+  "ORCo"    >: orc_dot;
+  "XORI"    >: xori;
+  "XORIS"   >: xoris;
+  "XOR"     >: xor_;
+  "XORo"    >: xor_dot;
+  "NAND"    >: nand;
+  "NANDo"   >: nand_dot;
+  "NOR"     >: nor;
+  "NORo"    >: nor_dot;
+  "EQV"     >: eqv;
+  "EQVo"    >: eqv_dot;
+  "EXTSB"   >: extsb;
+  "EXTSBo"  >: extsb_dot;
+  "EXTSH"   >: extsh;
+  "EXTSHo"  >: extsh_dot;
+  "EXTSW"   >: extsw;
+  "EXTSWo"  >: extsw_dot;
+  "CNTLZW"  >: cntlzw;
+  "CNTLZWo" >: cntlzw_dot;
+  "CNTLZD"  >: cntlzd;
+  "CNTLZDo" >: cntlzd_dot;
+  "CNTTZW"  >: cnttzw;
+  "CNTTZWo" >: cnttzw_dot;
+  "CNTTZD"  >: cnttzd;
+  "CNTTZDo" >: cnttzd_dot;
+  "CMPB"    >: cmpb;
+  "POPCNTW" >: popcntw;
+  "POPCNTD" >: popcntd;
+  "BPERMD"  >: bpermd;

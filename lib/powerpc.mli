@@ -152,7 +152,6 @@ val case    : exp -> rtl list -> clause
 (** [default code] - creates a switch default *)
 val default : rtl list -> clause
 
-
 (** [bil_of_rtl rtl] - returns a bil code *)
 val bil_of_rtl : rtl list -> bil
 
@@ -183,7 +182,4 @@ type cpu = {
 
 val make_cpu : addr_size -> endian -> mem -> cpu
 
-module type Lifter = sig
-  type t [@@deriving sexp, enumerate]
-  val lift : t -> cpu -> op array -> rtl list
-end
+val (>:) : string -> (cpu -> op array -> rtl list) -> unit

@@ -1,6 +1,3 @@
-open Core_kernel.Std
-open Bap.Std
-
 open Powerpc
 
 (** Fix-point Compare Immediate
@@ -111,25 +108,12 @@ let cmpld cpu ops =
     nth bit bf 3 := cpu.so;
   ]
 
-type t = [
-  | `CMPWI
-  | `CMPDI
-  | `CMPW
-  | `CMPD
-  | `CMPLWI
-  | `CMPLDI
-  | `CMPLW
-  | `CMPLD
-] [@@deriving sexp, enumerate]
-
-let lift opcode cpu ops =
-  let open Op in
-  match opcode with
-  | `CMPWI  -> cmpwi cpu ops
-  | `CMPDI  -> cmpdi cpu ops
-  | `CMPW   -> cmpw cpu ops
-  | `CMPD   -> cmpd cpu ops
-  | `CMPLWI -> cmplwi cpu ops
-  | `CMPLDI -> cmpldi cpu ops
-  | `CMPLW  -> cmplw cpu ops
-  | `CMPLD  -> cmpld cpu ops
+let () =
+  "CMPWI"  >: cmpwi;
+  "CMPDI"  >: cmpdi;
+  "CMPW"   >: cmpw;
+  "CMPD"   >: cmpd;
+  "CMPLWI" >: cmplwi;
+  "CMPLDI" >: cmpldi;
+  "CMPLW"  >: cmplw;
+  "CMPLD"  >: cmpld;

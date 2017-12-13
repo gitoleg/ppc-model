@@ -27,13 +27,21 @@ end
 let range32 = List.range 0 32
 let range64 = List.range 0 64
 
-let make_var_i typ prefix i = Var.create (sprintf "%s%d" prefix i) typ
+let make_name prefix i = sprintf "%s%d" prefix i
 
-let make_regs typ prefix range =
+let make_var_i typ prefix i = Var.create (make_name prefix i) typ
+
+let make_regs typ ?alias prefix range =
   List.fold ~init:String.Map.empty ~f:(fun regs i ->
       let var = make_var_i typ prefix i in
       let name = Var.name var in
-      String.Map.add regs name var) range
+      let regs = String.Map.add regs name var in
+      match alias with
+      | None -> regs
+      | Some a ->
+        let name = make_name a i in
+        String.Map.add regs name var) range
+
 
 let make_regs_i typ prefix range =
   List.fold ~init:Int.Map.empty ~f:(fun regs i ->
@@ -53,7 +61,7 @@ let tar_bitwidth = 64
 module Hardware_vars = struct
 
   (** general purpose registers  *)
-  let gpr = make_regs (Type.imm gpr_bitwidth) "R" range32
+  let gpr = make_regs (Type.imm gpr_bitwidth) "R" ~alias:"X" range32
   let gpri = make_regs_i (Type.imm gpr_bitwidth) "R" range32
 
   (** floating point registers *)

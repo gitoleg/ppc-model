@@ -28,24 +28,14 @@ let size_of_width x =
   | Ok s -> s
   | Error _ -> ppc_fail "invalid size: %d" x
 
-(** will also try to find R# when got X#, (e.g. R3 when got X3)
-    for reasons depended only from llvm side *)
-let find_gpr reg =
-  let find name = String.Map.find gpr name in
-  let reg_name = Reg.name reg in
-  match find reg_name with
-  | Some r -> Some r
-  | None ->
-    if String.is_prefix reg_name ~prefix:"X" then
-      let name = String.substr_replace_first
-          reg_name ~pattern:"X" ~with_:"R" in
-      find name
-    else None
+let find_reg regs reg = String.Map.find regs (Reg.name reg)
+let find_gpr = find_reg gpr
+let find_vr  = find_reg vr
+let find_fpr = find_reg fpr
+let find_cr_bit = find_reg crn
+let find_cr_field = find_reg cr_fields
 
-let find_cr_bit reg = String.Map.find crn (Reg.name reg)
-let find_cr_field reg = String.Map.find cr_fields (Reg.name reg)
-
-let reg_searches = [find_gpr; find_cr_bit; find_cr_field;]
+let reg_searches = [find_gpr; find_cr_bit; find_cr_field; find_fpr; find_vr]
 
 let find reg =
   List.filter_map reg_searches ~f:(fun f -> f reg) |> function

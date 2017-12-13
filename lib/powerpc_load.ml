@@ -1,7 +1,3 @@
-open Core_kernel.Std
-open Bap.Std
-open Op
-
 open Powerpc
 
 (** TODO: check reg1 <> reg2  *)
@@ -311,89 +307,30 @@ let ldbrx cpu ops =
       nth byte x 3 ^ nth byte x 2 ^ nth byte x 1 ^ nth byte x 0;
   ]
 
-type lz = [
-  | `LBZ
-  | `LHZ
-  | `LWZ
-] [@@deriving sexp, enumerate ]
-
-type lzx = [
-  | `LBZX
-  | `LHZX
-  | `LWZX
-] [@@deriving sexp, enumerate ]
-
-type lzu = [
-  | `LBZU
-  | `LHZU
-  | `LWZU
-] [@@deriving sexp, enumerate ]
-
-type lzux = [
-  | `LBZUX
-  | `LHZUX
-  | `LWZUX
-] [@@deriving sexp, enumerate]
-
-type la = [
-  | `LHA
-  | `LWA
-] [@@deriving sexp, enumerate]
-
-type lax = [
-  | `LHAX
-  | `LWAX
-] [@@deriving sexp, enumerate]
-
-type lhau = [
-  | `LHAU
-] [@@deriving sexp, enumerate]
-
-type laux = [
-  | `LHAUX
-  | `LWAUX
-] [@@deriving sexp, enumerate]
-
-type ld = [
-  | `LD
-  | `LDX
-  | `LDU
-  | `LDUX
-] [@@deriving sexp, enumerate]
-
-type lrev = [
-  | `LHBRX
-  | `LWBRX
-  | `LDBRX
-] [@@deriving sexp, enumerate]
-
-type t = [ lz | lzx | lzu | lzux | la | lax | lhau | laux | ld | lrev ] [@@deriving sexp, enumerate]
-
-let lift opcode cpu ops =
-  match opcode with
-  | `LBZ -> lbz cpu ops
-  | `LHZ -> lhz cpu ops
-  | `LWZ -> lwz cpu ops
-  | `LBZX -> lbzx cpu ops
-  | `LHZX -> lhzx cpu ops
-  | `LWZX -> lwzx cpu ops
-  | `LBZU -> lbzu cpu ops
-  | `LHZU -> lhzu cpu ops
-  | `LWZU -> lwzu cpu ops
-  | `LBZUX -> lbzux cpu ops
-  | `LHZUX -> lhzux cpu ops
-  | `LWZUX -> lwzux cpu ops
-  | `LHA  -> lha cpu ops
-  | `LWA  -> lwa cpu ops
-  | `LHAX  -> lhax cpu ops
-  | `LWAX  -> lwax cpu ops
-  | `LHAU -> lhau cpu ops
-  | `LHAUX -> lhaux cpu ops
-  | `LWAUX -> lwaux cpu ops
-  | `LD   -> ld cpu ops
-  | `LDX  -> ldx cpu ops
-  | `LDU  -> ldu cpu ops
-  | `LDUX -> ldux cpu ops
-  | `LHBRX -> lhbrx cpu ops
-  | `LWBRX -> lwbrx cpu ops
-  | `LDBRX -> ldbrx cpu ops
+let () =
+  "LBZ"   >: lbz;
+  "LHZ"   >: lhz;
+  "LWZ"   >: lwz;
+  "LBZX"  >: lbzx;
+  "LHZX"  >: lhzx;
+  "LWZX"  >: lwzx;
+  "LBZU"  >: lbzu;
+  "LHZU"  >: lhzu;
+  "LWZU"  >: lwzu;
+  "LBZUX" >: lbzux;
+  "LHZUX" >: lhzux;
+  "LWZUX" >: lwzux;
+  "LHA"   >: lha;
+  "LWA"   >: lwa;
+  "LHAX"  >: lhax;
+  "LWAX"  >: lwax;
+  "LHAU"  >: lhau;
+  "LHAUX" >: lhaux;
+  "LWAUX" >: lwaux;
+  "LD"    >: ld;
+  "LDX"   >: ldx;
+  "LDU"   >: ldu;
+  "LDUX"  >: ldux;
+  "LHBRX" >: lhbrx;
+  "LWBRX" >: lwbrx;
+  "LDBRX" >: ldbrx;

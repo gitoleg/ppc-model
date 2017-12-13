@@ -24,7 +24,6 @@ Library powerpc_lifter
                   Powerpc_compare,
                   Powerpc_cr,
                   Powerpc_dsl,
-                  Powerpc_lifter,
                   Powerpc_load,
                   Powerpc_logical,
                   Powerpc_model,

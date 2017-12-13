@@ -107,25 +107,13 @@ let mcrf cpu ops =
     bt := bs;
   ]
 
-type t = [
-  | `CRAND
-  | `CRNAND
-  | `CROR
-  | `CRXOR
-  | `CRNOR
-  | `CREQV
-  | `CRANDC
-  | `CRORC
-  | `MCRF
-] [@@deriving sexp, enumerate]
-
-let lift opcode cpu ops = match opcode with
-  | `CRAND  -> crand cpu ops
-  | `CRNAND -> crnand cpu ops
-  | `CROR   -> cror cpu ops
-  | `CRXOR  -> crxor cpu ops
-  | `CRNOR  -> crnor cpu ops
-  | `CREQV  -> creqv cpu ops
-  | `CRANDC -> crandc cpu ops
-  | `CRORC  -> crorc cpu ops
-  | `MCRF   -> mcrf cpu ops
+let () =
+  "CRAND"  >: crand;
+  "CRNAND" >: crnand;
+  "CROR"   >: cror;
+  "CRXOR"  >: crxor;
+  "CRNOR"  >: crnor;
+  "CREQV"  >: creqv;
+  "CRANDC" >: crandc;
+  "CRORC"  >: crorc;
+  "MCRF"   >: mcrf;

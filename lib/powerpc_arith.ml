@@ -341,57 +341,29 @@ let modud cpu ops =
     rt := ra % rb;
   ]
 
-type t = [
-  | `SUBF
-  | `SUBFIC
-  | `SUBFC
-  | `SUBFE
-  | `SUBFME
-  | `SUBFZE
-  | `MULLI
-  | `MULHW
-  | `MULHWU
-  | `MULLW
-  | `DIVW
-  | `DIVWU
-  | `DIVWE
-  | `DIVWEU
-  | `MODSW
-  | `MODUW
-  | `MULLD
-  | `MULHD
-  | `MULHDU
-  | `DIVD
-  | `DIVDU
-  | `DIVDE
-  | `DIVDEU
-  | `MODSD
-  | `MODUD
-] [@@deriving sexp, enumerate]
-
-let lift t cpu ops = match t with
-  | `SUBF   -> subf   cpu ops
-  | `SUBFIC -> subfic cpu ops
-  | `SUBFC  -> subfc  cpu ops
-  | `SUBFE  -> subfe  cpu ops
-  | `SUBFME -> subfme cpu ops
-  | `SUBFZE -> subfze cpu ops
-  | `MULLI -> mulli cpu ops
-  | `MULHW -> mulhw cpu ops
-  | `MULHWU-> mulhwu cpu ops
-  | `MULLW -> mullw cpu ops
-  | `DIVW -> divw cpu ops
-  | `DIVWU -> divwu cpu ops
-  | `DIVWE -> divwe cpu ops
-  | `DIVWEU -> divweu cpu ops
-  | `MODSW -> modsw cpu ops
-  | `MODUW -> moduw cpu ops
-  | `MULLD -> mulld cpu ops
-  | `MULHD -> mulhd cpu ops
-  | `MULHDU -> mulhdu cpu ops
-  | `DIVD -> divd cpu ops
-  | `DIVDU -> divdu cpu ops
-  | `DIVDE -> divde cpu ops
-  | `DIVDEU -> divdeu cpu ops
-  | `MODSD -> modsd cpu ops
-  | `MODUD -> modud cpu ops
+let () =
+  "SUBF"   >: subf;
+  "SUBFIC" >: subfic;
+  "SUBFC"  >: subfc;
+  "SUBFE"  >: subfe;
+  "SUBFME" >: subfme;
+  "SUBFZE" >: subfze;
+  "MULLI"  >: mulli;
+  "MULHW"  >: mulhw;
+  "MULHWU" >: mulhwu;
+  "MULLW"  >: mullw;
+  "DIVW"   >: divw;
+  "DIVWU"  >: divwu;
+  "DIVWE"  >: divwe;
+  "DIVWEU" >: divweu;
+  "MODSW"  >: modsw;
+  "MODUW"  >: moduw;
+  "MULLD"  >: mulld;
+  "MULHD"  >: mulhd;
+  "MULHDU" >: mulhdu;
+  "DIVD"   >: divd;
+  "DIVDU"  >: divdu;
+  "DIVDE"  >: divde;
+  "DIVDEU" >: divdeu;
+  "MODSD"  >: modsd;
+  "MODUD"  >: modud;
