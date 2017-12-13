@@ -221,21 +221,21 @@ let rldimi cpu ops =
   ]
 
 let () =
-  "RLWINM" >: rlwinm;
-  "RLWNM"  >: rlwnm;
-  "RLWIMI" >: rlwimi;
-  "RLDICL" >: rldicl;
-  "RLDICR" >: rldicr;
-  "RLDIC"  >: rldic;
-  "RLDCL"  >: rldcl;
-  "RLDCR"  >: rldcr;
-  "RLDIMI" >: rldimi;
-  "RLWINM" >! rlwinm;
-  "RLWNM"  >! rlwnm;
-  "RLWIMI" >! rlwimi;
-  "RLDICL" >! rldicl;
-  "RLDICR" >! rldicr;
-  "RLDIC"  >! rldic;
-  "RLDCL"  >! rldcl;
-  "RLDCR"  >! rldcr;
-  "RLDIMI" >! rldimi;
+  "RLWINM"  >: rlwinm;
+  "RLWNM"   >: rlwnm;
+  "RLWIMI"  >: rlwimi;
+  "RLDICL"  >: rldicl;
+  "RLDICR"  >: rldicr;
+  "RLDIC"   >: rldic;
+  "RLDCL"   >: rldcl;
+  "RLDCR"   >: rldcr;
+  "RLDIMI"  >: rldimi;
+  "RLWINMo" >! rlwinm;
+  "RLWNMo"  >! rlwnm;
+  "RLWIMIo" >! rlwimi;
+  "RLDICLo" >! rldicl;
+  "RLDICRo" >! rldicr;
+  "RLDICo"  >! rldic;
+  "RLDCLo"  >! rldcl;
+  "RLDCRo"  >! rldcr;
+  "RLDIMIo" >! rldimi;

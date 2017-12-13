@@ -168,19 +168,19 @@ let srad cpu ops =
   ]
 
 let () =
-  "SLW"   >: slw;
-  "SRW"   >: srw;
-  "SRAWI" >: srawi;
-  "SRAW"  >: sraw;
-  "SLD"   >: sld;
-  "SRD"   >: srd;
-  "SRADI" >: sradi;
-  "SRAD"  >: srad;
-  "SLW"   >! slw;
-  "SRW"   >! srw;
-  "SRAWI" >! srawi;
-  "SRAW"  >! sraw;
-  "SLD"   >! sld;
-  "SRD"   >! srd;
-  "SRADI" >! sradi;
-  "SRAD"  >! srad;
+  "SLW"    >: slw;
+  "SRW"    >: srw;
+  "SRAWI"  >: srawi;
+  "SRAW"   >: sraw;
+  "SLD"    >: sld;
+  "SRD"    >: srd;
+  "SRADI"  >: sradi;
+  "SRAD"   >: srad;
+  "SLWo"   >! slw;
+  "SRWo"   >! srw;
+  "SRAWIo" >! srawi;
+  "SRAWo"  >! sraw;
+  "SLDo"   >! sld;
+  "SRDo"   >! srd;
+  "SRADIo" >! sradi;
+  "SRADo"  >! srad;
