@@ -7,7 +7,7 @@ open Powerpc_model
 open Powerpc_utils
 open Hardware
 
-type 'a p = bool -> 'a
+type 'a ec = bool -> 'a
 
 type bitwidth = int
 
@@ -16,7 +16,7 @@ let byte = 8
 let halfword = 16
 let word = 32
 let doubleword = 64
-let quadroword = 128
+let quadword = 128
 let bitwidth x = x
 
 let int_of_bitwidth = ident

@@ -1,7 +1,5 @@
 open Powerpc
 
-(** TODO: check reg1 <> reg2  *)
-
 (** Fixed-point Load Byte/Halfword/Word and Zero
     Pages 48-54 of IBM Power ISATM Version 3.0 B
     examples:
@@ -58,7 +56,6 @@ let lwzx cpu ops =
     a5 3c 00 14  lhzu r9, 20(r28)
     85 3f ff fc  lwzu r9, -4(r31)  *)
 let lbzu cpu ops =
-  (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzu: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let im = signed imm ops.(2) in
   let ra = signed reg ops.(3) in
@@ -68,7 +65,6 @@ let lbzu cpu ops =
   ]
 
 let lhzu cpu ops =
-  (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzu: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let im = signed imm ops.(2) in
   let ra = signed reg ops.(3) in
@@ -78,7 +74,6 @@ let lhzu cpu ops =
   ]
 
 let lwzu cpu ops =
-  (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzu: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let im = signed imm ops.(2) in
   let ra = signed reg ops.(3) in
@@ -94,7 +89,6 @@ let lwzu cpu ops =
     7d 3d 52 6e  lhzux r9, r29, r10
     7d 3d 50 6e  lwzux r9, r29, r10  *)
 let lbzux cpu ops =
-  (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzux: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -104,7 +98,6 @@ let lbzux cpu ops =
   ]
 
 let lhzux cpu ops =
-  (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzux: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -114,7 +107,6 @@ let lhzux cpu ops =
   ]
 
 let lwzux cpu ops =
-  (* if Reg.equal rt ra then Dsl.ppc_fail "Invalid instruction lzux: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -175,7 +167,6 @@ let lwax cpu ops =
     examples:
     ac 29 00 05    lhau r1, 5(r9) *)
 let lhau cpu ops =
-  (* if Reg.equal rt ra then RTL.ppc_fail "Invalid instruction lhau: same operands"; *)
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let im = signed imm ops.(2) in
@@ -190,7 +181,6 @@ let lhau cpu ops =
     7c 25 4a ee    lhaux r1, r5, r9
     7c 25 4a ea    lwaux r1, r5, r9 *)
 let lhaux cpu ops =
-  (* if Reg.equal rt ra then RTL.ppc_fail "Invalid instruction lhaux: same operands"; *)
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -200,7 +190,6 @@ let lhaux cpu ops =
   ]
 
 let lwaux cpu ops =
-  (* if Reg.equal rt ra then RTL.ppc_fail "Invalid instruction lhaux: same operands"; *)
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -239,7 +228,6 @@ let ldx cpu ops =
     examples:
     e8 29 00 09    ldu r1, 8(r9) *)
 let ldu cpu ops =
-  (* if Reg.equal rt ra then RTL.ppc_fail "Invalid instruction ldu: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let ra = signed reg ops.(1) in
   let im = unsigned imm ops.(2) in
@@ -254,7 +242,6 @@ let ldu cpu ops =
     examples:
     7c 28 48 6a    ldux r1, r8, r9 *)
 let ldux cpu ops =
-  (* if Reg.equal rt ra then RTL.ppc_fail "Invalid instruction ldux: same operands"; *)
   let rt = unsigned reg ops.(0) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in

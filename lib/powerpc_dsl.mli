@@ -2,7 +2,7 @@ open Core_kernel.Std
 open Bap.Std
 open Powerpc_rtl
 
-type 'a p
+type 'a ec
 
 type bitwidth
 
@@ -11,16 +11,16 @@ val byte : bitwidth
 val halfword : bitwidth
 val word : bitwidth
 val doubleword : bitwidth
-val quadroword : bitwidth
+val quadword : bitwidth
 val bitwidth : int -> bitwidth
 val int_of_bitwidth : bitwidth -> int
 
-val imm : (op -> exp) p
-val reg : (op -> exp) p
-val var : (bitwidth -> exp) p
-val const : (bitwidth -> int -> exp) p
-val signed : 'a p -> 'a
-val unsigned : 'a p -> 'a
+val imm : (op -> exp) ec
+val reg : (op -> exp) ec
+val var : (bitwidth -> exp) ec
+val const : (bitwidth -> int -> exp) ec
+val signed : 'a ec -> 'a
+val unsigned : 'a ec -> 'a
 
 val zero : exp
 val one  : exp

@@ -1,66 +1,73 @@
+
 (**
-    ## Intro
+
+  ## Intro
 
     This module is the only one that needed to write lifter functions.
-    The main idea is to make life of lifter writers as easy as
-    possible. This implies that only few lines of code should be
+    The main idea is to make a life of lifter writers as easy as
+    possible. This implies that only a few lines of code should be
     enough to describe any instruction.
 
     We introduce RTL - the language we expect to be very expressive,
-    with lots of details hidden under the hood, so user should not
+    with lots of details hidden under the hood, so a user should not
     care about minor details.
 
-    So proposed usage is just to open it in the very begining of your
+    So proposed usage is just to open it at the very beginning of your
     module:
+
     open Powerpc
     ...
 
     Note, that everywhere in this module, where some operation has
-    notion of bit (byte/word ...) position, it's assumed that
+    a notion of bit position (byte/word ...), it's assumed that
     numeration starts from most significant bit (byte/word ...).
 
-    ## Lifter
+
+  ## Lifter
+
     Any lifter function must have two arguments.
-    First one is a model of CPU that contains all information like
+    The first one is a model of CPU that contains all information like
     registers, memory access, instruction address, etc.
-    Second argument is an array of instruction operands, and its
+    The second argument is an array of instruction operands, and its
     user responsibility to treat each element of this array
     according to instruction semantics. Those, for add instruction
-    which sum register and immediate and save result in register,
-    user must point that the first and the second elements of operands
-    array are registers, and the third argument is immediate.
+    which sum register and immediate and save a result in a register,
+    a user must point that the first and the second element of
+    operands array registers and the third argument is immediate.
 
     In general, what one should do to add an instruction is to write
     a lifter function and to add it to others.
 
-    ## RTL
-    The central part of this module is RTL. It contains
-    expressions, operations over expressions and statements.
-    Basicly, any line that ended with ';' is a statment,
+
+  ## RTL
+
+    The central part of this module is RTL. It contains expressions,
+    operations over expressions and statements.
+    Basically, any line that ended with ';' is a statement,
     and any part of it is either expression(s), or operation over
     expression(s).
 
     ### Bitwidth and Signess
-    Any expression in RTL has a notion of signess. Any operation
-    over expressions of different sign cause a casting to signed.
+    Any expression in RTL has a notion of signess. Any operation over
+    expressions of different sign causes a casting to signed.
 
     Any expression in RTL has a notion of bitwidth. All operations
     over expressions of different width will cause a casting to the
     more biggest bitwidth.
 
-    Note, that any expression that tend to take part of other
-    expression is always unsigned. The same is true for any expression
-    that is a concatination of expressions.
+    Note, that any expression that tends to take part of other
+    expression is always unsigned. The same is true for any
+    expression that is a concatenation of expressions.
     But it's still possible to use them as signed expressions, e.g.
     assign them to signed expression or use signed comparison.
 
-    ### Expressions
-    There are only few ways to construct expression:
-     - from instruciton operand
+   ### Expressions
+    There are only a few ways to construct expression:
+     - from instruction operand
      - from constant
 
-    To construct an expression that denote a register and treat
-    it's content as unsigned value, one should write:
+    To construct an expression that denotes a register and treat
+     its content as an unsigned value, one should write:
      ...
      let ra = unsigned reg op.(0)
      ...      -------- --- ------
@@ -71,19 +78,19 @@
                         |    |
            claim register  from operands array at index 0
 
-    Immediate instuctions operands are constructed in the same
+    Immediate instructions operands are constructed in the same
     way:
      ...
      let im = signed imm op.(1)
      ...
 
-    Also one may create variables for convinience:
+    Also one may create variables for convenience:
      ...
      let x = unsigned var halfword
      ...
     that is a creation of variable of bitwidth 16. Other useful
     bitwidthes are bit, byte, word, doubleword, quadroword. And
-    also it's possible to create a variable of arbitary bitwidth:
+    also it's possible to create a variable of arbitrary bitwidth:
      ...
      let x = signed var (bitwidth 10)
      ...
@@ -93,21 +100,21 @@
      let x = unsigned const word 42
      ...
 
-    #### Take Part
+    #### Taking a part
     There is a general way to take a part of an expression:
     {extract exp from to}, where a [from] denotes a more significant
     bit than [to].
 
-    Also there are few more convinient and readable ways to take part:
-    low word x  - take last word from [x]
+    Also, there are few more convenient and readable ways to take part:
+    low word x  - take the last word from [x]
     high byte x - take first - the most significant byte
     last x 5    - take last (least significant) bits
     first x 2   - take second bit
     msb x       - take the most significant bit
 
-    Note, that taking a part of a bigger width from expression is also
-    possible. An extened expression will be return with the respect to
-    [x] sign:
+    Note, that taking a part of a bigger width from expression is
+    also possible. An extended expression will be returned with
+    the respect to  [x] sign:
      ...
      let x = unsigned var halfword
      let y = unsigned var word
@@ -121,17 +128,18 @@
     x + y, lnot y, x lsl y ...
 
     #### Assignment
-    The only operator that takes expresion and returns a statement is
-    an assignment. It is a very important and expressive operator in RTL.
-    Right hand side of assignment is always treated to have the same
-    sign and width as a left one:
+    The only operator that takes an expression and returns a statement
+    is an assignment. It is a very important and expressive operator
+    in RTL. The right-hand side of an assignment is always treated to
+    have the same sign and width as a left one:
     ...
       ra := zero;
       rb := rc ^ rd;
     ...
-    Assuming, that zero is just one bit and all ra,rb,rc,rd are 32-bit
+    Assuming, that zero is just one bit and all ra, rb, rc, rd are 32-
+     bit
     expressions we will get ra, with all bits set to zero, and rb
-    equled to rd.
+    equaled to rd.
 
     An expression in left hand side of assignment is always either of
     expressions:
@@ -145,17 +153,21 @@
      nbit cpu.cr 1 := one;
      ...
 
-    ## Other
-    There are few useful constuctions that either a part of RTL
+
+  ## Other
+
+    There are few useful constructions that either a part of RTL
     (if_, foreach) or simplify code (when_, ifnot, switch).
     Also, it's very necessary to register a lifted function, so
     it could be called when appropriative instruction will be
     encountered. There are two operators for this purpose:
-    - (>>) - just registers a function (see example bellow)
+    - (>>) - just registers a function (see example below)
     - (>.) - does the same, plus does some extra job (see
-             description bellow)
+             a description below)
 
-    ## Comlete example
+
+  ## Comlete example
+
     To be more concrete let's create an artificial example:
      1 let sort_of_add cpu ops =
      2   let rt = unsigned reg ops.(0) in
@@ -175,14 +187,16 @@
 
    There is a lifter for instruction "SomeSortOfAdd". As it's required
    it has two arguments: cpu model and operand array.
-   Author read an ISA of Power PC architecture carefuly and figured
-   out that this instruction has four operands, and that the first,
-   the second and the fourth argumnent are registers and the third one
-   is an immediate. And instruction has the following sematics.
-   Effective address is a sum of content of [ra] register and immediate.
-   Effective address is stored in [rt] register. A halfword stored at
-   this address must be summed with 42, shifted left twice and summed
-   with carry flag. And the result must be written to [rc] register.
+   An author read an ISA of Power PC architecture carefully and
+   figured out that this instruction has four operands, and that the
+   first, the second and the fourth argument are registers and the
+   third one is an immediate. And instruction has the following
+   semantics.
+   An effective address is a sum of the content of [ra] register and
+   immediate. An effective address is stored in [rt] register. A
+   halfword stored at this address must be summed with 42, shifted
+   left twice and summed with carry flag. And the result must be
+   written to [rc] register.
 
    How did author implement lifter for this instruction:
    line  1    : defined a function with two arguments
@@ -191,17 +205,17 @@
    lines 9-13 : wrote RTL code for this instruction.
    lines 14-15: registered lifter
 
-   What happend on each line:
-   line 10: sum of signed [ra] and usigned im is an signed expression,
+   What happens on each line:
+   line 10: sum of signed [ra] and unsigned imm is a signed expression,
             because one of the operands is signed. But an unsigned
             result is placed in [rt], since [rt] is unsigned too.
    line 11: load from memory at address from [rt] is summed with 42
             and assigned to variable [tm]. Note, there are two width
             extension under the hood: loaded halfword is extended to
-            upto a word bitwidth (since it's a bigger bitwidth among
+            up to a word bitwidth (since it's a bigger bitwidth among
             sum operand) and than sum extended to a doubleword
-            bitwidth with respect to a [tm] sign. So, result of this
-            sum is treated as a signed.
+            bitwidth with respect to a [tm] sign. So, the result of
+            this sum is treated as a signed.
    line 12: Logical shift returns an unsigned result which is summed
             with unsigned value. The interesting part is that it's
             safe to add one-bit value (flag is one bit width) and a
@@ -213,17 +227,17 @@ open Bap.Std
 
 (** Operands and registers bitwidth.  *)
 type bitwidth
-type exp [@@deriving bin_io, compare, sexp]
-type rtl [@@deriving bin_io, compare, sexp]
 
-(** Bitwidth  *)
 val bit  : bitwidth
 val byte : bitwidth
 val word : bitwidth
 val halfword : bitwidth
 val doubleword : bitwidth
-val quadroword : bitwidth
+val quadword : bitwidth
 val bitwidth : int -> bitwidth
+
+type exp [@@deriving bin_io, compare, sexp]
+type rtl [@@deriving bin_io, compare, sexp]
 
 (** CPU model  *)
 type cpu = {
@@ -272,25 +286,25 @@ type cpu = {
 type lift = cpu -> op array -> rtl list
 
 (** expression constructor  *)
-type 'a p
+type 'a ec
 
-(** [signed c] - construct a signed expression from given [c] *)
-val signed : 'a p -> 'a
+(** [signed ec] - returnst a signed expression from given [ec] *)
+val signed : 'a ec -> 'a
 
-(** [unsigned c] - construct a unsigned expression from given [c] *)
-val unsigned : 'a p -> 'a
+(** [unsigned ec] - returns an unsigned expression from given [ec] *)
+val unsigned : 'a ec -> 'a
 
 (** imm constructor - constructs an immediate from operand *)
-val imm : (op -> exp) p
+val imm : (op -> exp) ec
 
 (** reg constructor - constructs a register from operand   *)
-val reg : (op -> exp) p
+val reg : (op -> exp) ec
 
 (** var constructor - constructs a variable of bitwidth *)
-val var : (bitwidth -> exp) p
+val var : (bitwidth -> exp) ec
 
 (** const constructor - constructs a constant of [bitwidth] and integer *)
-val const : (bitwidth -> int -> exp) p
+val const : (bitwidth -> int -> exp) ec
 
 
 (** Set of operators. Briefly it contains next operators:

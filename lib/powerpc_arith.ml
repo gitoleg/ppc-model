@@ -262,7 +262,7 @@ let mulhd cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  let tm = signed var quadroword in
+  let tm = signed var quadword in
   RTL.[
     tm := ra;
     tm := tm * rb;
@@ -278,7 +278,7 @@ let mulhdu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
-  let tm = unsigned var quadroword in
+  let tm = unsigned var quadword in
   RTL.[
     tm := ra;
     tm := tm * rb;
@@ -320,8 +320,8 @@ let divde cpu ops =
   let rt = signed reg ops.(0) in
   let ra = signed reg ops.(1) in
   let rb = signed reg ops.(2) in
-  let tm1 = signed var quadroword in
-  let tm2 = signed var quadroword in
+  let tm1 = signed var quadword in
+  let tm2 = signed var quadword in
   RTL.[
     tm1 := zero;
     high doubleword tm1 := ra;
@@ -338,8 +338,8 @@ let divdeu cpu ops =
   let rt = unsigned reg ops.(0) in
   let ra = unsigned reg ops.(1) in
   let rb = unsigned reg ops.(2) in
-  let tm1 = unsigned var quadroword in
-  let tm2 = unsigned var quadroword in
+  let tm1 = unsigned var quadword in
+  let tm2 = unsigned var quadword in
   RTL.[
     tm1 := zero;
     high doubleword tm1 := ra;

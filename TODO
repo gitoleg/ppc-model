@@ -12,9 +12,10 @@ x - implement one or few vector instructions to check that our model
  - consider update_link_register in branch insns - weird ?
 v - add NOP insn just for full picture
 v - add typecheck to tests
- - solve load/store error message - if we do need
+v - solve load/store error message - if we do need
  - check move instruction - that numbers, if we need to extend them.
    plus it would be useful to write a default clause for switch in
    move insns
  - add documentation
-V - refactoring rtl, add [@@deriving ...]
+v - refactoring rtl, add [@@deriving ...]
+  - take a look at lifters in part of signed/unsigned

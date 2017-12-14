@@ -63,7 +63,6 @@ let stdx cpu ops =
     b5 3d ff ff     sthu r9,-1(r29)
     94 21 ff f0     stwu r1,-16(r1)  *)
 let stbu cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szu: same operands"; *)
   let rs = signed reg ops.(1) in
   let im = signed imm ops.(2) in
   let ra = signed reg ops.(3) in
@@ -73,7 +72,6 @@ let stbu cpu ops =
   ]
 
 let sthu cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szu: same operands"; *)
   let rs = signed reg ops.(1) in
   let im = signed imm ops.(2) in
   let ra = signed reg ops.(3) in
@@ -83,7 +81,6 @@ let sthu cpu ops =
   ]
 
 let stwu cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szu: same operands"; *)
   let rs = signed reg ops.(1) in
   let im = signed imm ops.(2) in
   let ra = signed reg ops.(3) in
@@ -100,7 +97,6 @@ let stwu cpu ops =
     7d 41 49 6e     stwux r10,r1,r9
     7c 28 49 6a     stdux r1,r8,r9   *)
 let stbux cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szux: same operands"; *)
   let rs = signed reg ops.(1) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -110,7 +106,6 @@ let stbux cpu ops =
   ]
 
 let sthux cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szux: same operands"; *)
   let rs = signed reg ops.(1) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -120,7 +115,6 @@ let sthux cpu ops =
   ]
 
 let stwux cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szux: same operands"; *)
   let rs = signed reg ops.(1) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
@@ -130,7 +124,6 @@ let stwux cpu ops =
   ]
 
 let stdux cpu ops =
-  (* if Reg.equal rs ra then ppc_fail "Invalid instruction szux: same operands"; *)
   let rs = signed reg ops.(1) in
   let ra = signed reg ops.(2) in
   let rb = signed reg ops.(3) in
