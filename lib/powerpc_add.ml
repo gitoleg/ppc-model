@@ -102,7 +102,7 @@ let addic cpu ops =
     cpu.ca32 := low word rt < low word tm;
   ]
 
-(** Fixed-Point Arithmetic Instructions - Add Cpu.Carrying
+(** Fixed-Point Arithmetic Instructions - Add Carrying
     Page 70 of IBM Power ISATM Version 3.0 B
     examples:
     7d 62 58 14  addc   r11, r2, r11

@@ -17,4 +17,4 @@ v - add typecheck to tests
    plus it would be useful to write a default clause for switch in
    move insns
  - add documentation
- - refactoring rtl, add [@@deriving ...]
+V - refactoring rtl, add [@@deriving ...]

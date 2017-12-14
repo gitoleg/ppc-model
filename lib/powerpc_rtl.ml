@@ -87,9 +87,11 @@ module Exp = struct
 
   let unop op x = { x with body = Unop (op, x.body)}
 
-  let binop op lhs rhs =
-    let sign = lhs.sign in
-    let width = lhs.width in
+  let unsigned_binop op lhs rhs =
+    let sign = Unsigned in
+    let width = max lhs.width rhs.width in
+    let lhs = cast lhs width sign in
+    let rhs = cast rhs width sign in
     let body = Binop(op, lhs.body, rhs.body) in
     {sign; width; body;}
 
@@ -125,11 +127,11 @@ module Exp = struct
   let slte x y = bit_result (binop_with_cast Bil.sle x y)
   let sgte x y = bit_result (binop_with_cast Bil.sle y x)
 
-  let lshift = binop_with_cast Bil.lshift
-  let rshift = binop Bil.rshift
-  let bit_and = binop_with_cast Bil.bit_and
-  let bit_xor = binop_with_cast Bil.bit_xor
-  let bit_or = binop_with_cast Bil.bit_or
+  let lshift  = unsigned_binop Bil.lshift
+  let rshift  = unsigned_binop Bil.rshift
+  let bit_and = unsigned_binop Bil.bit_and
+  let bit_xor = unsigned_binop Bil.bit_xor
+  let bit_or  = unsigned_binop Bil.bit_or
   let not x = unop Bil.not x
 
   let of_var var =
@@ -299,7 +301,7 @@ module Translate = struct
       4) extract hi lo var := exp - change only certain bits of var
       5) extract hi lo (var1 ^ var2 ... varN) := exp
 
-      and only first kind of assignment sign sensitive *)
+      and only first kind of assignment is sign sensitive *)
   let rec move lhs rhs =
     match Exp.body lhs with
     | Vars (v, []) ->

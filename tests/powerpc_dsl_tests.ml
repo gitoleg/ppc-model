@@ -17,7 +17,6 @@ end
 open Dsl
 open Model.Hardware
 
-
 let eval_rtl rtl =
   let bil = bil_of_t rtl in
   Stmt.eval bil (new Bili.context)
@@ -35,6 +34,34 @@ let dsl_extract ctxt =
   let expected = Word.of_int ~width:32 5 in
   let value = lookup_var ctxt y' in
   assert_bool "extract failed" (is_equal_words expected value)
+
+let dsl_extract_signed ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:8 0xFFFF in
+  let x = signed var word in
+  let y' = Var.create "y" (Type.Imm 32) in
+  let y  = Exp.(unsigned @@ of_var y') in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.extract x 0 31;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int64 ~width:32 0xFFFFFFFFL in
+  let value = lookup_var ctxt y' in
+  assert_bool "extract signed failed" (is_equal_words expected value)
+
+let dsl_extract_unsigned ctxt =
+  let v = Exp.of_word @@ Word.of_int ~width:8 0xFFFF in
+  let x = unsigned var word in
+  let y' = Var.create "y" (Type.Imm 32) in
+  let y  = Exp.(signed @@ of_var y') in
+  let rtl = RTL.[
+    x := v;
+    y := Dsl.extract x 0 31;
+  ] in
+  let ctxt = eval_rtl rtl in
+  let expected = Word.of_int ~width:32 0xFF in
+  let value = lookup_var ctxt y' in
+  assert_bool "extract signed failed" (is_equal_words expected value)
 
 let first ctxt =
   let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
@@ -444,6 +471,8 @@ let circ_shift_32 ctxt =
 
 let suite = "Dsl" >::: [
     "extract"                                >:: dsl_extract;
+    "extract signed"                         >:: dsl_extract_signed;
+    "extract unsigned"                       >:: dsl_extract_unsigned;
     "low"                                    >:: low;
     "high byte"                              >:: high byte 8;
     "high halfword"                          >:: high halfword 16;

@@ -34,7 +34,7 @@
     a lifter function and to add it to others.
 
     ## RTL
-    The central element of this module is RTL. It contains
+    The central part of this module is RTL. It contains
     expressions, operations over expressions and statements.
     Basicly, any line that ended with ';' is a statment,
     and any part of it is either expression(s), or operation over
@@ -46,7 +46,7 @@
 
     Any expression in RTL has a notion of bitwidth. All operations
     over expressions of different width will cause a casting to the
-    more bigger bitwidth.
+    more biggest bitwidth.
 
     Note, that any expression that tend to take part of other
     expression is always unsigned. The same is true for any expression
@@ -67,7 +67,7 @@
                  ^      ^    ^
                  |      |    |
       content is |      |    |
-      unsigned          |    |
+      unsigned __|      |    |
                         |    |
            claim register  from operands array at index 0
 
@@ -99,12 +99,21 @@
     bit than [to].
 
     Also there are few more convinient and readable ways to take part:
-    low word x - take last word from [x]
+    low word x  - take last word from [x]
     high byte x - take first - the most significant byte
-    last x 5   - take last (least significant) bits
-    first x 1  - take first - the most significant bit
+    last x 5    - take last (least significant) bits
+    first x 2   - take second bit
+    msb x       - take the most significant bit
 
-    TODO: describe a behaviour is width of [x] doesn't match to the requested
+    Note, that taking a part of a bigger width from expression is also
+    possible. An extened expression will be return with the respect to
+    [x] sign:
+     ...
+     let x = unsigned var halfword
+     let y = unsigned var word
+     RTL.[
+        y := last word x;
+     ]
 
     #### Operators
     There are lot's math operators: plus, modulo, less than etc.
