@@ -4,9 +4,9 @@ open Bap.Std
 module Model = Powerpc_model
 open Powerpc_rtl
 
-include Powerpc_dsl
 include Powerpc_utils
 include Powerpc_cpu
+include Powerpc_dsl
 
 module RTL = struct
   include Powerpc_rtl
