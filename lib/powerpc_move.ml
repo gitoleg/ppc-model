@@ -20,6 +20,7 @@ let mtspr cpu ops =
       case xer_num  [ cpu.xer := rs ];
       case lr_num   [ cpu.lr  := rs ];
       case ctr_num  [ cpu.ctr := rs ];
+      default [ message "Unknown register number"; ]
     ];
   ]
 
@@ -42,6 +43,7 @@ let mfspr cpu ops =
       case xer_num [ rt := cpu.xer ];
       case lr_num  [ rt := cpu.lr  ];
       case ctr_num [ rt := cpu.ctr ];
+      default [ message "Unknown register number"; ]
     ];
   ]
 

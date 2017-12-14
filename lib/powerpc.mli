@@ -418,6 +418,9 @@ module RTL : sig
       will set a most significant byte of [reg] to zero *)
   val foreach : exp -> exp -> rtl list -> rtl
 
+  (** [message m] - embeds a string [m] in code *)
+  val message : string -> rtl
+
 end
 
 (** [zero] is a one bit length expression set to zero *)

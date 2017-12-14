@@ -32,6 +32,7 @@ type t =
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
   | Foreach of exp * exp * t list
+  | Message of string
 [@@deriving bin_io, compare, sexp]
 
 type rtl = t [@@deriving bin_io, compare, sexp]
@@ -41,6 +42,7 @@ let jmp addr = Jmp addr
 let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
 let foreach step exp code = Foreach (step,exp,code)
+let message m = Message m
 
 let rec bil_exp = function
   | Vars (v, []) -> Bil.var v
@@ -334,6 +336,7 @@ module Translate = struct
       let then_ = to_bil then_ in
       let else_ = to_bil else_ in
       if_ cond then_ else_
+    | Message m -> [Bil.special m]
     | Foreach (step_e, e, code) ->
       let step_var = var_of_exp step_e in
       let iters = Exp.width e / Exp.width step_e in
