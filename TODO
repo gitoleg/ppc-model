@@ -9,13 +9,13 @@ x - implement one or few vector instructions to check that our model
     fits well to this purpose
  - add to model xer register
  - add to model floating point flags (or whatever there is)
- - consider update_link_register in branch insns - weird ?
+v - consider update_link_register in branch insns - weird ?
 v - add NOP insn just for full picture
 v - add typecheck to tests
 v - solve load/store error message - if we do need
- - check move instruction - that numbers, if we need to extend them.
-   plus it would be useful to write a default clause for switch in
-   move insns
- - add documentation
+v - check move instruction - that numbers, if we need to extend them.
+    plus it would be useful to write a default clause for switch in
+    move insns
+v - add documentation
 v - refactoring rtl, add [@@deriving ...]
   - take a look at lifters in part of signed/unsigned

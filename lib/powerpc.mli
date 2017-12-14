@@ -492,6 +492,13 @@ val default : rtl list -> clause
 (** [bil_of_rtl rtl] - returns a bil code *)
 val bil_of_rtl : rtl list -> bil
 
+(** [extend insn code] - returns a lifter, that extend
+    an existing one with an additional code *)
+val extend : lift -> rtl list -> lift
+
+(** [concat insn insn'] - returns a lifter, that is a
+    concatenation of code for insn and insn' *)
+val concat : lift -> lift -> lift
 
 (** Registration *)
 

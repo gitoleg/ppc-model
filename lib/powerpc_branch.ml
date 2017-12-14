@@ -1,6 +1,6 @@
 open Powerpc
 
-let update_link_register cpu =
+let update_link_register cpu ops =
   RTL.[cpu.lr := cpu.addr + unsigned const byte 4]
 
 (** Branch Instructions, Branch
@@ -85,8 +85,8 @@ let bca cpu ops =
     ]
   ]
 
-let bcl cpu ops = bc cpu ops @ update_link_register cpu
-let bcla cpu ops = bca cpu ops @ update_link_register cpu
+let bcl = concat bc update_link_register
+let bcla = concat bca update_link_register
 
 (** bdz  target = bc 18,0, target *)
 let bdz cpu ops =
@@ -134,7 +134,7 @@ let bclr cpu ops =
     ];
   ]
 
-let bclrl cpu ops = bclr cpu ops @ update_link_register cpu
+let bclrl = concat bclr update_link_register
 
 (** Branch Instructions extended mnemonic, branch to LR unconditionally.
     Page 792 of IBM Power ISATM Version 3.0 B
@@ -183,8 +183,7 @@ let bcctr cpu ops =
     ];
   ]
 
-let bcctrl cpu ops =
-  bcctr cpu ops @ update_link_register cpu
+let bcctrl = concat bcctr update_link_register
 
 (** Branch Instructions extended mnemonic, branch to CTR unconditionally.
     Page 792 of IBM Power ISATM Version 3.0 B
@@ -228,8 +227,7 @@ let bctar cpu ops =
     ]
   ]
 
-let bctarl cpu ops =
-  bctar cpu ops @ update_link_register cpu
+let bctarl = concat bctar update_link_register
 
 let () =
   "B"       >> b;

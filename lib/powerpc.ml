@@ -19,6 +19,10 @@ type lift = cpu -> op array -> rtl list
 
 let bil_of_rtl = RTL.bil_of_t
 
+let extend f code = fun cpu ops -> f cpu ops @ code
+
+let concat f g = fun cpu ops -> f cpu ops @ g cpu ops
+
 let dot fc cpu ops =
   let res = signed reg ops.(0) in
   let x = signed var cpu.addr_size in
