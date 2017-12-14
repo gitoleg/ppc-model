@@ -70,6 +70,15 @@ let get_bil ?addr arch bytes =
   let mem,insn = get_insn ?addr arch bytes in
   to_bil arch mem insn
 
+let check_bil bil =
+  match Type.check bil with
+  | Error te ->
+    let err =
+      sprintf "The lifted code is not well-typed: %s"
+        (Type.Error.to_string te) in
+    failwith err
+  | Ok () -> ()
+
 (** [check_gpr ?addr init_bil bytes var expected arch ctxt] -
     tests if a result bound to the [var] is equal to
     [exptected]. Evaluates bil, that is a concatenation
@@ -78,6 +87,7 @@ let get_bil ?addr arch bytes =
 let check_gpr ?addr init bytes var expected arch ctxt =
   let mem,insn = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
+  check_bil (init @ bil);
   let c = Stmt.eval (init @ bil) (new Bili.context) in
   match lookup_var c var with
   | None -> assert_bool "var not found OR it's result not Imm" false
@@ -95,6 +105,7 @@ let check_gpr ?addr init bytes var expected arch ctxt =
 let eval ?addr init bytes arch =
   let mem,insn = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
+  check_bil (init @ bil);
   Stmt.eval (init @ bil) (new Bili.context)
 
 let load_word ctxt mem addr endian size =
@@ -103,12 +114,14 @@ let load_word ctxt mem addr endian size =
   let bil = Bil.[
       tmp := load ~mem:(var mem) ~addr:(int addr) endian size;
     ] in
+  check_bil bil;
   let ctxt = Stmt.eval bil ctxt in
   lookup_var ctxt tmp
 
 let check_mem init bytes mem ~addr ~size expected ?(endian=BigEndian) arch ctxt =
   let memory,insn = get_insn arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch memory insn in
+  check_bil (init @ bil);
   let c = Stmt.eval (init @ bil) (new Bili.context) in
    match load_word c mem addr endian size with
   | None -> assert_bool "word not found OR it's result not Imm" false

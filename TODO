@@ -1,5 +1,5 @@
- - implement beatiful registration for lifter functions
- - remove X-register search from dsl, and just add aliases for them in model
+v - implement beatiful registration for lifter functions
+v - remove X-register search from dsl, and just add aliases for them in model
  - consider to remove explicit sign binary operations.
    as a positive effect - it eliminate syntax cases. as a negative it
    may introduce new bugs, because an expression (low word ra > zero)
@@ -9,11 +9,9 @@
    fits well to this purpose
  - add to model xer register
  - add to model floating point flags (or whatever there is)
- - check move insn - if there is some suitable numbers for registers
-   that we didn't use
  - consider update_link_register in branch insns - weird ?
- - add NOP insn just for full picture
- - add typecheck to tests
+v - add NOP insn just for full picture
+v - add typecheck to tests
  - solve load/store error message - if we do need
  - check move instruction - that numbers, if we need to extend them.
    plus it would be useful to write a default clause for switch in
