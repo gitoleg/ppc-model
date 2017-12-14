@@ -18,4 +18,4 @@ v - check move instruction - that numbers, if we need to extend them.
     move insns
 v - add documentation
 v - refactoring rtl, add [@@deriving ...]
-  - take a look at lifters in part of signed/unsigned
+v - take a look at lifters in part of signed/unsigned
