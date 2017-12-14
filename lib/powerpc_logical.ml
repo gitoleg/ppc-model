@@ -363,14 +363,6 @@ let popcntd cpu ops =
     ra := cnt;
   ]
 
-(** Fixed-point Parity Doubleword/Word
-    Pages 92-98 of IBM Power ISATM Version 3.0 B
-    examples:
-    7c 84 01 74     prtyd r4, r4 (not working in llvm)
-    7c 84 01 34     prtyw r4, r4 (not working in llvm)    *)
-let parity ops size = ppc_fail "llvm disasm failed"
-
-
 (** Fixed-point Bit Permute Doubleword
     Pages 100 of IBM Power ISATM Version 3.0 B
     examples:

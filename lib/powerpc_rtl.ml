@@ -32,8 +32,9 @@ type t =
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
   | Foreach of exp * exp * t list
+[@@deriving bin_io, compare, sexp]
 
-type rtl = t
+type rtl = t [@@deriving bin_io, compare, sexp]
 
 let store mem addr x endian size = Store (mem, addr, x, endian, size)
 let jmp addr = Jmp addr
@@ -70,12 +71,11 @@ let var_of_exp e = match e.body with
 
 module Exp = struct
 
-  (** TODO: think here again  *)
   let cast x width sign =
     if x.sign = sign && x.width = width then x
     else
     if x.width = 1 then
-      {width; sign=x.sign; body = Cast (x.sign, width, x.body)}
+      {width; sign; body = Cast (x.sign, width, x.body)}
     else
       {width; sign; body = Cast (sign, width, x.body)}
 
@@ -101,19 +101,18 @@ module Exp = struct
     { sign; width; body = Binop (op, lhs.body, rhs.body); }
 
   let concat lhs rhs =
-    let sign = derive_sign lhs.sign rhs.sign in
     let width = lhs.width + rhs.width in
     let body = Concat (lhs.body, rhs.body) in
-    { sign; width; body; }
+    { sign = Unsigned; width; body; }
 
   let bit_result x = cast_width x 1
 
-  let plus = binop_with_cast Bil.plus
+  let plus  = binop_with_cast Bil.plus
   let minus = binop_with_cast Bil.minus
   let times = binop_with_cast Bil.times
-  let divide = binop_with_cast Bil.divide
+  let divide  = binop_with_cast Bil.divide
   let sdivide = binop_with_cast Bil.sdivide
-  let modulo = binop_with_cast Bil.modulo
+  let modulo  = binop_with_cast Bil.modulo
   let smodulo = binop_with_cast Bil.smodulo
   let lt x y  = bit_result (binop_with_cast Bil.lt x y)
   let gt x y  = bit_result (binop_with_cast Bil.lt y x)
@@ -264,8 +263,6 @@ module Translate = struct
     | None, Some right -> Bil.[v := middle ^ right]
     | Some left, Some right -> Bil.[ v := left ^ middle ^ right; ]
 
-  (** TODO: what is with lhs sign ? and why do we nees
-      an extra match clause bellow (in move function) *)
   let assign_vars vars ?hi ?lo rhs =
     let in_bounds x left right = x <= left && x >= right in
     let vars = List.rev vars in
@@ -300,7 +297,9 @@ module Translate = struct
       2) var1 ^ var2 ... varN := exp
       3) [var1;var2; ...] := exp  - equivalent to 2)
       4) extract hi lo var := exp - change only certain bits of var
-      5) extract hi lo (var1 ^ var2 ... varN) := exp *)
+      5) extract hi lo (var1 ^ var2 ... varN) := exp
+
+      and only first kind of assignment sign sensitive *)
   let rec move lhs rhs =
     match Exp.body lhs with
     | Vars (v, []) ->

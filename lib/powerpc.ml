@@ -13,30 +13,31 @@ module RTL = struct
   include Infix
 end
 
-type rtl = RTL.rtl
-type exp = RTL.exp
+type rtl = RTL.rtl [@@deriving bin_io, compare, sexp]
+type exp = RTL.exp [@@deriving bin_io, compare, sexp]
 type lift = cpu -> op array -> rtl list
 
 let bil_of_rtl = RTL.bil_of_t
+
+let dot fc cpu ops =
+  let res = signed reg ops.(0) in
+  let x = signed var cpu.addr_size in
+  fc cpu ops @
+  RTL.[
+    x := low cpu.addr_size res;
+    nth bit cpu.cr 0 := x <$ zero;
+    nth bit cpu.cr 1 := x >$ zero;
+    nth bit cpu.cr 2 := x = zero;
+  ]
 
 let lifters = String.Table.create ()
 
 let register name lifter =
   String.Table.change lifters name ~f:(fun _ -> Some lifter)
 
-let (>>) = register
-
-let dot fc cpu ops =
-  let res = signed reg ops.(0) in
-  fc cpu ops @
-  RTL.[
-    nth bit cpu.cr 0 := low cpu.addr_size res <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size res >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size res = zero;
-  ]
-
 let register_dot name lifter = register name (dot lifter)
 
+let (>>) = register
 let (>.) = register_dot
 
 (** TODO: endian is dynamic property!!  *)

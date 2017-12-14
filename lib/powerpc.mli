@@ -1,3 +1,12 @@
+(** TODO:
+    write carefuly about signess, e.g.
+    operations like low, last, concat ... are always unsigned
+
+    write carefuly about extract and assignment, e.g.
+    short := long -> short := extract from long less significant of size short
+
+*)
+
 open Core_kernel.Std
 open Bap.Std
 
@@ -13,8 +22,8 @@ val quadroword : bitwidth
 val bitwidth : int -> bitwidth
 
 type 'a p
-type exp
-type rtl
+type exp [@@deriving bin_io, compare, sexp]
+type rtl [@@deriving bin_io, compare, sexp]
 
 val imm : (op -> exp) p
 val reg : (op -> exp) p
@@ -127,9 +136,6 @@ val when_ : exp -> rtl list -> rtl
 (** [ifnot cond rtl] = if_ cond [] rtl *)
 val ifnot : exp -> rtl list -> rtl
 
-(** [ppc_fail error_string] - raise a failure with [error_string] *)
-val ppc_fail : ('a, unit, string, 'b) format4 -> 'a
-
 (** switch clause  *)
 type clause
 
@@ -139,15 +145,15 @@ type clause
     ra := <...>
     switch (x) [
       case one   [ rs := <...>; ];
-      case zero  [ rt := <...>; rs := <...> ];
+      case zero  [ rt := <...>;
+                   rs := <...>; ];
       default [rs := zero];
     ]
-    ...
- *)
+    ...  *)
 val switch  : exp -> clause list -> rtl
 
 (** [case exp code] - creates a switch case *)
-val case    : exp -> rtl list -> clause
+val case : exp -> rtl list -> clause
 
 (** [default code] - creates a switch default *)
 val default : rtl list -> clause
@@ -202,5 +208,5 @@ val (>>) : string -> lift -> unit
     with an additinal code for writing {lt,gt,eq} bits of [cr_field] *)
 val dot : lift -> cpu -> op array -> rtl list
 
-(** [name >: lift] - registers a lifter for instruction [name]  *)
+(** [name >: lift] - registers a lifter for dot version of instruction [name]  *)
 val (>.) : string -> lift -> unit
