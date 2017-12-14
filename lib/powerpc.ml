@@ -44,10 +44,7 @@ let register_dot name lifter = register name (dot lifter)
 let (>>) = register
 let (>.) = register_dot
 
-(** TODO: endian is dynamic property!!  *)
-let endian = BigEndian
-
-let lift addr_size mem insn =
+let lift addr_size endian mem insn =
   let insn = Insn.of_basic insn in
   let insn_name = Insn.name insn in
   let cpu = make_cpu addr_size endian mem  in
@@ -64,13 +61,19 @@ let lift addr_size mem insn =
 
 module T32 = struct
   module CPU = Model.PowerPC_32_cpu
-  let lift = lift `r32
+  let lift = lift `r32 BigEndian
 end
 
 module T64 = struct
   module CPU = Model.PowerPC_64_cpu
-  let lift = lift `r64
+  let lift = lift `r64 BigEndian
+end
+
+module T64_le = struct
+  module CPU = Model.PowerPC_64_cpu
+  let lift = lift `r64 LittleEndian
 end
 
 let () = register_target `ppc (module T32)
 let () = register_target `ppc64 (module T64)
+let () = register_target `ppc64le (module T64_le)
