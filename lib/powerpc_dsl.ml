@@ -48,7 +48,9 @@ let int_of_imm = function
 let imm signed op =
   let imm = int_of_imm op in
   let w = Word.of_int ~width:64 imm in
-  Exp.of_word w
+  let e = Exp.of_word w in
+  if signed then Exp.signed e
+  else Exp.unsigned e
 
 let signed f = f true
 let unsigned f = f false
@@ -146,3 +148,35 @@ let switch exp cases =
       List.fold (List.rev cases) ~init:default ~f:(fun acc (x,code) ->
           [if_ (cond x) code acc;]) in
     (if_ (cond x) code else_)
+
+
+
+let var_of_exp x = failwith ""
+let to_bil = bil_of_t
+
+class move_finder var = object(self)
+  inherit [bool] Stmt.visitor
+  method! enter_move v _ x = Var.equal var v || x
+end
+
+let has_assignments var rtl =
+  let bil = to_bil rtl in
+  let vis = new move_finder var in
+  vis#run bil false
+
+let test step_e e code =
+  let step_var = var_of_exp step_e in
+  let iters = Exp.width e / Exp.width step_e in
+  let step = Exp.width step_e in
+  let has_assignments = has_assignments step_var code in
+  to_bil @@ List.concat
+    (List.init iters
+       ~f:(fun i ->
+           let i = iters - i - 1 in
+           let hi = (i + 1) * step - 1 in
+           let lo = i * step in
+           if has_assignments then
+             let last = Infix.(Exp.extract hi lo e := step_e) in
+             Infix.(step_e := Exp.extract hi lo e) :: code @ [last]
+           else
+             Infix.(step_e := Exp.extract hi lo e) :: code))

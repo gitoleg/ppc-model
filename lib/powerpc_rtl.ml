@@ -26,6 +26,21 @@ type exp = {
   width : int;
 } [@@deriving bin_io, compare, sexp]
 
+type t =
+  | Move of exp * exp
+  | Jmp of exp
+  | Store of var * exp * exp * endian * size
+  | If of exp * t list * t list
+  | Foreach of exp * exp * t list
+
+type rtl = t
+
+let store mem addr x endian size = Store (mem, addr, x, endian, size)
+let jmp addr = Jmp addr
+let move x y = Move (x,y)
+let if_ cond then_ else_ = If (cond, then_, else_)
+let foreach step exp code = Foreach (step,exp,code)
+
 let rec bil_exp = function
   | Vars (v, []) -> Bil.var v
   | Vars (v, vars) ->
@@ -55,6 +70,7 @@ let var_of_exp e = match e.body with
 
 module Exp = struct
 
+  (** TODO: think here again  *)
   let cast x width sign =
     if x.sign = sign && x.width = width then x
     else
@@ -159,9 +175,9 @@ module Exp = struct
           else None) bounds in
       let v = List.hd_exn vars in
       let vars = List.tl_exn vars in
-      {sign=e.sign; width; body = Vars (v,vars)}
+      {sign=Unsigned; width; body = Vars (v,vars)}
     else
-      {sign=e.sign; width; body = Extract (hi,lo,e.body)}
+      {sign=Unsigned; width; body = Extract (hi,lo,e.body)}
 
   let extract hi lo e =
     let width = hi - lo + 1 in
@@ -171,7 +187,7 @@ module Exp = struct
       | Vars (v,vars) when vars <> [] ->
         extract_of_vars e hi lo (v :: vars)
       | _ ->
-        { sign=e.sign; width; body = Extract (hi,lo,e.body) }
+        { sign=Unsigned; width; body = Extract (hi,lo,e.body) }
 
   let signed e = {e with sign = Signed}
   let unsigned e = {e with sign = Unsigned}
@@ -180,21 +196,6 @@ module Exp = struct
   let sign e = e.sign
   let bil_exp e = bil_exp e.body
 end
-
-type t =
-  | Move of exp * exp
-  | Jmp of exp
-  | Store of var * exp * exp * endian * size
-  | If of exp * t list * t list
-  | Foreach of exp * exp * t list
-
-type rtl = t
-
-let store mem addr x endian size = Store (mem, addr, x, endian, size)
-let jmp addr = Jmp addr
-let move x y = Move (x,y)
-let if_ cond then_ else_ = If (cond, then_, else_)
-let foreach step exp code = Foreach (step,exp,code)
 
 module Infix = struct
   open Exp
