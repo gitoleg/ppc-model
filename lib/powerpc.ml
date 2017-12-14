@@ -42,15 +42,7 @@ let (>.) = register_dot
 (** TODO: endian is dynamic property!!  *)
 let endian = BigEndian
 
-let once = ref true
-
-let print () =
-  if !once then
-    printf "insns number is %d\n" (Hashtbl.length lifters);
-  once := false
-
 let lift addr_size mem insn =
-  print ();
   let insn = Insn.of_basic insn in
   let insn_name = Insn.name insn in
   let cpu = make_cpu addr_size endian mem  in

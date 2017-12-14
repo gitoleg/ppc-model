@@ -70,6 +70,9 @@ let ori cpu ops =
   let im = unsigned imm ops.(2) in
   RTL.[ ra := rs lor im; ]
 
+(** 60 00 00 00    nop   (equivalen to ori 0,0,0 *)
+let nop cpu ops = []
+
 (** Fixed-point OR Immediate Shifted
     Pages 92-98 of IBM Power ISATM Version 3.0 B
     examples:
@@ -405,6 +408,7 @@ let () =
   "ANDC"    >> andc;
   "ANDCo"   >. andc;
   "ORI"     >> ori;
+  "NOP"     >> nop;
   "ORIS"    >> oris;
   "OR"      >> or_;
   "ORo"     >. or_;

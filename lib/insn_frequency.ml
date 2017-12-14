@@ -158,7 +158,7 @@
    stwux      1           | store word update indexed
    bge        1           | branch if great or equal then
    cmplwi     1           | compare logical imm
-   srawi.     1           |
+   srawi.     1           | shift right algebraic imm
    addze.     1           | add zero extended (dot)
    lwzx       1           | load word zero indexed
    blelr      1           | branch to LR if less then
@@ -202,7 +202,7 @@
    bl         32          | branch
    li         33          | add imm (extended)
    ld         39          | load doubleword
-   nop        48          |
+   nop        48          | no operation
    mr         65          | or_ (extended)
    addi       71          | add imm
    stw        71          | store word
