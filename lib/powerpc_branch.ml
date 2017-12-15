@@ -193,15 +193,10 @@ let bcctrl = concat bcctr update_link_register
 let bctr cpu ops =
   let sh = unsigned const byte 2 in
   RTL.[
-    cpu.jmp (cpu.cr lsl sh)
+    cpu.jmp (cpu.ctr lsl sh)
   ]
 
-let bctrl cpu ops =
-  let sh = unsigned const byte 2 in
-  RTL.[
-    cpu.jmp (cpu.cr lsl sh);
-    cpu.lr := cpu.addr + unsigned const byte 4
-  ]
+let bctrl = concat bctr update_link_register
 
 (** Branch Instructions, Branch Conditional to Target Register
     Page 39 of IBM Power ISATM Version 3.0 B

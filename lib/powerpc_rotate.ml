@@ -15,23 +15,17 @@ let rlwinm cpu ops =
   let start = unsigned var doubleword in
   let stop  = unsigned var doubleword in
   let mask  = unsigned var doubleword in
-  let mask1 = unsigned var doubleword in
-  let mask2 = unsigned var doubleword in
   let bits  = unsigned const doubleword 32 in
   let width = unsigned const doubleword 64 in
+  let ones = unsigned const doubleword (-1) in
   RTL.[
     start := mb + bits;
     stop  := me + bits;
-    mask := zero;
-    mask := lnot mask;
-    if_ (start <= stop) [
-      mask1 := mask lsr start;
-      mask2 := mask lsl (width - stop - one);
-      mask := mask1 land mask2;
+    mask := ones;
+    if_ (mb <= me) [
+      mask := (mask lsr start) land (mask lsl (width - stop - one));
     ] [
-      mask1 := mask lsl (width - stop);
-      mask2 := mask lsr (start + one);
-      mask := mask1 lor mask2;
+      mask := (mask lsl (width - stop)) lor (mask lsr (start + one));
     ];
     tmp := nth word rs 1;
     ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl sh) 0) land mask;
@@ -52,23 +46,17 @@ let rlwnm cpu ops =
   let start = unsigned var doubleword in
   let stop  = unsigned var doubleword in
   let mask  = unsigned var doubleword in
-  let mask1 = unsigned var doubleword in
-  let mask2 = unsigned var doubleword in
   let bits  = unsigned const doubleword 32 in
   let width = unsigned const doubleword 64 in
+  let ones = unsigned const doubleword (-1) in
   RTL.[
     start := mb + bits;
     stop  := me + bits;
-    mask := zero;
-    mask := lnot mask;
-    if_ (start <= stop) [
-      mask1 := mask lsr start;
-      mask2 := mask lsl (width - stop - one);
-      mask := mask1 land mask2;
+    mask := ones;
+    if_ (mb <= me) [
+      mask := (mask lsr start) land (mask lsl (width - stop - one));
     ] [
-      mask1 := mask lsl (width - stop);
-      mask2 := mask lsr (start + one);
-      mask := mask1 lor mask2;
+      mask := (mask lsl (width - stop)) lor (mask lsr (start + one));
     ];
     tmp := nth word rs 1;
     ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl (last rb 5)) 0) land mask;
@@ -90,23 +78,17 @@ let rlwimi cpu ops =
   let start = unsigned var doubleword in
   let stop  = unsigned var doubleword in
   let mask  = unsigned var doubleword in
-  let mask1 = unsigned var doubleword in
-  let mask2 = unsigned var doubleword in
   let bits  = unsigned const doubleword 32 in
   let width = unsigned const doubleword 64 in
+  let ones = unsigned const doubleword (-1) in
   RTL.[
     start := mb + bits;
     stop  := me + bits;
-    mask := zero;
-    mask := lnot mask;
-    if_ (start <= stop) [
-      mask1 := mask lsr start;
-      mask2 := mask lsl (width - stop - one);
-      mask := mask1 land mask2;
+    mask := ones;
+    if_ (mb <= me) [
+      mask := (mask lsr start) land (mask lsl (width - stop - one));
     ] [
-      mask1 := mask lsl (width - stop);
-      mask2 := mask lsr (start + one);
-      mask := mask1 lor mask2;
+      mask := (mask lsl (width - stop)) lor (mask lsr (start + one));
     ];
     tmp1 := nth word rs 1;
     tmp2 := nth doubleword ((tmp1 ^ tmp1 ^ tmp1) lsl sh) 0;
@@ -161,9 +143,9 @@ let rldic cpu ops =
   let mask = unsigned var doubleword in
   let mask1 = unsigned var doubleword in
   let mask2 = unsigned var doubleword in
+  let ones = unsigned const doubleword (-1) in
   RTL.[
-    mask := zero;
-    mask := (lnot mask);
+    mask := ones;
     mask1 := mask lsr mb;
     mask2 := mask lsl sh;
     mask := mask1 land mask2;
@@ -219,9 +201,9 @@ let rldimi cpu ops =
   let mask  = unsigned var doubleword in
   let mask1 = unsigned var doubleword in
   let mask2 = unsigned var doubleword in
+  let ones = unsigned const doubleword (-1) in
   RTL.[
-    mask := zero;
-    mask := (lnot mask);
+    mask := ones;
     mask1 := mask lsr mb;
     mask2 := mask lsl sh;
     mask := mask1 land mask2;
