@@ -6,11 +6,16 @@ module Dis = Disasm_expert.Basic
 
 open Powerpc
 
-module H = Powerpc_model.Hardware_vars
+open Powerpc_model
+
+module H32 = PowerPC_32.Hardware_vars
+module H64 = PowerPC_64.Hardware_vars
+
+module Any_ppc = H32
 
 let cr_bit n =
   try
-    Int.Map.find_exn H.cri n
+    Int.Map.find_exn Any_ppc.cri n
   with _ ->
     sprintf "requested CR bit %d not found" n |>
     failwith
@@ -18,11 +23,11 @@ let cr_bit n =
 let nf = cr_bit 0
 let pf = cr_bit 1
 let zf = cr_bit 2
-let ca = H.ca
-let ca32 = H.ca32
-let lr = H.lr
-let ctr = H.ctr
-let tar = H.tar
+let ca = Any_ppc.ca
+let ca32 = Any_ppc.ca32
+let lr = Any_ppc.lr
+let ctr = Any_ppc.ctr
+let tar = Any_ppc.tar
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>
@@ -49,7 +54,9 @@ let get_insn ?addr arch bytes =
   let mem = create_memory arch bytes addr in
   let dis = create_dis arch in
   match Dis.insn_of_mem dis mem with
-  | Ok (mem, Some insn, _) -> mem, insn
+  | Ok (mem, Some insn, _) ->
+    let insn_name = Insn.(name @@ of_basic insn) in
+    mem, insn, insn_name
   | _ -> failwith "disasm failed"
 
 let lookup_var c var = match c#lookup var with
@@ -59,15 +66,16 @@ let lookup_var c var = match c#lookup var with
     | Bil.Imm word -> Some word
     | Bil.Bot | Bil.Mem _ -> None
 
-(** [find_gpr name] - find a GPR by it's name *)
-let find_gpr name =
+let find_gpr arch name =
   try
-    String.Map.find_exn H.gpr name
+    match arch with
+    | `ppc -> String.Map.find_exn H32.gpr name
+    | _ -> String.Map.find_exn H64.gpr name
   with _ ->
     sprintf "gpr %s not" name |> failwith
 
 let get_bil ?addr arch bytes =
-  let mem,insn = get_insn ?addr arch bytes in
+  let mem,insn,_ = get_insn ?addr arch bytes in
   to_bil arch mem insn
 
 let check_bil bil =
@@ -85,15 +93,17 @@ let check_bil bil =
     of [init_bil] and code, obtained from lifting [bytes].
     [addr] is an instruction address, 0 by default. *)
 let check_gpr ?addr init bytes var expected arch ctxt =
-  let mem,insn = get_insn ?addr arch bytes in
+  let mem,insn,insn_name = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
   check_bil (init @ bil);
   let c = Stmt.eval (init @ bil) (new Bili.context) in
   match lookup_var c var with
   | None -> assert_bool "var not found OR it's result not Imm" false
   | Some w ->
-    if not (Word.equal w expected) then
-      printf "\ncheck failed for %s: expected %s <> %s\n"
+    if not (Word.equal w expected) ||
+        (Word.bitwidth w <> Word.bitwidth expected) then
+      printf "\n%s: check failed for %s: expected %s <> %s\n"
+        insn_name
         (Var.name var)
         (Word.to_string expected)
         (Word.to_string w);
@@ -103,7 +113,7 @@ let check_gpr ?addr init bytes var expected arch ctxt =
     of [init_bil] and code, obtained from lifting [bytes].
     [addr] is an instruction address, 0 by default. *)
 let eval ?addr init bytes arch =
-  let mem,insn = get_insn ?addr arch bytes in
+  let mem,insn,_ = get_insn ?addr arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch mem insn in
   check_bil (init @ bil);
   Stmt.eval (init @ bil) (new Bili.context)
@@ -119,7 +129,7 @@ let load_word ctxt mem addr endian size =
   lookup_var ctxt tmp
 
 let check_mem init bytes mem ~addr ~size expected ?(endian=BigEndian) arch ctxt =
-  let memory,insn = get_insn arch bytes in
+  let memory,insn,insn_name = get_insn arch bytes in
   let bil = Or_error.ok_exn @@ to_bil arch memory insn in
   check_bil (init @ bil);
   let c = Stmt.eval (init @ bil) (new Bili.context) in
@@ -127,7 +137,8 @@ let check_mem init bytes mem ~addr ~size expected ?(endian=BigEndian) arch ctxt 
   | None -> assert_bool "word not found OR it's result not Imm" false
   | Some w ->
     if not (Word.equal w expected) then
-      printf "\ncheck failed for %s: expected %s <> %s\n"
+      printf "\n%s: check failed for %s: expected %s <> %s\n"
+        insn_name
         (Addr.to_string addr)
         (Word.to_string expected)
         (Word.to_string w);
@@ -151,6 +162,8 @@ let is_equal_words w = function
 let string_of_bytes bytes =
   String.fold ~init:"" ~f:(fun acc b ->
       sprintf "%s%02X " acc (Char.to_int b)) bytes
+
+let arch_width a = Arch.addr_size a |> Size.in_bits
 
 type form = [
   | `D
@@ -297,8 +310,7 @@ let make_insn ?name ?(arch=`ppc) form fields =
   let () = match name with
     | None -> ()
     | Some name ->
-      let _,insn = get_insn arch bytes in
-      let insn_name = Insn.(name @@ of_basic insn) in
+      let _,insn,insn_name = get_insn arch bytes in
       if not (String.equal name insn_name) then
         let err =
           sprintf "error: failed to construct %s insn, got a %s"

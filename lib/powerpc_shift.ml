@@ -6,11 +6,12 @@ open Powerpc
     7d 2a 58 30     slw  r10, r9, r11
     7d 2a 58 31     slw. r10, r9, r11  *)
 let slw cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
+  let sh = unsigned const byte 5 in
   RTL.[
-    if_ (nth bit rb 58 = zero) [
+    if_ (lsb (rb lsr sh) = zero) [
       ra := low word rs lsl last rb 5;
     ] [
       ra := zero;
@@ -23,11 +24,12 @@ let slw cpu ops =
     7d 2a 5c 30     srw  r10, r9, r11
     7d 2a 5c 31     srw. r10, r9, r11 *)
 let srw cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
+  let sh = unsigned const byte 5 in
   RTL.[
-    if_ (nth bit rb 58 = zero) [
+    if_ (lsb (rb lsr sh) = zero) [
       ra := low word rs lsr last rb 5;
     ] [
       ra := zero;
@@ -40,22 +42,21 @@ let srw cpu ops =
     7d 2a 5e 70     srawi  r10, r9, 11
     7d 2a 5e 71     srawi. r10, r9, 11 *)
 let srawi cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
-  let mask = unsigned var doubleword in
-  let width = unsigned const doubleword 32 in
+  let mask = unsigned var cpu.gpr_width in
   let carry_ones = unsigned var bit in
+  let ones = unsigned const cpu.gpr_width (-1) in
   RTL.[
-    mask := zero;
-    mask := lnot mask;
+    mask := ones;
     carry_ones := ((lnot (mask lsl sh)) land rs) <> zero;
     cpu.ca := carry_ones land (low word rs <$ zero);
     cpu.ca32 := cpu.ca;
     if_ (low word rs >=$ zero) [
       ra := low word rs lsr sh;
     ] [
-      mask := mask lsr (width + sh);
+      mask := mask lsr (width ra + sh);
       ra := (low word rs lsr sh) lor (lnot mask);
     ]
   ]
@@ -66,9 +67,9 @@ let srawi cpu ops =
     7d 2a 5e 30     sraw  r10, r9, r11
     7d 2a 5e 31     sraw. r10, r9, r11 *)
 let sraw cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let mask = unsigned var doubleword in
   let width = unsigned const doubleword 32 in
   let carry_ones = unsigned var bit in
@@ -98,9 +99,9 @@ let sraw cpu ops =
     7d 2a 58 36     sld  r10, r9, r11
     7d 2a 58 37     sld. r10, r9, r11 *)
 let sld cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[
     ra := rs lsl (last rb 6)
   ]
@@ -111,9 +112,9 @@ let sld cpu ops =
     7d 2a 5c 36     srd  r10, r9, r11
     7d 2a 5c 37     srd. r10, r9, r11 *)
 let srd cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[
     ra := rs lsr (last rb 6)
   ]
@@ -124,8 +125,8 @@ let srd cpu ops =
     7d 2a 26 74     sradi  r10, r9, 4
     7d 2a 26 75     sradi. r10, r9, 4 *)
 let sradi cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
   let mask = unsigned var doubleword in
   let carry_ones = unsigned var bit in
@@ -149,9 +150,9 @@ let sradi cpu ops =
     7d 2a 5e 34     srad  r10, r9, r11
     7d 2a 5e 35     srad. r10, r9, r11 *)
 let srad cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let mask = unsigned var doubleword in
   let carry_ones = unsigned var bit in
   let s = unsigned var bit in

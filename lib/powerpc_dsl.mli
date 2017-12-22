@@ -16,9 +16,10 @@ val bitwidth : int -> bitwidth
 val int_of_bitwidth : bitwidth -> int
 
 val imm : (op -> exp) ec
-val reg : (op -> exp) ec
 val var : (bitwidth -> exp) ec
 val const : (bitwidth -> int -> exp) ec
+val reg : (reg -> exp) -> (op -> exp) ec
+
 val signed : 'a ec -> 'a
 val unsigned : 'a ec -> 'a
 
@@ -87,3 +88,6 @@ val case    : exp -> rtl list -> clause
 
 (** [default code] - creates a switch default *)
 val default : rtl list -> clause
+
+(** [width e] - returns width of [e] as an expression *)
+val width : exp -> exp

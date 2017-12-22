@@ -15,7 +15,11 @@ module RTL = struct
 end
 
 open Dsl
-open Model.Hardware
+open Powerpc_model
+module Ppc_vars = PowerPC_32.Hardware_vars
+module Ppc = PowerPC_32.Hardware
+open Ppc
+
 
 let eval_rtl rtl =
   let bil = bil_of_t rtl in
@@ -334,12 +338,11 @@ let cr_assign ctxt =
       nth byte cr 2 := ones;
     ] in
   let ctxt = eval_rtl rtl in
-  let crs = Model.Hardware_vars.cri in
   let range = List.range 0 32 in
   List.iter range ~f:(fun i ->
       let expected = if i >= 16 && i <= 23 then
           Word.b1 else Word.b0 in
-      let cr_bit = Int.Map.find_exn crs i in
+      let cr_bit = Int.Map.find_exn Ppc_vars.cri i in
       let value = lookup_var ctxt cr_bit in
       let err = sprintf "cr assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))
@@ -352,12 +355,11 @@ let cr_field_assign ctxt =
       crf := ones;
     ] in
   let ctxt = eval_rtl rtl in
-  let crs = Model.Hardware_vars.cri in
   let range = List.range 0 32 in
   List.iter range ~f:(fun i ->
       let expected = if i >= 8 && i <= 11 then
           Word.b1 else Word.b0 in
-      let cr_bit = Int.Map.find_exn crs i in
+      let cr_bit = Int.Map.find_exn Ppc_vars.cri i in
       let value = lookup_var ctxt cr_bit in
       let err = sprintf "cr field assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))
@@ -370,12 +372,11 @@ let cr_shift ctxt =
       cr := cr lsl sh;
     ] in
   let ctxt = eval_rtl rtl in
-  let crs = Model.Hardware_vars.cri in
   let range = List.range 0 32 in
   List.iter range ~f:(fun i ->
       let expected = if i >= 0 && i <= 29 then
           Word.b1 else Word.b0 in
-      let cr_bit = Int.Map.find_exn crs i in
+      let cr_bit = Int.Map.find_exn Ppc_vars.cri i in
       let value = lookup_var ctxt cr_bit in
       let err = sprintf "cr assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))

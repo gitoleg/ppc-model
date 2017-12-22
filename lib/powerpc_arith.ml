@@ -7,8 +7,8 @@ open Powerpc
     7c 22 00 d0   neg  r1, r2
     7c 22 00 d1   neg. r1, r2 *)
 let neg cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
   RTL.[ rt := lnot ra + one ]
 
 (** Fixed-Point Arithmetic Instructions - Substract From
@@ -17,9 +17,9 @@ let neg cpu ops =
     7c 22 18 50    subf  r1, r2, r3
     7c 22 18 51    subf. r1, r2, r3 *)
 let subf cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[rt := (lnot ra) + rb + one]
 
 (** Fixed-Point Arithmetic Instructions - Substract From Immediate Carrying
@@ -27,8 +27,8 @@ let subf cpu ops =
     example:
     20 22 10 92    subfic r1, r2, 4242 *)
 let subfic cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
   let si = unsigned imm ops.(2) in
   RTL.[
     rt := (lnot ra) + si + one;
@@ -42,9 +42,9 @@ let subfic cpu ops =
     7c 22 18 10    subfc  r1, r2, r3
     7c 22 18 11    subfc. r1, r2, r3 *)
 let subfc cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := (lnot ra) + rb + one;
     cpu.ca   := low cpu.addr_size rb < low cpu.addr_size ra;
@@ -57,9 +57,9 @@ let subfc cpu ops =
     7c 22 19 10    subfe  r1, r2, r3
     7c 22 19 11    subfe. r1, r2, r3 *)
 let subfe cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := (lnot ra) + rb + cpu.ca;
     cpu.ca32 := low word rb < low word (ra + one - cpu.ca);
@@ -72,8 +72,8 @@ let subfe cpu ops =
     7c 22 01 d0    subfme  r1, r2
     7c 22 01 d1    subfme. r1, r2 *)
 let subfme cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   RTL.[
     rt := (lnot ra) + cpu.ca - one;
     cpu.ca32 := one;
@@ -86,8 +86,8 @@ let subfme cpu ops =
     7c 22 01 90    subfze  r1, r2
     7c 22 01 91    subfze. r1, r2 *)
 let subfze cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   RTL.[
     rt := (lnot ra) + cpu.ca;
     cpu.ca32 := one;
@@ -99,8 +99,8 @@ let subfze cpu ops =
     example:
     1c 22 00 2a    mulli r1, r2, 42 *)
 let mulli cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   let si = signed imm ops.(2) in
   RTL.[
     rt := ra *  si;
@@ -112,9 +112,9 @@ let mulli cpu ops =
     7c 22 18 96    mulhw  r1, r2, r3
     7c 22 18 97    mulhw. r1, r2, r3 *)
 let mulhw cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let tmp1 = signed var doubleword in
   let tmp2 = signed var doubleword in
   RTL.[
@@ -129,9 +129,9 @@ let mulhw cpu ops =
     7c 22 18 16    mulhwu  r1, r2, r3
     7c 22 18 17    mulhwu. r1, r2, r3 *)
 let mulhwu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let tmp1 = unsigned var doubleword in
   let tmp2 = unsigned var doubleword in
   RTL.[
@@ -146,9 +146,9 @@ let mulhwu cpu ops =
     7c 22 19 d6   mullw  r1, r2, r3
     7c 22 19 d7   mullw. r1, r2, r3 *)
 let mullw cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let tmp1 = unsigned var doubleword in
   let tmp2 = unsigned var doubleword in
   RTL.[
@@ -163,9 +163,9 @@ let mullw cpu ops =
     7c 22 1b d6    divw  r1, r2, r3
     7c 22 1b d7    divw. r1, r2, r3 *)
 let divw cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := low word ra /$ low word rb;
   ]
@@ -176,9 +176,9 @@ let divw cpu ops =
     7c 22 1b 96    divwu  r1, r2, r3
     7c 22 1b 97    divwu. r1, r2, r3 *)
 let divwu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[
     rt := low word ra / low word rb;
   ]
@@ -189,9 +189,9 @@ let divwu cpu ops =
     7c 22 1b 56    divwe  r1, r2, r3
     7c 22 1b 57    divwe. r1, r2, r3 *)
 let divwe cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let x = signed var doubleword in
   RTL.[
     x := zero;
@@ -205,9 +205,9 @@ let divwe cpu ops =
     7c 22 1b 16    divweu  r1, r2, r3
     7c 22 1b 17    divweu. r1, r2, r3 *)
 let divweu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let x = unsigned var doubleword in
   RTL.[
     x := zero;
@@ -220,9 +220,9 @@ let divweu cpu ops =
     example:
     7c 22 1e 16   modsw r1, r2, r3 *)
 let modsw cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := low word ra %$ low word rb;
   ]
@@ -233,9 +233,9 @@ let modsw cpu ops =
     7c 22 1a 16   moduw  r1, r2, r3
     7c 22 1a 17   moduw. r1, r2, r3 *)
 let moduw cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[
     rt := low word ra % low word rb;
   ]
@@ -246,9 +246,9 @@ let moduw cpu ops =
     7c 22 19 d2   mulld  r1, r2, r3
     7c 22 19 d3   mulld. r1, r2, r3 *)
 let mulld cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := ra * rb;
   ]
@@ -259,9 +259,9 @@ let mulld cpu ops =
     7c 22 18 92   mulhd  r1, r2, r3
     7c 22 18 93   mulhd. r1, r2, r3 *)
 let mulhd cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let tm = signed var quadword in
   RTL.[
     tm := ra;
@@ -275,9 +275,9 @@ let mulhd cpu ops =
     7c 22 18 12   mulhdu  r1, r2, r3
     7c 22 18 13   mulhdu. r1, r2, r3 *)
 let mulhdu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let tm = unsigned var quadword in
   RTL.[
     tm := ra;
@@ -291,9 +291,9 @@ let mulhdu cpu ops =
     7c 22 1b d2   divd  r1, r2, r3
     7c 22 1b d3   divd. r1, r2, r3 *)
 let divd cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := ra /$  rb;
   ]
@@ -304,9 +304,9 @@ let divd cpu ops =
     7c 22 1b 92   divdu  r1, r2, r3
     7c 22 1b 93   divdu. r1, r2, r3 *)
 let divdu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[
     rt := ra /  rb;
   ]
@@ -317,9 +317,9 @@ let divdu cpu ops =
     7c 22 1b 52   divde  r1, r2, r3
     7c 22 1b 53   divde. r1, r2, r3 *)
 let divde cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let tm1 = signed var quadword in
   let tm2 = signed var quadword in
   RTL.[
@@ -335,9 +335,9 @@ let divde cpu ops =
     7c 22 1b 12   divdeu  r1, r2, r3
     7c 22 1b 13   divdeu. r1, r2, r3 *)
 let divdeu cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let tm1 = unsigned var quadword in
   let tm2 = unsigned var quadword in
   RTL.[
@@ -352,9 +352,9 @@ let divdeu cpu ops =
     example:
     7c 22 1e 12   modsd  r1, r2, r3 *)
 let modsd cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := ra %$ rb;
   ]
@@ -364,9 +364,9 @@ let modsd cpu ops =
     example:
     7c 22 1a 12  modud  r1, r2, r3 *)
 let modud cpu ops =
-  let rt = unsigned reg ops.(0) in
-  let ra = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let rt = unsigned cpu.reg ops.(0) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   RTL.[
     rt := ra % rb;
   ]

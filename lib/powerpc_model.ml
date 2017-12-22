@@ -3,7 +3,7 @@ open Bap.Std
 
 open Powerpc_rtl
 
-module type Hardware = sig
+module type Model = sig
   type t
   val gpr  : t String.Map.t
   val gpri : t Int.Map.t
@@ -22,6 +22,30 @@ module type Hardware = sig
   val ov : t
   val ca32 : t
   val ov32 : t
+end
+
+module type Model_exp = sig
+  include Model with type t := exp
+  (** condition register  *)
+  val cr : exp
+
+  (** condition register fields *)
+  val cr_fields  : exp String.Map.t
+  val cri_fields : exp Int.Map.t
+end
+
+module type PowerPC = sig
+  module Hardware_vars : Model with type t := var
+  module Hardware : Model_exp
+  val mem : var
+  val gpr_bitwidth : int
+  val fpr_bitwidth : int
+  val vr_bitwidth  : int
+  val cr_bitwidth  : int
+  val xer_bitwidth : int
+  val lr_bitwidth  : int
+  val ctr_bitwidth : int
+  val tar_bitwidth : int
 end
 
 let range32 = List.range 0 32
@@ -49,20 +73,18 @@ let make_regs_i typ prefix range =
 
 let flag name = Var.create name (Type.imm 1)
 
-let gpr_bitwidth = 64
-let fpr_bitwidth = 64
-let vr_bitwidth  = 128
-let cr_bitwidth  = 32
-let xer_bitwidth = 64
-let lr_bitwidth  = 64
-let ctr_bitwidth = 64
-let tar_bitwidth = 64
+module Bitwidth = struct
+  let fpr_bitwidth = 64
+  let vr_bitwidth  = 128
+  let cr_bitwidth  = 32
+  let xer_bitwidth = 64
+  let lr_bitwidth  = 64
+  let ctr_bitwidth = 64
+  let tar_bitwidth = 64
+end
 
-module Hardware_vars = struct
-
-  (** general purpose registers  *)
-  let gpr = make_regs (Type.imm gpr_bitwidth) "R" ~alias:"X" range32
-  let gpri = make_regs_i (Type.imm gpr_bitwidth) "R" range32
+module Vars = struct
+  open Bitwidth
 
   (** floating point registers *)
   let fpr = make_regs (Type.imm fpr_bitwidth) "F" range32
@@ -172,18 +194,15 @@ module Hardware_vars = struct
 
 end
 
+let of_vars vars =
+  String.Map.map vars ~f:(fun v -> Exp.of_var v)
 
-module Hardware = struct
-  open Hardware_vars
+let of_vars_i vars =
+  Int.Map.map vars ~f:(fun v -> Exp.of_var v)
 
-  let of_vars vars =
-    String.Map.map vars ~f:(fun v -> Exp.of_var v)
+module Exps = struct
+  open Vars
 
-  let of_vars_i vars =
-    Int.Map.map vars ~f:(fun v -> Exp.of_var v)
-
-  let gpri = of_vars_i gpri
-  let gpr = of_vars gpr
   let fpri = of_vars_i fpri
   let fpr = of_vars fpr
   let vri = of_vars_i vri
@@ -215,27 +234,51 @@ module Hardware = struct
 
 end
 
-let mem32 = Var.create "mem" (Type.mem `r32 `r8)
-let mem64 = Var.create "mem" (Type.mem `r64 `r8)
-
-
-module PPC32 = struct
-  include Hardware_vars
-  let mem = mem32
+module type Spec = sig
+  val gpr_bitwidth : int
+  val addr_size : addr_size
 end
 
-module PPC64 = struct
-  include Hardware_vars
-  let mem = mem64
+module Make_ppc(S : Spec) : PowerPC = struct
+  include Bitwidth
+  let gpr_bitwidth = S.gpr_bitwidth
+
+  (** TODO: what with X registers in 32-bit mode?  *)
+  module Hardware_vars = struct
+    include Vars
+    let gpr = make_regs (Type.imm gpr_bitwidth) "R" ~alias:"X" range32
+    let gpri = make_regs_i (Type.imm gpr_bitwidth) "R" range32
+  end
+
+  module Hardware = struct
+    open Hardware_vars
+    include Exps
+    let gpri = of_vars_i gpri
+    let gpr = of_vars gpr
+  end
+
+  let mem = Var.create "mem" (Type.mem S.addr_size `r8)
+
 end
 
-module type PPC_cpu = sig
-  include module type of Hardware_vars
-  val mem : var
+module Spec32 = struct
+  let gpr_bitwidth = 32
+  let addr_size = `r32
 end
 
-module Make_cpu(P : PPC_cpu) : CPU = struct
-  include P
+module Spec64 = struct
+  let gpr_bitwidth = 64
+  let addr_size = `r64
+end
+
+module PowerPC_32 = Make_ppc(Spec32)
+module PowerPC_64 = Make_ppc(Spec64)
+
+module Make_cpu(P : PowerPC) : CPU = struct
+  open P
+  open Hardware_vars
+
+  let mem = P.mem
 
   let gpr =
     let data = Map.data gpr in
@@ -245,13 +288,11 @@ module Make_cpu(P : PPC_cpu) : CPU = struct
   let sp = Var.Set.find_exn gpr ~f:(fun v -> Var.name v = "R1")
   let vf = ov
   let cf = ca
-  let nf = cr0
-  let zf = cr2
+  let nf = Int.Map.find_exn cri 0
+  let zf = Int.Map.find_exn cri 1
 
   let flags = Var.Set.of_list [
       so; ca; ov; cf; nf; zf; ca32; ov32;
-      float_c; float_less; float_equal;
-      float_greater; float_unordered
     ]
 
   let is = Var.same
@@ -266,5 +307,5 @@ module Make_cpu(P : PPC_cpu) : CPU = struct
   let is_bp _ = false
 end
 
-module PowerPC_32_cpu = Make_cpu(PPC32)
-module PowerPC_64_cpu = Make_cpu(PPC64)
+module PowerPC_32_cpu = Make_cpu(PowerPC_32)
+module PowerPC_64_cpu = Make_cpu(PowerPC_64)

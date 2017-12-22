@@ -16,8 +16,8 @@ val tar : var
 (** [cr_bit n] - returns a condition register bit [n] *)
 val cr_bit : int -> var
 
-(** [find_gpr name] - return a GPR with a [name] *)
-val find_gpr : string -> var
+(** [find_gpr arch name] - return a GPR with a [name] *)
+val find_gpr : arch -> string -> var
 
 (** [get_bil ?addr arch bytes] - returns a bil code
     from [bytes] for [arch]. [addr] is an instruction address,
@@ -57,6 +57,9 @@ val is_equal_words : word -> word option -> bool
 
 (** [string_of_bytes bytes] - returns a readable string from [bytes] *)
 val string_of_bytes : string -> string
+
+(** [arch_width arch] - returns addr_size of [arch] in bits *)
+val arch_width : arch -> int
 
 (** PowerPC instruction forms  *)
 type form = [

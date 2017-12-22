@@ -3,9 +3,7 @@ open Bap.Std
 open Regular.Std
 
 open Powerpc_rtl
-open Powerpc_model
 open Powerpc_utils
-open Hardware
 
 type 'a ec = bool -> 'a
 
@@ -23,22 +21,6 @@ let int_of_bitwidth = ident
 
 let width_of_size = Size.in_bits
 
-let find_reg regs reg = String.Map.find regs (Reg.name reg)
-let find_gpr = find_reg gpr
-let find_vr  = find_reg vr
-let find_fpr = find_reg fpr
-let find_cr_bit = find_reg crn
-let find_cr_field = find_reg cr_fields
-
-let reg_searches = [find_gpr; find_cr_bit; find_cr_field; find_fpr; find_vr]
-
-let find reg =
-  List.filter_map reg_searches ~f:(fun f -> f reg) |> function
-  | [] ->
-    ppc_fail "Register not found: %s" (Reg.name reg)
-  | hd :: [] -> hd
-  | _ -> ppc_fail "Register name %s is ambigous!!!" (Reg.name reg)
-
 let int_of_imm = function
   | Op.Reg _ | Op.Fmm _ -> ppc_fail "imm operand expected"
   | Op.Imm x -> match Imm.to_int x with
@@ -47,7 +29,7 @@ let int_of_imm = function
 
 let imm signed op =
   let imm = int_of_imm op in
-  let w = Word.of_int ~width:64 imm in
+  let w = Word.of_int ~width:32 imm in
   let e = Exp.of_word w in
   if signed then Exp.signed e
   else Exp.unsigned e
@@ -60,13 +42,10 @@ let var signed width =
   if signed then Exp.signed e
   else Exp.unsigned e
 
-let reg signed op = match op with
+let reg find signed op = match op with
   | Op.Imm _ | Op.Fmm _ -> ppc_fail "reg operand expected"
   | Op.Reg x ->
-    let e =
-      try find x
-      with _ ->
-        Exp.of_word (Word.zero 64) in
+    let e = find x in
     if signed then Exp.signed e
     else Exp.unsigned e
 
@@ -149,34 +128,6 @@ let switch exp cases =
           [if_ (cond x) code acc;]) in
     (if_ (cond x) code else_)
 
-
-
-let var_of_exp x = failwith ""
-let to_bil = bil_of_t
-
-class move_finder var = object(self)
-  inherit [bool] Stmt.visitor
-  method! enter_move v _ x = Var.equal var v || x
-end
-
-let has_assignments var rtl =
-  let bil = to_bil rtl in
-  let vis = new move_finder var in
-  vis#run bil false
-
-let test step_e e code =
-  let step_var = var_of_exp step_e in
-  let iters = Exp.width e / Exp.width step_e in
-  let step = Exp.width step_e in
-  let has_assignments = has_assignments step_var code in
-  to_bil @@ List.concat
-    (List.init iters
-       ~f:(fun i ->
-           let i = iters - i - 1 in
-           let hi = (i + 1) * step - 1 in
-           let lo = i * step in
-           if has_assignments then
-             let last = Infix.(Exp.extract hi lo e := step_e) in
-             Infix.(step_e := Exp.extract hi lo e) :: code @ [last]
-           else
-             Infix.(step_e := Exp.extract hi lo e) :: code))
+let width e =
+  let w = Exp.width e in
+  Exp.of_word (Word.of_int ~width:w w)

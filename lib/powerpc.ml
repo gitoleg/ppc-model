@@ -24,7 +24,7 @@ let extend f code = fun cpu ops -> f cpu ops @ code
 let concat f g = fun cpu ops -> f cpu ops @ g cpu ops
 
 let dot fc cpu ops =
-  let res = signed reg ops.(0) in
+  let res = signed cpu.reg ops.(0) in
   let x = signed var cpu.addr_size in
   fc cpu ops @
   RTL.[
@@ -73,6 +73,7 @@ module T64_le = struct
   module CPU = Model.PowerPC_64_cpu
   let lift = lift `r64 LittleEndian
 end
+
 
 let () = register_target `ppc (module T32)
 let () = register_target `ppc64 (module T64)

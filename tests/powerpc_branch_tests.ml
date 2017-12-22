@@ -6,6 +6,10 @@ open Powerpc
 open Powerpc_model
 open Powerpc_tests_helpers
 
+
+let lr_bitwidth = 64
+let ctr_bitwidth = 64
+
 let typecheck bytes arch ctxt =
   let bil = get_bil arch bytes in
   assert_bool "typecheck failed" (Result.is_ok bil)

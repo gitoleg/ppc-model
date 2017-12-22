@@ -239,6 +239,9 @@ val bitwidth : int -> bitwidth
 type exp [@@deriving bin_io, compare, sexp]
 type rtl [@@deriving bin_io, compare, sexp]
 
+(** expression constructor  *)
+type 'a ec
+
 (** CPU model  *)
 type cpu = {
   (** [cpu.load address size] *)
@@ -253,10 +256,14 @@ type cpu = {
   (** address of current instruction *)
   addr      : exp;
 
-  (** address size of current mode   *)
+  (** address size of current arch   *)
   addr_size : bitwidth;
 
+  (** gpr bitwidth for current arch  *)
+  gpr_width : bitwidth;
+
   (** registers  *)
+  reg       : (op -> exp) ec; (** reg constructor - constructs a register from operand *)
   gpr       : int -> exp; (** general purpose registers 0..31 *)
   fpr       : int -> exp; (** floating-point registers 0..31  *)
   vr        : int -> exp; (** vector register 0..31           *)
@@ -285,9 +292,6 @@ type cpu = {
 (** The type of lifter functions *)
 type lift = cpu -> op array -> rtl list
 
-(** expression constructor  *)
-type 'a ec
-
 (** [signed ec] - returnst a signed expression from given [ec] *)
 val signed : 'a ec -> 'a
 
@@ -296,9 +300,6 @@ val unsigned : 'a ec -> 'a
 
 (** imm constructor - constructs an immediate from operand *)
 val imm : (op -> exp) ec
-
-(** reg constructor - constructs a register from operand   *)
-val reg : (op -> exp) ec
 
 (** var constructor - constructs a variable of bitwidth *)
 val var : (bitwidth -> exp) ec
@@ -489,6 +490,9 @@ val case : exp -> rtl list -> clause
 (** [default code] - creates a switch default *)
 val default : rtl list -> clause
 
+(** [width e] - returns width of [e] as an expression *)
+val width : exp -> exp
+
 (** [bil_of_rtl rtl] - returns a bil code *)
 val bil_of_rtl : rtl list -> bil
 
@@ -511,3 +515,7 @@ val (>>) : string -> lift -> unit
     comparison. It's also assumed that a first instruction operand
     is used for storing of a result. *)
 val (>.) : string -> lift -> unit
+
+module T32 : Target
+module T64 : Target
+module T64_le : Target

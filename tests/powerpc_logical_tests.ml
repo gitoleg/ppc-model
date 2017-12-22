@@ -2,24 +2,25 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc_model.Hardware
 open Powerpc_tests_helpers
 
 let andi_dot arch ctxt =
   let bytes = "\x71\x2a\x00\x1F" in  (** andi.   r10,r9,31 *)
-  let r10 = find_gpr "R10" in
-  let r9 = find_gpr "R9" in
+  let r10 = find_gpr arch "R10" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let init = Bil.[
-      r9 := int (Word.of_int ~width:64 10);
+      r9 := int (Word.of_int ~width 10);
     ] in
-  let expected = Word.of_int ~width:64 10 in
+  let expected = Word.of_int ~width 10 in
   check_gpr init bytes r10 expected arch ctxt
 
 let andis_dot arch ctxt =
   let bytes = "\x75\x2a\x0E\x00" in  (** andis.  r10,r9,2048 *)
-  let r10 = find_gpr "R10" in
-  let r9 = find_gpr "R9" in
-  let value = Word.of_int ~width:64 0x0800_0000 in
+  let r10 = find_gpr arch "R10" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
+  let value = Word.of_int ~width 0x0800_0000 in
   let init = Bil.[
       r9 := int value;
     ] in
@@ -28,32 +29,34 @@ let andis_dot arch ctxt =
 
 let and_ arch ctxt =
   let bytes = "\x7f\x39\xe8\x38" in (** and r25 r25 r29 *)
-  let r25 = find_gpr "R25" in
-  let r29 = find_gpr "R29" in
+  let r25 = find_gpr arch "R25" in
+  let r29 = find_gpr arch "R29" in
+  let width = arch_width arch in
   let x = 31 in
   let y = 10 in
   let r = x land y in
   let init = Bil.[
-      r29  := int (Word.of_int ~width:64 x);
-      r25 := int (Word.of_int ~width:64 y);
+      r29  := int (Word.of_int ~width x);
+      r25 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r25 expected arch ctxt
 
 let and_dot arch ctxt =
   let bytes = "\x7f\x39\xe8\x39" in (** and. r25 r25 r29 *)
-  let r25 = find_gpr "R25" in
-  let r29 = find_gpr "R29" in
+  let r25 = find_gpr arch "R25" in
+  let r29 = find_gpr arch "R29" in
+  let width = arch_width arch in
   let x = 31 in
   let y = 10 in
   let r = x land y in
   let init = Bil.[
-      r29  := int (Word.of_int ~width:64 x);
-      r25 := int (Word.of_int ~width:64 y);
+      r29  := int (Word.of_int ~width x);
+      r25 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r25_value = lookup_var ctxt r25 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -64,32 +67,34 @@ let and_dot arch ctxt =
 
 let andc arch ctxt =
   let bytes = "\x7c\xea\x50\x78" in (** andc r10 r7 r10 *)
-  let r10 = find_gpr "R10" in
-  let r7  = find_gpr "R7" in
+  let r10 = find_gpr arch "R10" in
+  let r7  = find_gpr arch "R7" in
+  let width = arch_width arch in
   let x = 21 in
   let y = 10 in
   let r = x land (lnot y) in
   let init = Bil.[
-      r7 := int (Word.of_int ~width:64 x);
-      r10 := int (Word.of_int ~width:64 y);
+      r7 := int (Word.of_int ~width x);
+      r10 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r10 expected arch ctxt
 
 let andc_dot arch ctxt =
   let bytes = "\x7c\xea\x50\x79" in (** andc. r10 r7 r10 *)
-  let r10 = find_gpr "R10" in
-  let r7  = find_gpr "R7" in
+  let r10 = find_gpr arch "R10" in
+  let r7  = find_gpr arch "R7" in
+  let width = arch_width arch in
   let x = 42 in
   let y = x in
   let r = x land (lnot y) in
   let init = Bil.[
-      r7 := int (Word.of_int ~width:64 x);
-      r10 := int (Word.of_int ~width:64 y);
+      r7 := int (Word.of_int ~width x);
+      r10 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r10_value = lookup_var ctxt r10 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -100,55 +105,59 @@ let andc_dot arch ctxt =
 
 let ori arch ctxt =
   let bytes = "\x60\xc6\x51\xc1" in  (** ori     r6,r6,20929 *)
-  let r6 = find_gpr "R6" in
+  let r6 = find_gpr arch "R6" in
+  let width = arch_width arch in
   let x = 62 in
   let r = x lor 20929 in
   let init = Bil.[
-      r6 := int (Word.of_int ~width:64 x);
+      r6 := int (Word.of_int ~width x);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r6 expected arch ctxt
 
 let oris arch ctxt =
   let bytes = "\x65\x4a\x00\x0F" in (** oris    r10,r10,15  *)
-  let r10 = find_gpr "R10" in
+  let r10 = find_gpr arch "R10" in
+  let width = arch_width arch in
   let x = 61440 in
   let y = 15 in
   let r = x lxor (y lsl 16) in
   let init = Bil.[
-      r10 := int (Word.of_int ~width:64 x);
+      r10 := int (Word.of_int ~width x);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r10 expected arch ctxt
 
 let or_  arch ctxt =
   let bytes = "\x7f\x38\xc3\x78" in (** or r24,r25,r24  *)
-  let r24 = find_gpr "R24" in
-  let r25 = find_gpr "R25" in
+  let r24 = find_gpr arch "R24" in
+  let r25 = find_gpr arch "R25" in
+  let width = arch_width arch in
   let x = 24 in
   let y = 10 in
   let r = x lor y in
   let init = Bil.[
-      r24 := int (Word.of_int ~width:64 x);
-      r25 := int (Word.of_int ~width:64 y);
+      r24 := int (Word.of_int ~width x);
+      r25 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r24 expected arch ctxt
 
 let or_dot arch ctxt =
   let bytes = "\x7f\x38\xc3\x79" in (** or r24,r25,r24  *)
-  let r24 = find_gpr "R24" in
-  let r25 = find_gpr "R25" in
+  let r24 = find_gpr arch "R24" in
+  let r25 = find_gpr arch "R25" in
+  let width = arch_width arch in
   let x = 24 in
   let y = 10 in
   let r = x lor y in
   let init = Bil.[
-      r24 := int (Word.of_int ~width:64 x);
-      r25 := int (Word.of_int ~width:64 y);
+      r24 := int (Word.of_int ~width x);
+      r25 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r24_value = lookup_var ctxt r24 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -159,32 +168,34 @@ let or_dot arch ctxt =
 
 let orc arch ctxt =
   let bytes = "\x7c\x8a\x53\x38" in (** orc     r10,r4,r10 *)
-  let r4 = find_gpr "R4" in
-  let r10 = find_gpr "R10" in
+  let r4 = find_gpr arch "R4" in
+  let r10 = find_gpr arch "R10" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 10 in
   let r = x lor (lnot y)  in
   let init = Bil.[
-      r4 := int (Word.of_int ~width:64 x);
-      r10 := int (Word.of_int ~width:64 y);
+      r4 := int (Word.of_int ~width x);
+      r10 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r10 expected arch ctxt
 
 let orc_dot arch ctxt =
   let bytes = "\x7c\x8a\x53\x39" in (** orc.     r10,r4,r10 *)
-  let r4 = find_gpr "R4" in
-  let r10 = find_gpr "R10" in
+  let r4 = find_gpr arch "R4" in
+  let r10 = find_gpr arch "R10" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 0 in
   let r = x lor (lnot y)  in
   let init = Bil.[
-      r4 := int (Word.of_int ~width:64 x);
-      r10 := int (Word.of_int ~width:64 y);
+      r4 := int (Word.of_int ~width x);
+      r10 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r10_value = lookup_var ctxt r10 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -195,55 +206,59 @@ let orc_dot arch ctxt =
 
 let xori arch ctxt =
   let bytes = "\x68\x63\x00\x0B" in (** xori    r3,r3,11   *)
-  let r3 = find_gpr "R3" in
+  let r3 = find_gpr arch "R3" in
+  let width = arch_width arch in
   let x = 16 in
   let r = x lxor 11 in
   let init = Bil.[
-      r3 := int (Word.of_int ~width:64 x);
+      r3 := int (Word.of_int ~width x);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r3 expected arch ctxt
 
 let xoris arch ctxt =
   let bytes = "\x6d\x2a\x00\x0f" in (** xoris r10,r9,15 *)
-  let r9 = find_gpr "R9" in
-  let r10 = find_gpr "R10" in
+  let r9 = find_gpr arch "R9" in
+  let r10 = find_gpr arch "R10" in
+  let width = arch_width arch in
   let x = 0x1F0000 in
   let r = x lxor (15 lsl 16) in
   let init = Bil.[
-      r9 := int (Word.of_int ~width:64 x);
+      r9 := int (Word.of_int ~width x);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r10 expected arch ctxt
 
 let xor_ arch ctxt =
   let bytes = "\x7c\x6a\x52\x78" in (** xor     r10,r3,r10 *)
-  let r3 = find_gpr "R3" in
-  let r10 = find_gpr "R10" in
+  let r3 = find_gpr arch "R3" in
+  let r10 = find_gpr arch "R10" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 15 in
   let r = x lxor y in
   let init = Bil.[
-      r3 := int (Word.of_int ~width:64 x);
-      r10 := int (Word.of_int ~width:64 y);
+      r3 := int (Word.of_int ~width x);
+      r10 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r10 expected arch ctxt
 
 let xor_dot arch ctxt =
   let bytes = "\x7c\x6a\x52\x79" in (** xor.     r10,r3,r10 *)
-  let r3 = find_gpr "R3" in
-  let r10 = find_gpr "R10" in
+  let r3 = find_gpr arch "R3" in
+  let r10 = find_gpr arch "R10" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 42 in
   let r = x lxor y in
   let init = Bil.[
-      r3 := int (Word.of_int ~width:64 x);
-      r10 := int (Word.of_int ~width:64 y);
+      r3 := int (Word.of_int ~width x);
+      r10 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r10_value = lookup_var ctxt r10 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -254,32 +269,34 @@ let xor_dot arch ctxt =
 
 let nand arch ctxt =
   let bytes = "\x7c\x63\x23\xb8" in (** nand    r3,r3,r4 *)
-  let r3 = find_gpr "R3" in
-  let r4 = find_gpr "R4" in
+  let r3 = find_gpr arch "R3" in
+  let r4 = find_gpr arch "R4" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 15 in
   let r = lnot (x land y) in
   let init = Bil.[
-      r3 := int (Word.of_int ~width:64 x);
-      r4 := int (Word.of_int ~width:64 y);
+      r3 := int (Word.of_int ~width x);
+      r4 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r3 expected arch ctxt
 
 let nand_dot arch ctxt =
   let bytes = "\x7c\x63\x23\xb9" in (** nand.    r3,r3,r4 *)
-  let r3 = find_gpr "R3" in
-  let r4 = find_gpr "R4" in
+  let r3 = find_gpr arch "R3" in
+  let r4 = find_gpr arch "R4" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 15 in
   let r = lnot (x land y) in
   let init = Bil.[
-      r3 := int (Word.of_int ~width:64 x);
-      r4 := int (Word.of_int ~width:64 y);
+      r3 := int (Word.of_int ~width x);
+      r4 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r3_value = lookup_var ctxt r3 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -290,32 +307,34 @@ let nand_dot arch ctxt =
 
 let nor arch ctxt =
   let bytes = "\x7d\x09\x48\xf8" in (** nor     r9,r8,r9 *)
-  let r8 = find_gpr "R8" in
-  let r9 = find_gpr "R9" in
+  let r8 = find_gpr arch "R8" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 15 in
   let r = lnot (x lor y) in
   let init = Bil.[
-      r8 := int (Word.of_int ~width:64 x);
-      r9 := int (Word.of_int ~width:64 y);
+      r8 := int (Word.of_int ~width x);
+      r9 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r9 expected arch ctxt
 
 let nor_dot arch ctxt =
   let bytes = "\x7d\x09\x48\xf9" in (** nor.     r9,r8,r9 *)
-  let r8 = find_gpr "R8" in
-  let r9 = find_gpr "R9" in
+  let r8 = find_gpr arch "R8" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let x = 42 in
   let y = -15 in
   let r = lnot (x lor y) in
   let init = Bil.[
-      r8 := int (Word.of_int ~width:64 x);
-      r9 := int (Word.of_int ~width:64 y);
+      r8 := int (Word.of_int ~width x);
+      r9 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r9_value = lookup_var ctxt r9 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -326,32 +345,34 @@ let nor_dot arch ctxt =
 
 let eqv arch ctxt =
   let bytes = "\x7d\x09\x4a\x38" in (** eqv     r9,r8,r9 *)
-  let r8 = find_gpr "R8" in
-  let r9 = find_gpr "R9" in
+  let r8 = find_gpr arch "R8" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let x = 42 in
   let y = 15 in
   let r = lnot (x lxor y); in
   let init = Bil.[
-      r8 := int (Word.of_int ~width:64 x);
-      r9 := int (Word.of_int ~width:64 y);
+      r8 := int (Word.of_int ~width x);
+      r9 := int (Word.of_int ~width y);
     ] in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   check_gpr init bytes r9 expected arch ctxt
 
 let eqv_dot arch ctxt =
   let bytes = "\x7d\x09\x4a\x39" in (** eqv.     r9,r8,r9 *)
-  let r8 = find_gpr "R8" in
-  let r9 = find_gpr "R9" in
+  let r8 = find_gpr arch "R8" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let x = -1 in
   let y = 0 in
   let r = lnot (x lxor y); in
   let init = Bil.[
-      r8 := int (Word.of_int ~width:64 x);
-      r9 := int (Word.of_int ~width:64 y);
+      r8 := int (Word.of_int ~width x);
+      r9 := int (Word.of_int ~width y);
     ] in
   let ctxt = eval init bytes arch in
   let r9_value = lookup_var ctxt r9 in
-  let expected = Word.of_int ~width:64 r in
+  let expected = Word.of_int ~width r in
   let nf_value = lookup_var ctxt nf in
   let pf_value = lookup_var ctxt pf in
   let zf_value = lookup_var ctxt zf in
@@ -362,32 +383,35 @@ let eqv_dot arch ctxt =
 
 let extsb arch ctxt =
   let bytes = "\x7d\x6a\x07\x74" in   (** extsb   r10,r11  *)
-  let r10 = find_gpr "R10" in
-  let r11 = find_gpr "R11" in
+  let r10 = find_gpr arch "R10" in
+  let r11 = find_gpr arch "R11" in
+  let width = arch_width arch in
   let init = Bil.[
-      r11 := int (Word.of_int ~width:64 0xC0);
+      r11 := int (Word.of_int ~width 0xC0);
     ] in
-  let expected = Word.of_int64 0xFFFFFFFFFFFFFFC0L in
+  let expected = Word.of_int64 ~width 0xFFFFFFFFFFFFFFC0L in
   check_gpr init bytes r10 expected arch ctxt
 
 let extsh arch ctxt =
   let bytes = "\x7d\x25\x07\x34" in   (** extsh   r5,r9 *)
-  let r5 = find_gpr "R5" in
-  let r9 = find_gpr "R9" in
+  let r5 = find_gpr arch "R5" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let init = Bil.[
-      r9 := int (Word.of_int ~width:64 0xC000);
+      r9 := int (Word.of_int ~width 0xC000);
     ] in
-  let expected = Word.of_int64 0xFFFFFFFFFFFFC000L in
+  let expected = Word.of_int64 ~width 0xFFFFFFFFFFFFC000L in
   check_gpr init bytes r5 expected arch ctxt
 
 let exts_dot arch ctxt =
   let bytes = "\x7d\x25\x07\x35" in   (** extsh.   r5,r9 *)
-  let r5 = find_gpr "R5" in
-  let r9 = find_gpr "R9" in
+  let r5 = find_gpr arch "R5" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let init = Bil.[
-      r9 := int (Word.of_int ~width:64 0xC000);
+      r9 := int (Word.of_int ~width 0xC000);
     ] in
-  let expected = Word.of_int64 0xFFFFFFFFFFFFC000L in
+  let expected = Word.of_int64 ~width 0xFFFFFFFFFFFFC000L in
   let ctxt = eval init bytes arch in
   let r5_value = lookup_var ctxt r5 in
   let nf_value = lookup_var ctxt nf in
@@ -400,107 +424,126 @@ let exts_dot arch ctxt =
 
 let extsw arch ctxt =
   let bytes = "\x7d\x25\x07\xb4" in   (** extsw   r5,r9 *)
-  let r5 = find_gpr "R5" in
-  let r9 = find_gpr "R9" in
+  let r5 = find_gpr arch "R5" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let init = Bil.[
-      r9 := int (Word.of_int ~width:64 0xC0000000);
+      r9 := int (Word.of_int ~width 0xC0000000);
     ] in
-  let expected = Word.of_int64 0xFFFFFFFFC0000000L in
+  let expected = Word.of_int64 ~width 0xFFFFFFFFC0000000L in
   check_gpr init bytes r5 expected arch ctxt
 
 let extsw_dot arch ctxt =
   let bytes = "\x7d\x25\x07\xb5" in   (** extsw.  r5,r9 *)
-  let r5 = find_gpr "R5" in
-  let r9 = find_gpr "R9" in
+  let r5 = find_gpr arch "R5" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let init = Bil.[
-      r9 := int (Word.of_int ~width:64 0xC0000000);
+      r9 := int (Word.of_int ~width 0xC0000000);
     ] in
-  let expected = Word.of_int64 0xFFFFFFFFC0000000L in
+  let expected = Word.of_int64 ~width 0xFFFFFFFFC0000000L in
   check_gpr init bytes r5 expected arch ctxt
 
 let cntlzw arch value zeros ctxt =
   let bytes = "\x7c\x63\x00\x34" in
-  let r = find_gpr "R3" in
+  let r = find_gpr arch "R3" in
+  let width = arch_width arch in
   let init = Bil.[
-      r := int (Word.of_int ~width:64 value);
+      r := int (Word.of_int ~width value);
     ] in
-  let expected = Word.of_int ~width:64 zeros in
+  let expected = Word.of_int ~width zeros in
   check_gpr init bytes r expected arch ctxt
 
 let cnttzw arch value zeros ctxt =
   let bytes = "\x7c\x63\x04\x34" in
-  let r = find_gpr "R3" in
+  let r = find_gpr arch "R3" in
+  let width = arch_width arch in
   let init = Bil.[
-      r := int (Word.of_int ~width:64 value);
+      r := int (Word.of_int ~width value);
     ] in
-  let expected = Word.of_int ~width:64 zeros in
+  let expected = Word.of_int ~width zeros in
   check_gpr init bytes r expected arch ctxt
 
-let cntlzd arch ctxt =
+let cntlzd ctxt =
+  let arch = `ppc64 in
   let bytes = "\x7c\x63\x00\x74" in
-  let r = find_gpr "R3" in
+  let r = find_gpr arch "R3" in
+  let width = arch_width arch in
   let value = Word.of_int64 0x0000FFFF_00000000L in
   let init = Bil.[
       r := int value;
     ] in
-  let expected = Word.of_int ~width:64 16 in
+  let expected = Word.of_int ~width 16 in
   check_gpr init bytes r expected arch ctxt
 
-let cnttzd arch ctxt =
+let cnttzd ctxt =
+  let arch = `ppc64 in
   let bytes = "\x7c\x63\x04\x75" in
-  let r = find_gpr "R3" in
+  let r = find_gpr arch "R3" in
+  let width = arch_width arch in
   let value = Word.of_int64 0x00000000_FFFF0000L in
   let init = Bil.[
       r := int value;
     ] in
-  let expected = Word.of_int ~width:64 16 in
+  let expected = Word.of_int ~width 16 in
   check_gpr init bytes r expected arch ctxt
 
 let cmpb arch ~bytes_cnt x y expected ctxt =
   let bytes = "\x7c\x8a\x53\xf8" in
-  let x = Word.of_int ~width:64 x in
-  let y = Word.of_int ~width:64 y in
-  let r10 = find_gpr "R10" in
-  let r4 = find_gpr "R4" in
+  let width = arch_width arch in
+  let x = Word.of_int ~width x in
+  let y = Word.of_int ~width y in
+  let r10 = find_gpr arch "R10" in
+  let r4 = find_gpr arch "R4" in
   let init = Bil.[
       r10 := int x;
       r4  := int y;
     ] in
-  let head = Word.ones (64 - bytes_cnt * 8) in
+  let head = Word.ones (width - bytes_cnt * 8) in
   let expected = Word.of_int ~width:(bytes_cnt * 8) expected in
   let expected = Word.concat head expected in
   check_gpr init bytes r10 expected arch ctxt
 
 let popcntw arch ctxt =
   let bytes = "\x7c\x44\x02\xf4" in (** popcntw r4, r2 *)
-  let r4 = find_gpr "R4" in
-  let r2 = find_gpr "R2" in
-  let value = Word.of_int64 0xA0200040_10000001L in
-  let expected = Word.of_int64 0x400000002L in (** 4 bits set in first word, and 2 in second  *)
+  let r4 = find_gpr arch "R4" in
+  let r2 = find_gpr arch "R2" in
+  let width = arch_width arch in
+  let value,expected = match arch with
+    | `ppc ->
+      Word.of_int64 ~width 0x10000001L,
+      Word.of_int64 ~width 0x000000002L
+    | _ ->
+      Word.of_int64 0xA0200040_10000001L,
+      Word.of_int64 0x400000002L in (** 4 bits set in first word, and 2 in second  *)
   let init = Bil.[
       r2 := int value;
     ] in
   check_gpr init bytes r4 expected arch ctxt
 
-let popcntd arch ctxt =
+let popcntd ctxt =
+  let arch = `ppc64 in
   let bytes = "\x7c\x44\x03\xf4" in (** popcntw r4, r2 *)
-  let r4 = find_gpr "R4" in
-  let r2 = find_gpr "R2" in
+  let r4 = find_gpr arch "R4" in
+  let r2 = find_gpr arch "R2" in
+  let width = arch_width arch in
   let value = Word.of_int64 0x0F00000F_00000001L in
-  let expected = Word.of_int ~width:64 9 in
+  let expected = Word.of_int ~width 9 in
   let init = Bil.[
       r2 := int value;
     ] in
   check_gpr init bytes r4 expected arch ctxt
 
-let bperm arch ctxt =
+let bperm ctxt =
+  let arch = `ppc64 in
   let bytes = "\x7c\xa1\x49\xf8" in (** bpermd r1, r5, r9  *)
-  let r1 = find_gpr "R1" in
-  let r5 = find_gpr "R5" in
-  let r9 = find_gpr "R9" in
+  let r1 = find_gpr arch "R1" in
+  let r5 = find_gpr arch "R5" in
+  let r9 = find_gpr arch "R9" in
+  let width = arch_width arch in
   let index_bits = Word.of_int64 0x05_00_01_44_25_1B_02_04L in
   let value = Word.of_int64 0xFFABCDEF0A0B0C0DL in
-  let expected = Word.of_int ~width:64 0xe3 in
+  let expected = Word.of_int ~width 0xe3 in
   let init = Bil.[
       r5 := int index_bits;
       r9 := int value;
@@ -542,15 +585,11 @@ let suite = "logical" >::: [
     "cnttzw32: 2" >:: cnttzw `ppc 0x1 0;
     "cnttzw32: 3" >:: cnttzw `ppc 0x2 1;
     "cnttzw32: 4" >:: cnttzw `ppc 0x20 5;
-    "cntlzd32"    >:: cntlzd `ppc;
-    "cnttzd32"    >:: cnttzd `ppc;
     "cmpb32: 0"   >:: cmpb `ppc ~bytes_cnt:3 0x31_41_AD 0x34_42_AD 0x00_00_FF;
     "cmpb32: 1"   >:: cmpb `ppc ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
     "cmpb32: 2"   >:: cmpb `ppc ~bytes_cnt:3 0 0x34_42_AD 0x0;
     "cmpb32: 3"   >:: cmpb `ppc ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
     "popcntw32"   >:: popcntw `ppc;
-    "popcntd32"   >:: popcntd `ppc;
-    "bperm32"     >:: bperm `ppc;
 
     "andi.64"     >:: andi_dot `ppc64;
     "andis.64"    >:: andis_dot `ppc64;
@@ -586,12 +625,12 @@ let suite = "logical" >::: [
     "cnttz64: 2"  >:: cnttzw `ppc64 0x1 0;
     "cnttz64: 3"  >:: cnttzw `ppc64 0x2 1;
     "cnttz64: 4"  >:: cnttzw `ppc64 0x20 5;
-    "cntlzd64"    >:: cntlzd `ppc64;
-    "cnttzd64"    >:: cnttzd `ppc64;
+    "cntlzd"      >:: cntlzd;
+    "cnttzd"      >:: cnttzd;
     "cmpb64: 1"   >:: cmpb `ppc64 ~bytes_cnt:3 0x31_42_45 0x34_42_AD 0x00_FF_00;
     "cmpb64: 2"   >:: cmpb `ppc64 ~bytes_cnt:3 0 0x34_42_AD 0x0;
     "cmpb64: 3"   >:: cmpb `ppc64 ~bytes_cnt:3 0x34_42_AD 0x34_42_AD 0xFF_FF_FF;
     "popcntw64"   >:: popcntw `ppc64;
-    "popcntd64"   >:: popcntd `ppc64;
-    "bperm64"     >:: bperm `ppc64;
+    "popcntd"     >:: popcntd;
+    "bperm64"     >:: bperm;
   ]

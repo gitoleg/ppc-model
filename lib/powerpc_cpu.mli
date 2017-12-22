@@ -8,8 +8,10 @@ type cpu = {
   jmp       : exp -> rtl;
   addr      : exp;
   addr_size : bitwidth;
+  gpr_width : bitwidth;
 
   (** registers  *)
+  reg       : (op -> exp) ec; (** construct exp from register *)
   gpr       : int -> exp; (** general purpose registers 0..31 *)
   fpr       : int -> exp; (** floating-point registers 0..31  *)
   vr        : int -> exp; (** vector register 0..31           *)

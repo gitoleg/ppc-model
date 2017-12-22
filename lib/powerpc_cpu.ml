@@ -5,8 +5,7 @@ open Powerpc_rtl
 open Powerpc_dsl
 open Powerpc_utils
 
-module Model = Powerpc_model
-open Model.Hardware
+open Powerpc_model
 
 type cpu = {
   load      : exp -> bitwidth -> exp;
@@ -14,6 +13,8 @@ type cpu = {
   jmp       : exp -> rtl;
   addr      : exp;
   addr_size : bitwidth;
+  gpr_width : bitwidth;
+  reg       : (op -> exp) ec;
   gpr       : int -> exp;
   fpr       : int -> exp;
   vr        : int -> exp;
@@ -43,23 +44,38 @@ let size_of_width x =
   | Ok s -> s
   | Error _ -> ppc_fail "invalid size: %d" x
 
+let find m reg =
+  let (module M : PowerPC) = m in
+  let open M in
+  let open Hardware in
+  let find_reg regs reg = String.Map.find regs (Reg.name reg) in
+  let find_gpr = find_reg gpr in
+  let find_vr  = find_reg vr in
+  let find_fpr = find_reg fpr in
+  let find_cr_bit = find_reg crn in
+  let find_cr_field = find_reg cr_fields in
+  let reg_searches =
+    [find_gpr; find_cr_bit; find_cr_field; find_fpr; find_vr] in
+  List.filter_map reg_searches ~f:(fun f -> f reg) |> function
+  | [] -> Exp.of_word (Word.zero gpr_bitwidth)
+  | hd :: [] -> hd
+  | _ -> ppc_fail "Register name %s is ambigous!!!" (Reg.name reg)
+
 let make_cpu addr_size endian memory =
-  let extract_addr a = match addr_size with
-    | `r32 -> low word a
-    | `r64 -> a in
-  let mem,addr_size = match addr_size with
-    | `r32 -> Model.mem32, word
-    | `r64 -> Model.mem64, doubleword in
-  let load exp width =
+  let (module M) = match addr_size with
+    | `r32 -> (module PowerPC_32 : PowerPC)
+    | `r64 -> (module PowerPC_64) in
+  let open M in
+  let open Hardware in
+  let reg = reg (find (module M)) in
+  let load addr width =
     let size = size_of_width width in
-    let addr = extract_addr exp in
     Exp.load mem addr endian size in
   let store addr data width =
     let size = size_of_width width in
-    let addr = extract_addr addr in
     store mem addr data endian size in
   let addr = Exp.of_word @@ Memory.min_addr memory in
-  let jmp e = jmp (low addr_size e) in
+  let jmp e = jmp e in
   let find name regs n =
     try
       Int.Map.find_exn regs n
@@ -67,7 +83,7 @@ let make_cpu addr_size endian memory =
       ppc_fail "%s with number %d not found" name n in
   let gpr n = find "GPR" gpri n in
   let fpr n = find "FPR" fpri n in
-  let vr  n = find "VR" vri n in
+  let vr  n = find "VR"  vri  n in
   let cr0 = Int.Map.find_exn cri_fields 0 in
   let cr1 = Int.Map.find_exn cri_fields 1 in
   let cr2 = Int.Map.find_exn cri_fields 2 in
@@ -76,8 +92,12 @@ let make_cpu addr_size endian memory =
   let cr5 = Int.Map.find_exn cri_fields 5 in
   let cr6 = Int.Map.find_exn cri_fields 6 in
   let cr7 = Int.Map.find_exn cri_fields 7 in
-  { load; store; jmp; addr; addr_size;
-    gpr; fpr; vr;
+  let addr_size = match addr_size with
+    | `r32 -> word
+    | `r64 -> doubleword in
+  let gpr_width = addr_size in
+  { load; store; jmp; addr; addr_size; gpr_width;
+    reg; gpr; fpr; vr;
     cr; cr0; cr1; cr2; cr3; cr4; cr5; cr6; cr7;
     xer; ctr; lr; tar;
-    so; ca; ov; ca32; ov32; }
+    so; ca; ov; ca32; ov32;}

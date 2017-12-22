@@ -42,13 +42,13 @@ open Powerpc
     3b de fd 28     addi    r30,r30,-728
     38 20 00 10     addi    r1,0,16 (OR li r1, 16) *)
 let addi cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
   RTL.[ rt := ra + im; ]
 
 let li cpu ops =
-  let rt = signed reg ops.(0) in
+  let rt = signed cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
   RTL.[ rt := im; ]
 
@@ -58,14 +58,14 @@ let li cpu ops =
     3f de 00 02     addis   r30,r30,2
     3d 6b f0 00     addis   r11,r11,-4096 *)
 let addis cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
   let sh = unsigned const word 16 in
   RTL.[ rt := ra + (im lsl sh); ]
 
 let lis cpu ops =
-  let rt = signed reg ops.(0) in
+  let rt = signed cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
   let sh = unsigned const word 16 in
   RTL.[ rt := im lsl sh; ]
@@ -76,9 +76,9 @@ let lis cpu ops =
     7d 62 5a 14 add   r11, r2, r11
     7d 62 5a 15 add.  r11, r2, r11 *)
 let add cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[rt := ra + rb]
 
 (** Fixed-Point Arithmetic Instructions - Add Immediate Carrying
@@ -91,8 +91,8 @@ let add cpu ops =
     34 21 00 10    addic. r1, r1, 16
     37 de fd 28    addic. r30, r30, -728 *)
 let addic cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
   let tm = signed var doubleword in
   RTL.[
@@ -108,9 +108,9 @@ let addic cpu ops =
     7d 62 58 14  addc   r11, r2, r11
     7d 62 58 15  addc.  r11, r2, r11 *)
 let addc cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
@@ -125,9 +125,9 @@ let addc cpu ops =
     7c 21 81 14  adde   r11, r2, r11
     7c 21 81 15  adde.  r11, r2, r11 *)
 let adde cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
@@ -142,8 +142,8 @@ let adde cpu ops =
     7c 22 01 d4  addme  r1,r2
     7c 22 01 d5  addme. r1,r2  *)
 let addme cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   let tm = signed var doubleword in
   RTL.[
     tm := ra;
@@ -158,8 +158,8 @@ let addme cpu ops =
     7c 22 01 94   addze r1,r2
     7c 22 01 95   addze. r1,r2 *)
 let addze cpu ops =
-  let rt = signed reg ops.(0) in
-  let ra = signed reg ops.(1) in
+  let rt = signed cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
   let tm = signed var doubleword in
   RTL.[
     tm := ra;

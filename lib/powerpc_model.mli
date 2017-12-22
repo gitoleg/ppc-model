@@ -3,7 +3,7 @@ open Bap.Std
 
 open Powerpc_rtl
 
-module type Hardware = sig
+module type Model = sig
   type t
   (** all general purpose registers *)
   val gpr  : t String.Map.t
@@ -17,7 +17,7 @@ module type Hardware = sig
   val vr : t String.Map.t
   val vri : t Int.Map.t
 
-  (** xer register bits *)
+  (** xer register *)
   val xer : t
 
   (** count register  *)
@@ -43,21 +43,8 @@ module type Hardware = sig
   val ov32 : t (** overflow of 32 bits     *)
 end
 
-val gpr_bitwidth : int
-val fpr_bitwidth : int
-val vr_bitwidth  : int
-val cr_bitwidth  : int
-val xer_bitwidth : int
-val lr_bitwidth  : int
-val ctr_bitwidth : int
-val tar_bitwidth : int
-
-
-module Hardware_vars : Hardware with type t := var
-
-module Hardware : sig
-  include Hardware with type t := exp
-
+module type Model_exp = sig
+  include Model with type t := exp
   (** condition register  *)
   val cr : exp
 
@@ -66,11 +53,22 @@ module Hardware : sig
   val cri_fields : exp Int.Map.t
 end
 
-(** 32-bit addressed memory *)
-val mem32 : var
+module type PowerPC = sig
+  module Hardware_vars : Model with type t := var
+  module Hardware : Model_exp
+  val mem : var
+  val gpr_bitwidth : int
+  val fpr_bitwidth : int
+  val vr_bitwidth  : int
+  val cr_bitwidth  : int
+  val xer_bitwidth : int
+  val lr_bitwidth  : int
+  val ctr_bitwidth : int
+  val tar_bitwidth : int
+end
 
-(** 64-bit addressed memory *)
-val mem64 : var
+module PowerPC_32 : PowerPC
+module PowerPC_64 : PowerPC
 
 module PowerPC_32_cpu : CPU
 module PowerPC_64_cpu : CPU

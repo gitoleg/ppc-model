@@ -6,29 +6,33 @@ open Powerpc
     55 2a 18 a0     rlwinm  r10, r8, 3, 2, 16
     55 2a 18 a1     rlwinm. r10, r8, 3, 2, 16 *)
 let rlwinm cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
   let mb = unsigned imm ops.(3) in
   let me = unsigned imm ops.(4) in
   let tmp   = unsigned var word in
-  let start = unsigned var doubleword in
-  let stop  = unsigned var doubleword in
-  let mask  = unsigned var doubleword in
-  let bits  = unsigned const doubleword 32 in
-  let width = unsigned const doubleword 64 in
-  let ones = unsigned const doubleword (-1) in
+  let start = unsigned var cpu.gpr_width in
+  let stop  = unsigned var cpu.gpr_width in
+  let mask  = unsigned var cpu.gpr_width in
+  let w32 = unsigned const word 32 in
+  let ones = unsigned const cpu.gpr_width (-1) in
   RTL.[
-    start := mb + bits;
-    stop  := me + bits;
+    if_ (width ra <> w32) [
+      start := mb + w32;
+      stop  := me + w32;
+    ] [
+      start := mb;
+      stop  := me;
+    ];
     mask := ones;
     if_ (mb <= me) [
-      mask := (mask lsr start) land (mask lsl (width - stop - one));
+      mask := (mask lsr start) land (mask lsl (width ra - stop - one));
     ] [
-      mask := (mask lsl (width - stop)) lor (mask lsr (start + one));
+      mask := (mask lsl (width ra - stop)) lor (mask lsr (start + one));
     ];
     tmp := nth word rs 1;
-    ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl sh) 0) land mask;
+    ra := (nth cpu.gpr_width ((tmp ^ tmp ^ tmp) lsl sh) 0) land mask;
   ]
 
 (** Fix-point Rotate Left Word then AND with Mask
@@ -37,26 +41,30 @@ let rlwinm cpu ops =
     5d 2a 19 54     rlwnm  r10, r9, r3, 5, 10
     5d 2a 19 55     rlwnm. r10, r9, r3, 5, 10 *)
 let rlwnm cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let mb = unsigned imm ops.(3) in
   let me = unsigned imm ops.(4) in
   let tmp   = unsigned var word in
-  let start = unsigned var doubleword in
-  let stop  = unsigned var doubleword in
-  let mask  = unsigned var doubleword in
-  let bits  = unsigned const doubleword 32 in
-  let width = unsigned const doubleword 64 in
-  let ones = unsigned const doubleword (-1) in
+  let start = unsigned var cpu.gpr_width in
+  let stop  = unsigned var cpu.gpr_width in
+  let mask  = unsigned var cpu.gpr_width in
+  let w32  = unsigned const word 32 in
+  let ones = unsigned const cpu.gpr_width (-1) in
   RTL.[
-    start := mb + bits;
-    stop  := me + bits;
+    if_ (width ra <> w32) [
+      start := mb + w32;
+      stop  := me + w32;
+    ] [
+      start := mb;
+      stop  := me;
+    ];
     mask := ones;
     if_ (mb <= me) [
-      mask := (mask lsr start) land (mask lsl (width - stop - one));
+      mask := (mask lsr start) land (mask lsl (width ra - stop - one));
     ] [
-      mask := (mask lsl (width - stop)) lor (mask lsr (start + one));
+      mask := (mask lsl (width ra - stop)) lor (mask lsr (start + one));
     ];
     tmp := nth word rs 1;
     ra := (nth doubleword ((tmp ^ tmp ^ tmp) lsl (last rb 5)) 0) land mask;
@@ -68,27 +76,31 @@ let rlwnm cpu ops =
     51 2a 19 54     rlwimi  r10, r9, 3, 5, 10
     51 2a 19 55     rlwimi. r10, r9, 3, 5, 10 *)
 let rlwimi cpu ops =
-  let ra = unsigned reg ops.(1) in
-  let rs = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(2) in
   let sh = unsigned imm ops.(3) in
   let mb = unsigned imm ops.(4) in
   let me = unsigned imm ops.(5) in
   let tmp1  = unsigned var word in
-  let tmp2  = unsigned var doubleword in
-  let start = unsigned var doubleword in
-  let stop  = unsigned var doubleword in
-  let mask  = unsigned var doubleword in
-  let bits  = unsigned const doubleword 32 in
-  let width = unsigned const doubleword 64 in
-  let ones = unsigned const doubleword (-1) in
+  let tmp2  = unsigned var cpu.gpr_width in
+  let start = unsigned var cpu.gpr_width in
+  let stop  = unsigned var cpu.gpr_width in
+  let mask  = unsigned var cpu.gpr_width in
+  let w32  = unsigned const cpu.gpr_width 32 in
+  let ones = unsigned const cpu.gpr_width (-1) in
   RTL.[
-    start := mb + bits;
-    stop  := me + bits;
+    if_ (width ra <> w32) [
+      start := mb + w32;
+      stop  := me + w32;
+    ] [
+      start := mb;
+      stop  := me;
+    ];
     mask := ones;
     if_ (mb <= me) [
-      mask := (mask lsr start) land (mask lsl (width - stop - one));
+      mask := (mask lsr start) land (mask lsl (width ra - stop - one));
     ] [
-      mask := (mask lsl (width - stop)) lor (mask lsr (start + one));
+      mask := (mask lsl (width ra - stop)) lor (mask lsr (start + one));
     ];
     tmp1 := nth word rs 1;
     tmp2 := nth doubleword ((tmp1 ^ tmp1 ^ tmp1) lsl sh) 0;
@@ -101,8 +113,8 @@ let rlwimi cpu ops =
     79 2a 7f e2     rldicl  r10, r9, 47, 63
     79 2a 7f e3     rldicl. r10, r9, 47, 63 *)
 let rldicl cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
   let mb = unsigned imm ops.(3) in
   let mask = unsigned var doubleword in
@@ -118,8 +130,8 @@ let rldicl cpu ops =
     79 2a 26 44     rldicr  r10, r9, 4, 25
     79 2a 26 45     rldicr. r10, r9, 4, 25 *)
 let rldicr cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
   let me = unsigned imm ops.(3) in
   let mask  = unsigned var doubleword in
@@ -136,8 +148,8 @@ let rldicr cpu ops =
     79 2a 26 48     rldic  r10, r9, 4, 25
     79 2a 26 49     rldic. r10, r9, 4, 25 *)
 let rldic cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
   let mb = unsigned imm ops.(3) in
   let mask = unsigned var doubleword in
@@ -158,9 +170,9 @@ let rldic cpu ops =
     79 2a 5e 50     rldcl  r10, r9, r11, 25
     79 2a 5e 51     rldcl. r10, r9, r11, 25 *)
 let rldcl cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let mb = unsigned imm ops.(3) in
   let mask = unsigned var doubleword in
   RTL.[
@@ -175,9 +187,9 @@ let rldcl cpu ops =
     79 2a 5e 52     rldcr  r10, r9, r11, 25
     79 2a 5e 53     rldcr. r10, r9, r11, 25 *)
 let rldcr cpu ops =
-  let ra = unsigned reg ops.(0) in
-  let rs = unsigned reg ops.(1) in
-  let rb = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let rb = unsigned cpu.reg ops.(2) in
   let me = unsigned imm ops.(3) in
   let mask = unsigned var doubleword in
   let width = unsigned const doubleword 64 in
@@ -193,8 +205,8 @@ let rldcr cpu ops =
     79 2a 26 4c     rldimi  r10, r9, 4, 25
     79 2a 26 4d     rldimi. r10, r9, 4, 25 *)
 let rldimi cpu ops =
-  let ra = unsigned reg ops.(1) in
-  let rs = unsigned reg ops.(2) in
+  let ra = unsigned cpu.reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(2) in
   let sh = unsigned imm ops.(3) in
   let mb = unsigned imm ops.(4) in
   let tmp   = unsigned var doubleword in

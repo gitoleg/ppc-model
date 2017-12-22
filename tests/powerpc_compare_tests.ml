@@ -36,7 +36,7 @@ let check ctxt expected =
     is_equal_words Word.b0 gt &&
     is_equal_words Word.b1 eq
 
-let cmpi name ~opcode l_field reg_value value expected arch (ctxt : test_ctxt) =
+let cmpi name ~opcode l_field arch reg_value value expected (ctxt : test_ctxt) =
   let reg_num = 6 in
   let opcode = Word.of_int ~width:6 opcode in
   let cr_field = Word.of_int ~width:3 cr_field_num in
@@ -45,17 +45,18 @@ let cmpi name ~opcode l_field reg_value value expected arch (ctxt : test_ctxt) =
   let value = Word.of_int64 ~width:16 value in
   let bytes =
     make_bytes [opcode; cr_field; Word.b0; l_field; reg; value] in
-  let reg = find_gpr (sprintf "R%d" reg_num) in
-  let init = Bil.[reg := int @@ Word.of_int64 reg_value] in
+  let reg = find_gpr arch (sprintf "R%d" reg_num) in
+  let width = arch_width arch in
+  let init = Bil.[reg := int @@ Word.of_int64 ~width reg_value] in
   let c = eval init bytes arch in
   assert_bool (sprintf "%s failed" name) @@ check c expected
 
 let cmpwi = cmpi "cmpwi" ~opcode:11 0
-let cmpdi = cmpi "cmpdi" ~opcode:11 1
 let cmplwi = cmpi "cmplwi" ~opcode:10 0
-let cmpldi = cmpi "cmpldi" ~opcode:10 1
+let cmpdi = cmpi "cmpdi" ~opcode:11 1 `ppc64
+let cmpldi = cmpi "cmpldi" ~opcode:10 1 `ppc64
 
-let cmp name ~opt_opcode l_field reg1_value reg2_value expected arch (ctxt : test_ctxt) =
+let cmp name ~opt_opcode l_field arch reg1_value reg2_value expected (ctxt : test_ctxt) =
   let reg1_num = 6 in
   let reg2_num = 7 in
   let opcode = Word.of_int ~width:6 31 in
@@ -67,148 +68,123 @@ let cmp name ~opt_opcode l_field reg1_value reg2_value expected arch (ctxt : tes
   let fin = Word.b0 in
   let bytes =
     make_bytes [opcode; cr_field; Word.b0; l_field; reg1; reg2; opt_opcode; fin] in
-  let reg1 = find_gpr (sprintf "R%d" reg1_num) in
-  let reg2 = find_gpr (sprintf "R%d" reg2_num) in
+  let reg1 = find_gpr arch (sprintf "R%d" reg1_num) in
+  let reg2 = find_gpr arch (sprintf "R%d" reg2_num) in
+  let width = arch_width arch in
   let init = Bil.[
-      reg1 := int @@ Word.of_int64 reg1_value;
-      reg2 := int @@ Word.of_int64 reg2_value;
+      reg1 := int @@ Word.of_int64 ~width reg1_value;
+      reg2 := int @@ Word.of_int64 ~width reg2_value;
     ] in
   let c = eval init bytes arch in
   assert_bool (sprintf "%s failed" name) @@ check c expected
 
 let cmpw = cmp "cmpw" ~opt_opcode:0 0
-let cmpd = cmp "cmpd" ~opt_opcode:0 1
 let cmplw = cmp "cmplw" ~opt_opcode:32 0
-let cmpld = cmp "cmpld" ~opt_opcode:32 1
+let cmpd = cmp "cmpd" ~opt_opcode:0 1 `ppc64
+let cmpld = cmp "cmpld" ~opt_opcode:32 1 `ppc64
 
 let suite = "compare" >::: [
 
-    "cmpwi32: lt"            >:: cmpwi 42L 44L LT `ppc;
-    "cmpwi32: gt"            >:: cmpwi 44L 42L GT `ppc;
-    "cmpwi32: eq"            >:: cmpwi 42L 42L EQ `ppc;
-    "cmpwi32: 32lt"          >:: cmpwi 0x0BCDEFAB_00000042L 0x44L LT `ppc;
-    "cmpwi32: lt signed"     >:: cmpwi (-42L) (-41L) LT `ppc;
-    "cmpwi32: gt signed"     >:: cmpwi 44L (-42L) GT `ppc;
-    "cmpwi32: eq signed"     >:: cmpwi (-42L) (-42L) EQ `ppc;
+    "cmpwi32: lt"            >:: cmpwi `ppc 42L 44L LT;
+    "cmpwi32: gt"            >:: cmpwi `ppc 44L 42L GT;
+    "cmpwi32: eq"            >:: cmpwi `ppc 42L 42L EQ;
+    "cmpwi32: 32lt"          >:: cmpwi `ppc 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmpwi32: lt signed"     >:: cmpwi `ppc (-42L) (-41L) LT;
+    "cmpwi32: gt signed"     >:: cmpwi `ppc 44L (-42L) GT;
+    "cmpwi32: eq signed"     >:: cmpwi `ppc (-42L) (-42L) EQ;
 
-    "cmpdi32: lt"            >:: cmpdi 42L 44L LT `ppc;
-    "cmpdi32: gt"            >:: cmpdi 44L 42L GT `ppc;
-    "cmpdi32: eq"            >:: cmpdi 42L 42L EQ `ppc;
-    "cmpdi32: 64 operand, 1" >:: cmpdi 0x0BCDEFAB_00000042L 0x44L GT `ppc;
-    "cmpdi32: 64 operand, 2" >:: cmpdi 0xFBCDEFAB_00000042L 0x44L LT `ppc;
-    "cmpdi32: lt signed"     >:: cmpdi (-42L) (-41L) LT `ppc;
-    "cmpdi32: gt signed"     >:: cmpdi 44L (-42L) GT `ppc;
-    "cmpdi32: eq signed"     >:: cmpdi (-42L) (-42L) EQ `ppc;
+    "cmpw32: lt"             >:: cmpw `ppc 42L 44L LT;
+    "cmpw32: gt"             >:: cmpw `ppc 44L 42L GT;
+    "cmpw32: eq"             >:: cmpw `ppc 42L 42L EQ;
+    "cmpw32: 32lt"           >:: cmpw `ppc 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmpw32: lt signed"      >:: cmpw `ppc (-42L) (-41L) LT;
+    "cmpw32: gt signed"      >:: cmpw `ppc 44L (-42L) GT;
+    "cmpw32: eq signed"      >:: cmpw `ppc (-42L) (-42L) EQ;
 
-    "cmpw32: lt"             >:: cmpw 42L 44L LT `ppc;
-    "cmpw32: gt"             >:: cmpw 44L 42L GT `ppc;
-    "cmpw32: eq"             >:: cmpw 42L 42L EQ `ppc;
-    "cmpw32: 32lt"           >:: cmpw 0x0BCDEFAB_00000042L 0x44L LT `ppc;
-    "cmpw32: lt signed"      >:: cmpw (-42L) (-41L) LT `ppc;
-    "cmpw32: gt signed"      >:: cmpw 44L (-42L) GT `ppc;
-    "cmpw32: eq signed"      >:: cmpw (-42L) (-42L) EQ `ppc;
+    "cmpw32: lt"             >:: cmpw `ppc 42L 44L LT;
+    "cmpw32: gt"             >:: cmpw `ppc 44L 42L GT;
+    "cmpw32: eq"             >:: cmpw `ppc 42L 42L EQ;
+    "cmpw32: 32lt"           >:: cmpw `ppc 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmpw32: lt signed"      >:: cmpw `ppc (-42L) (-41L) LT;
+    "cmpw32: gt signed"      >:: cmpw `ppc 44L (-42L) GT;
+    "cmpw32: eq signed"      >:: cmpw `ppc (-42L) (-42L) EQ;
 
-    "cmpd32: lt"             >:: cmpd 42L 44L LT `ppc;
-    "cmpd32: gt"             >:: cmpd 44L 42L GT `ppc;
-    "cmpd32: eq"             >:: cmpd 42L 42L EQ `ppc;
-    "cmpd32: 64 operand, 1"  >:: cmpd 0x0BCDEFAB_00000042L 0x44L GT `ppc;
-    "cmpd32: 64 operand, 2"  >:: cmpd 0xFBCDEFAB_00000042L 0x44L LT `ppc;
-    "cmpd32: lt signed"      >:: cmpd (-42L) (-41L) LT `ppc;
-    "cmpd32: gt signed"      >:: cmpd 44L (-42L) GT `ppc;
-    "cmpd32: eq signed"      >:: cmpd (-42L) (-42L) EQ `ppc;
+    "cmplwi32: lt"            >:: cmplwi `ppc 42L 44L LT;
+    "cmplwi32: gt"            >:: cmplwi `ppc 44L 42L GT;
+    "cmplwi32: eq"            >:: cmplwi `ppc 42L 42L EQ;
+    "cmplwi32: 32lt"          >:: cmplwi `ppc 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmplwi32: lt big"        >:: cmplwi `ppc 42L 0xFFFFFFFFL LT;
+    "cmplwi32: gt big"        >:: cmplwi `ppc 0xFFFFFFFF_FFFFFFFFL 42L GT;
 
-    "cmplwi32: lt"            >:: cmplwi 42L 44L LT `ppc;
-    "cmplwi32: gt"            >:: cmplwi 44L 42L GT `ppc;
-    "cmplwi32: eq"            >:: cmplwi 42L 42L EQ `ppc;
-    "cmplwi32: 32lt"          >:: cmplwi 0x0BCDEFAB_00000042L 0x44L LT `ppc;
-    "cmplwi32: lt big"        >:: cmplwi 42L 0xFFFFFFFFL LT `ppc;
-    "cmplwi32: gt big"        >:: cmplwi 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc;
+    "cmplw32: lt"             >:: cmplw `ppc 42L 44L LT;
+    "cmplw32: gt"             >:: cmplw `ppc 44L 42L GT;
+    "cmplw32: eq"             >:: cmplw `ppc 42L 42L EQ;
+    "cmplw32: 32lt"           >:: cmplw `ppc 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmplw32: lt big"         >:: cmplw `ppc 42L 0xFFFFFFFFL LT;
+    "cmplw32: gt big"         >:: cmplw `ppc 0xFFFFFFFF_FFFFFFFFL 42L GT;
 
-    "cmpldi32: lt"            >:: cmpldi 42L 44L LT `ppc;
-    "cmpldi32: gt"            >:: cmpldi 44L 42L GT `ppc;
-    "cmpldi32: eq"            >:: cmpldi 42L 42L EQ `ppc;
-    "cmpldi32: 64 operand, 1" >:: cmpldi 0x0BCDEFAB_00000042L 0x44L GT `ppc;
-    "cmpldi32: 64 operand, 2" >:: cmpldi 0xFBCDEFAB_00000042L 0x44L GT `ppc;
-    "cmpldi32: lt big"        >:: cmpldi 42L 0xFFFFFFFFL LT `ppc;
-    "cmpldi32: gt big"        >:: cmpldi 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc;
+    "cmpwi64: lt"             >:: cmpwi `ppc64 42L 44L LT;
+    "cmpwi64: gt"             >:: cmpwi `ppc64 44L 42L GT;
+    "cmpwi64: eq"             >:: cmpwi `ppc64 42L 42L EQ;
+    "cmpwi64: 64lt"           >:: cmpwi `ppc64 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmpwi64: lt signed"      >:: cmpwi `ppc64 (-42L) (-41L) LT;
+    "cmpwi64: gt signed"      >:: cmpwi `ppc64 44L (-42L) GT;
+    "cmpwi64: eq signed"      >:: cmpwi `ppc64 (-42L) (-42L) EQ;
 
-    "cmplw32: lt"             >:: cmplw 42L 44L LT `ppc;
-    "cmplw32: gt"             >:: cmplw 44L 42L GT `ppc;
-    "cmplw32: eq"             >:: cmplw 42L 42L EQ `ppc;
-    "cmplw32: 32lt"           >:: cmplw 0x0BCDEFAB_00000042L 0x44L LT `ppc;
-    "cmplw32: lt big"         >:: cmplw 42L 0xFFFFFFFFL LT `ppc;
-    "cmplw32: gt big"         >:: cmplw 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc;
+    "cmpw64: lt"              >:: cmpw `ppc64 42L 44L LT;
+    "cmpw64: gt"              >:: cmpw `ppc64 44L 42L GT;
+    "cmpw64: eq"              >:: cmpw `ppc64 42L 42L EQ;
+    "cmpw64: 64lt"            >:: cmpw `ppc64 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmpw64: lt signed"       >:: cmpw `ppc64 (-42L) (-41L) LT;
+    "cmpw64: gt signed"       >:: cmpw `ppc64 44L (-42L) GT;
+    "cmpw64: eq signed"       >:: cmpw `ppc64 (-42L) (-42L) EQ;
 
-    "cmpld32: lt"             >:: cmpld 42L 44L LT `ppc;
-    "cmpld32: gt"             >:: cmpld 44L 42L GT `ppc;
-    "cmpld32: eq"             >:: cmpld 42L 42L EQ `ppc;
-    "cmpld32: 64 operand, 1"  >:: cmpld 0x0BCDEFAB_00000042L 0x44L GT `ppc;
-    "cmpld32: 64 operand, 2"  >:: cmpld 0xFBCDEFAB_00000042L 0x44L GT `ppc;
-    "cmpld32: lt big"         >:: cmpld 42L 0xFFFFFFFFL LT `ppc;
-    "cmpld32: gt big"         >:: cmpld 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc;
+    "cmplwi64: lt"            >:: cmplwi `ppc64 42L 44L LT;
+    "cmplwi64: gt"            >:: cmplwi `ppc64 44L 42L GT;
+    "cmplwi64: eq"            >:: cmplwi `ppc64 42L 42L EQ;
+    "cmplwi64: 64lt"          >:: cmplwi `ppc64 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmplwi64: lt big"        >:: cmplwi `ppc64 42L 0xFFFFFFFFL LT;
+    "cmplwi64: gt big"        >:: cmplwi `ppc64 0xFFFFFFFF_FFFFFFFFL 42L GT;
 
-    "cmpwi64: lt"             >:: cmpwi 42L 44L LT `ppc64;
-    "cmpwi64: gt"             >:: cmpwi 44L 42L GT `ppc64;
-    "cmpwi64: eq"             >:: cmpwi 42L 42L EQ `ppc64;
-    "cmpwi64: 64lt"           >:: cmpwi 0x0BCDEFAB_00000042L 0x44L LT `ppc64;
-    "cmpwi64: lt signed"      >:: cmpwi (-42L) (-41L) LT `ppc64;
-    "cmpwi64: gt signed"      >:: cmpwi 44L (-42L) GT `ppc64;
-    "cmpwi64: eq signed"      >:: cmpwi (-42L) (-42L) EQ `ppc64;
+    "cmplw64: lt"             >:: cmplw `ppc64 42L 44L LT;
+    "cmplw64: gt"             >:: cmplw `ppc64 44L 42L GT;
+    "cmplw64: eq"             >:: cmplw `ppc64 42L 42L EQ;
+    "cmplw64: 64lt"           >:: cmplw `ppc64 0x0BCDEFAB_00000042L 0x44L LT;
+    "cmplw64: lt big"         >:: cmplw `ppc64 42L 0xFFFFFFFFL LT;
+    "cmplw64: gt big"         >:: cmplw `ppc64 0xFFFFFFFF_FFFFFFFFL 42L GT;
 
-    "cmpdi64: lt"             >:: cmpdi 42L 44L LT `ppc64;
-    "cmpdi64: gt"             >:: cmpdi 44L 42L GT `ppc64;
-    "cmpdi64: eq"             >:: cmpdi 42L 42L EQ `ppc64;
-    "cmpdi64: 64 operand, 1"  >:: cmpdi 0x0BCDEFAB_00000042L 0x44L GT `ppc64;
-    "cmpdi64: 64 operand, 2"  >:: cmpdi 0xFBCDEFAB_00000042L 0x44L LT `ppc64;
-    "cmpdi64: lt signed"      >:: cmpdi (-42L) (-41L) LT `ppc64;
-    "cmpdi64: gt signed"      >:: cmpdi 44L (-42L) GT `ppc64;
-    "cmpdi64: eq signed"      >:: cmpdi (-42L) (-42L) EQ `ppc64;
+    "cmpdi: lt"             >:: cmpdi 42L 44L LT;
+    "cmpdi: gt"             >:: cmpdi 44L 42L GT;
+    "cmpdi: eq"             >:: cmpdi 42L 42L EQ;
+    "cmpdi: 64 operand, 1"  >:: cmpdi 0x0BCDEFAB_00000042L 0x44L GT;
+    "cmpdi: 64 operand, 2"  >:: cmpdi 0xFBCDEFAB_00000042L 0x44L LT;
+    "cmpdi: lt signed"      >:: cmpdi (-42L) (-41L) LT;
+    "cmpdi: gt signed"      >:: cmpdi 44L (-42L) GT;
+    "cmpdi: eq signed"      >:: cmpdi (-42L) (-42L) EQ;
 
-    "cmpw64: lt"              >:: cmpw 42L 44L LT `ppc64;
-    "cmpw64: gt"              >:: cmpw 44L 42L GT `ppc64;
-    "cmpw64: eq"              >:: cmpw 42L 42L EQ `ppc64;
-    "cmpw64: 64lt"            >:: cmpw 0x0BCDEFAB_00000042L 0x44L LT `ppc64;
-    "cmpw64: lt signed"       >:: cmpw (-42L) (-41L) LT `ppc64;
-    "cmpw64: gt signed"       >:: cmpw 44L (-42L) GT `ppc64;
-    "cmpw64: eq signed"       >:: cmpw (-42L) (-42L) EQ `ppc64;
+    "cmpd: lt"              >:: cmpd 42L 44L LT;
+    "cmpd: gt"              >:: cmpd 44L 42L GT;
+    "cmpd: eq"              >:: cmpd 42L 42L EQ;
+    "cmpd: 64 operand, 1"   >:: cmpd 0x0BCDEFAB_00000042L 0x44L GT;
+    "cmpd: 64 operand, 2"   >:: cmpd 0xFBCDEFAB_00000042L 0x44L LT;
+    "cmpd: lt signed"       >:: cmpd (-42L) (-41L) LT;
+    "cmpd: gt signed"       >:: cmpd 44L (-42L) GT;
+    "cmpd: eq signed"       >:: cmpd (-42L) (-42L) EQ;
 
-    "cmpd64: lt"              >:: cmpd 42L 44L LT `ppc64;
-    "cmpd64: gt"              >:: cmpd 44L 42L GT `ppc64;
-    "cmpd64: eq"              >:: cmpd 42L 42L EQ `ppc64;
-    "cmpd64: 64 operand, 1"   >:: cmpd 0x0BCDEFAB_00000042L 0x44L GT `ppc64;
-    "cmpd64: 64 operand, 2"   >:: cmpd 0xFBCDEFAB_00000042L 0x44L LT `ppc64;
-    "cmpd64: lt signed"       >:: cmpd (-42L) (-41L) LT `ppc64;
-    "cmpd64: gt signed"       >:: cmpd 44L (-42L) GT `ppc64;
-    "cmpd64: eq signed"       >:: cmpd (-42L) (-42L) EQ `ppc64;
+    "cmpldi: lt"            >:: cmpldi 42L 44L LT;
+    "cmpldi: gt"            >:: cmpldi 44L 42L GT;
+    "cmpldi: eq"            >:: cmpldi 42L 42L EQ;
+    "cmpldi: 64 operand, 1" >:: cmpldi 0x0BCDEFAB_00000042L 0x44L GT;
+    "cmpldi: 64 operand, 2" >:: cmpldi 0xFBCDEFAB_00000042L 0x44L GT;
+    "cmpldi: lt big"        >:: cmpldi 42L 0xFFFFFFFFL LT;
+    "cmpldi: gt big"        >:: cmpldi 0xFFFFFFFF_FFFFFFFFL 42L GT;
 
-    "cmplwi64: lt"            >:: cmplwi 42L 44L LT `ppc64;
-    "cmplwi64: gt"            >:: cmplwi 44L 42L GT `ppc64;
-    "cmplwi64: eq"            >:: cmplwi 42L 42L EQ `ppc64;
-    "cmplwi64: 64lt"          >:: cmplwi 0x0BCDEFAB_00000042L 0x44L LT `ppc64;
-    "cmplwi64: lt big"        >:: cmplwi 42L 0xFFFFFFFFL LT `ppc64;
-    "cmplwi64: gt big"        >:: cmplwi 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc64;
-
-    "cmpldi64: lt"            >:: cmpldi 42L 44L LT `ppc64;
-    "cmpldi64: gt"            >:: cmpldi 44L 42L GT `ppc64;
-    "cmpldi64: eq"            >:: cmpldi 42L 42L EQ `ppc64;
-    "cmpldi64: 64 operand, 1" >:: cmpldi 0x0BCDEFAB_00000042L 0x44L GT `ppc64;
-    "cmpldi64: 64 operand, 2" >:: cmpldi 0xFBCDEFAB_00000042L 0x44L GT `ppc64;
-    "cmpldi64: lt big"        >:: cmpldi 42L 0xFFFFFFFFL LT `ppc64;
-    "cmpldi64: gt big"        >:: cmpldi 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc64;
-
-    "cmplw64: lt"             >:: cmplw 42L 44L LT `ppc64;
-    "cmplw64: gt"             >:: cmplw 44L 42L GT `ppc64;
-    "cmplw64: eq"             >:: cmplw 42L 42L EQ `ppc64;
-    "cmplw64: 64lt"           >:: cmplw 0x0BCDEFAB_00000042L 0x44L LT `ppc64;
-    "cmplw64: lt big"         >:: cmplw 42L 0xFFFFFFFFL LT `ppc64;
-    "cmplw64: gt big"         >:: cmplw 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc64;
-
-    "cmpld64: lt"             >:: cmpld 42L 44L LT `ppc64;
-    "cmpld64: gt"             >:: cmpld 44L 42L GT `ppc64;
-    "cmpld64: eq"             >:: cmpld 42L 42L EQ `ppc64;
-    "cmpld64: 64 operand, 1"  >:: cmpld 0x0BCDEFAB_00000042L 0x44L GT `ppc64;
-    "cmpld64: 64 operand, 2"  >:: cmpld 0xFBCDEFAB_00000042L 0x44L GT `ppc64;
-    "cmpld64: lt big"         >:: cmpld 42L 0xFFFFFFFFL LT `ppc64;
-    "cmpld64: gt big"         >:: cmpld 0xFFFFFFFF_FFFFFFFFL 42L GT `ppc64;
+    "cmpld: lt"             >:: cmpld 42L 44L LT;
+    "cmpld: gt"             >:: cmpld 44L 42L GT;
+    "cmpld: eq"             >:: cmpld 42L 42L EQ;
+    "cmpld: 64 operand, 1"  >:: cmpld 0x0BCDEFAB_00000042L 0x44L GT;
+    "cmpld: 64 operand, 2"  >:: cmpld 0xFBCDEFAB_00000042L 0x44L GT;
+    "cmpld: lt big"         >:: cmpld 42L 0xFFFFFFFFL LT;
+    "cmpld: gt big"         >:: cmpld 0xFFFFFFFF_FFFFFFFFL 42L GT;
 
   ]

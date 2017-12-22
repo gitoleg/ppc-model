@@ -1,13 +1,13 @@
 
 open Powerpc
 
-(** Fixed-Point Move To Special Purpose Register
+(** Fixed-Point Move To Special Purpose Cpu.Register
     Page 116 of IBM Power ISATM Version 3.0 B
     example:
     7c 20 4b a6  mtspr  9, r1 *)
 let mtspr cpu ops =
   let sr = unsigned imm ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(1) in
   let tmp = unsigned var (bitwidth 10) in
   let num = unsigned var word in
   let xer_num = unsigned const word 1 in
@@ -20,16 +20,16 @@ let mtspr cpu ops =
       case xer_num  [ cpu.xer := rs ];
       case lr_num   [ cpu.lr  := rs ];
       case ctr_num  [ cpu.ctr := rs ];
-      default [ message "Unknown register number"; ]
+      default [ message "Unknown cpu.register number"; ]
     ];
   ]
 
-(** Fixed-Point Move From Special Purpose Register
+(** Fixed-Point Move From Special Purpose Cpu.Register
     Page 116 of IBM Power ISATM Version 3.0 B
     example:
     7c 20 42 a6  mfspr  r1,8 *)
 let mfspr cpu ops =
-  let rt = unsigned reg ops.(0) in
+  let rt = unsigned cpu.reg ops.(0) in
   let sr = unsigned imm ops.(1) in
   let tmp = unsigned var (bitwidth 10) in
   let num = unsigned var word in
@@ -43,7 +43,7 @@ let mfspr cpu ops =
       case xer_num [ rt := cpu.xer ];
       case lr_num  [ rt := cpu.lr  ];
       case ctr_num [ rt := cpu.ctr ];
-      default [ message "Unknown register number"; ]
+      default [ message "Unknown cpu.register number"; ]
     ];
   ]
 
@@ -53,7 +53,7 @@ let mfspr cpu ops =
     7c 20 81 20  mtcrf  8, r1 *)
 let mtcrf cpu ops =
   let fx = unsigned imm ops.(0) in
-  let rs = unsigned reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(1) in
   let mask = unsigned var word in
   let bit_i = unsigned var bit in
   let halfbyte_i = unsigned var (bitwidth 4) in
@@ -81,7 +81,7 @@ let mtcrf cpu ops =
     example:
     7c 20 00 26  mfcr  r1 *)
 let mfcr cpu ops =
-  let rt = unsigned reg ops.(0) in
+  let rt = unsigned cpu.reg ops.(0) in
   RTL.[ rt := cpu.cr ]
 
 let () =

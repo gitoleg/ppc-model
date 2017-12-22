@@ -8,21 +8,21 @@ open Powerpc
     b1 3c 01 6c     sth r9,364(r28)
     91 28 ff d4     stw r9,-44(r8) *)
 let stb cpu ops =
-  let rs = unsigned reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
-  let ra = signed reg ops.(2) in
+  let ra = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + im) rs byte; ]
 
 let sth cpu ops =
-  let rs = unsigned reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
-  let ra = signed reg ops.(2) in
+  let ra = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + im) rs halfword; ]
 
 let stw cpu ops =
-  let rs = unsigned reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
-  let ra = signed reg ops.(2) in
+  let ra = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + im) rs word; ]
 
 (** Fixed-point Store Byte/Halfword/Word/Doubleword Indexed
@@ -33,27 +33,27 @@ let stw cpu ops =
     7f b6 f9 2e     stwx    r29,r22,r31
     7c 28 49 2a     stdx    r1, r8, r9  *)
 let stbx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + rb) rs byte; ]
 
 let sthx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + rb) rs halfword; ]
 
 let stwx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + rb) rs word; ]
 
 let stdx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   RTL.[ cpu.store (ra + rb) rs doubleword; ]
 
 (** fixed-point Store Byte/Halfword/Word with Update
@@ -63,27 +63,27 @@ let stdx cpu ops =
     b5 3d ff ff     sthu r9,-1(r29)
     94 21 ff f0     stwu r1,-16(r1)  *)
 let stbu cpu ops =
-  let rs = unsigned reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
-  let ra = signed reg ops.(3) in
+  let ra = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + im) rs byte;
     ra := ra + im;
   ]
 
 let sthu cpu ops =
-  let rs = unsigned reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
-  let ra = signed reg ops.(3) in
+  let ra = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + im) rs halfword;
     ra := ra + im;
   ]
 
 let stwu cpu ops =
-  let rs = unsigned reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
-  let ra = signed reg ops.(3) in
+  let ra = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + im) rs word;
     ra := ra + im;
@@ -97,36 +97,36 @@ let stwu cpu ops =
     7d 41 49 6e     stwux r10,r1,r9
     7c 28 49 6a     stdux r1,r8,r9   *)
 let stbux cpu ops =
-  let rs = unsigned reg ops.(1) in
-  let ra = signed reg ops.(2) in
-  let rb = signed reg ops.(3) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let ra = signed cpu.reg ops.(2) in
+  let rb = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + rb) rs byte;
     ra := ra + rb;
   ]
 
 let sthux cpu ops =
-  let rs = unsigned reg ops.(1) in
-  let ra = signed reg ops.(2) in
-  let rb = signed reg ops.(3) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let ra = signed cpu.reg ops.(2) in
+  let rb = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + rb) rs halfword;
     ra := ra + rb;
   ]
 
 let stwux cpu ops =
-  let rs = unsigned reg ops.(1) in
-  let ra = signed reg ops.(2) in
-  let rb = signed reg ops.(3) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let ra = signed cpu.reg ops.(2) in
+  let rb = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + rb) rs word;
     ra := ra + rb;
   ]
 
 let stdux cpu ops =
-  let rs = unsigned reg ops.(1) in
-  let ra = signed reg ops.(2) in
-  let rb = signed reg ops.(3) in
+  let rs = unsigned cpu.reg ops.(1) in
+  let ra = signed cpu.reg ops.(2) in
+  let rb = signed cpu.reg ops.(3) in
   RTL.[
     cpu.store (ra + rb) rs doubleword;
     ra := ra + rb;
@@ -137,9 +137,9 @@ let stdux cpu ops =
     examples:
     f8 29 00 08   std r1, 8(r9) *)
 let std cpu ops =
-  let rs = unsigned reg ops.(0) in
+  let rs = unsigned cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
-  let ra = signed reg ops.(2) in
+  let ra = signed cpu.reg ops.(2) in
   let sh = unsigned const byte 2 in
   RTL.[
     cpu.store (ra + (im lsl sh)) rs doubleword;
@@ -150,9 +150,9 @@ let std cpu ops =
     examples:
     f8 29 00 09   stdu r1, 8(r9) *)
 let stdu cpu ops =
-  let rs = unsigned reg ops.(1) in
+  let rs = unsigned cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
-  let ra = signed reg ops.(3) in
+  let ra = signed cpu.reg ops.(3) in
   let sh = unsigned const byte 2 in
   let ea = unsigned var doubleword in
   RTL.[
@@ -166,9 +166,9 @@ let stdu cpu ops =
     example:
     7c 22 1f 2c    sthbrx r1, r2, r3  *)
 let sthbrx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let ea = unsigned var doubleword in
   let x = unsigned var halfword in
   RTL.[
@@ -182,9 +182,9 @@ let sthbrx cpu ops =
     example:
     7c 22 1d 2c    stwbrx r1, r2, r3  *)
 let stwbrx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let ea = unsigned var doubleword in
   let x = unsigned var word in
   RTL.[
@@ -198,9 +198,9 @@ let stwbrx cpu ops =
     example:
     7c 22 1d 28    stdbrx r1, r2, r3  *)
 let stdbrx cpu ops =
-  let rs = unsigned reg ops.(0) in
-  let ra = signed reg ops.(1) in
-  let rb = signed reg ops.(2) in
+  let rs = unsigned cpu.reg ops.(0) in
+  let ra = signed cpu.reg ops.(1) in
+  let rb = signed cpu.reg ops.(2) in
   let ea = unsigned var doubleword in
   let x = unsigned var doubleword in
   RTL.[

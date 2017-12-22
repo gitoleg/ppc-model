@@ -74,7 +74,10 @@ let var_of_exp e = match e.body with
 module Exp = struct
 
   let cast x width sign =
-    if x.sign = sign && x.width = width then x
+    let nothing_to_cast =
+      (x.sign = sign && x.width = width) ||
+      (x.width = width && width = 1) in
+    if nothing_to_cast then x
     else
     if x.width = 1 then
       {width; sign; body = Cast (x.sign, width, x.body)}
@@ -151,7 +154,7 @@ module Exp = struct
     {sign = Unsigned; width; body = Word w }
 
   let tmp width =
-    let var = Var.create ~fresh:true "tmp" (Type.imm width) in
+    let var = Var.create ~is_virtual:true ~fresh:true "tmp" (Type.imm width) in
     of_var var
 
   let load mem addr endian size =
@@ -330,6 +333,12 @@ module Translate = struct
   let rec stmt_to_bil = function
     | Move (x,y) -> move x y
     | Store (mem, addr, data, endian, size) ->
+      let size' = Size.in_bits size in
+      let width = Exp.width data in
+      let data =
+        if size' = width then data
+        else
+          Exp.extract (size' - 1) 0 data in
       store mem addr data endian size
     | Jmp a -> jmp a
     | If (cond, then_, else_) ->
@@ -360,7 +369,42 @@ module Translate = struct
     let bil = to_bil rtl in
     let vis = new move_finder var in
     vis#run bil false
-
 end
 
-let bil_of_t = Translate.to_bil
+
+(** TODO: Check again, e.g. with cntlzw  *)
+module Normalize = struct
+  open Bap.Std
+
+  let stack bil =
+    let open Bil in
+    List.fold bil ~init:[] ~f:(fun stack -> function
+        | Move (v, ((Int _) as e)) -> (v, e) :: stack
+        | Move (v, _) ->
+          List.filter ~f:(fun (w,_) -> Var.(base v <> base w)) stack
+        | _ -> stack)
+
+  class subst_vars stack = object
+    inherit Stmt.mapper
+
+    method! map_var v =
+      match List.find stack ~f:(fun (w,_) -> Var.(base v = base w)) with
+      | None -> Bil.var v
+      | Some (_,e) -> e
+  end
+
+  let rec norm bil =
+    let s = new subst_vars (stack bil) in
+    List.map bil ~f:(function
+        | Bil.If (e, ts, es) ->
+          Bil.If (s#map_exp e, norm ts, norm es)
+        | Bil.Move (v, e) -> Bil.move v (s#map_exp e)
+        | Bil.Jmp e -> Bil.Jmp (s#map_exp e)
+        | x -> x)
+end
+
+let bil_of_t rtl =
+  let bil = Translate.to_bil rtl in
+  let bil =
+    Stmt.simpl @@ Bil.fold_consts (Stmt.normalize bil) in
+  bil  (* Normalize.norm bil *)
