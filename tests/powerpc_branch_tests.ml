@@ -39,9 +39,9 @@ let extract ~hi ~lo w = Word.extract_exn ~hi ~lo w
 let b arch ctxt =
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let bytes = "\x4b\xff\xfe\xf0" in
-  let bytes'= Word.of_int64 ~width:bits 0x4bfffef0L in
+  let bytes'= Word.of_int64 ~width:32 0x4bfffef0L in
   let imm =
-    extract ~hi:25 ~lo:2 bytes' |>
+    extract ~hi:25 ~lo:2 bytes' |> Word.signed |>
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =
@@ -53,9 +53,9 @@ let b arch ctxt =
 let ba arch ctxt =
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let bytes = "\x4b\xff\xfe\xf2" in
-  let bytes'= Word.of_int64 ~width:bits 0x4bfffef2L in
- let imm =
-    extract ~hi:25 ~lo:2 bytes' |>
+  let bytes'= Word.of_int64 ~width:32 0x4bfffef2L in
+  let imm =
+    extract ~hi:25 ~lo:2 bytes' |> Word.signed |>
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =
@@ -67,9 +67,9 @@ let ba arch ctxt =
 let bl arch ctxt =
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let bytes = "\x4b\xff\xfe\xf1" in
-  let bytes'= Word.of_int64 ~width:bits 0x4bfffef1L in
+  let bytes'= Word.of_int64 ~width:32 0x4bfffef1L in
   let imm =
-    extract ~hi:25 ~lo:2 bytes' |>
+    extract ~hi:25 ~lo:2 bytes' |>Word.signed |>
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =
@@ -84,9 +84,9 @@ let bl arch ctxt =
 let bla arch ctxt =
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let bytes = "\x4b\xff\xfe\xf3" in
-  let bytes'= Word.of_int64 ~width:bits 0x4bfffef3L in
+  let bytes'= Word.of_int64 ~width:32 0x4bfffef3L in
   let imm =
-    extract ~hi:25 ~lo:2 bytes' |>
+    extract ~hi:25 ~lo:2 bytes' |> Word.signed |>
     extract ~hi:bits ~lo:0 in
   let addr = addr_of_arch arch in
   let expected =

@@ -22,7 +22,7 @@ let b cpu ops =
 let ba cpu ops =
   let im = unsigned imm ops.(0) in
   let sh = unsigned const byte 2 in
-  let tm = signed var word in
+  let tm = signed var cpu.addr_size in
   RTL.[
     tm := last (im lsl sh) 26;
     cpu.jmp tm;
@@ -43,7 +43,7 @@ let bla cpu ops =
   let im = unsigned imm ops.(0) in
   let sh = unsigned const byte 2 in
   let ad = unsigned const byte 4 in
-  let tm = signed var word in
+  let tm = signed var cpu.addr_size in
   RTL.[
     tm := last (im lsl sh) 26;
     cpu.jmp tm;

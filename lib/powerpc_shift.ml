@@ -48,6 +48,7 @@ let srawi cpu ops =
   let mask = unsigned var cpu.gpr_width in
   let carry_ones = unsigned var bit in
   let ones = unsigned const cpu.gpr_width (-1) in
+  let w32 = unsigned const byte 32 in
   RTL.[
     mask := ones;
     carry_ones := ((lnot (mask lsl sh)) land rs) <> zero;
@@ -56,7 +57,11 @@ let srawi cpu ops =
     if_ (low word rs >=$ zero) [
       ra := low word rs lsr sh;
     ] [
-      mask := mask lsr (width ra + sh);
+      if_ (width ra = w32) [
+        mask := mask lsr sh;
+      ] [
+        mask := mask lsr (w32 + sh);
+      ];
       ra := (low word rs lsr sh) lor (lnot mask);
     ]
   ]
@@ -70,15 +75,15 @@ let sraw cpu ops =
   let ra = unsigned cpu.reg ops.(0) in
   let rs = unsigned cpu.reg ops.(1) in
   let rb = unsigned cpu.reg ops.(2) in
-  let mask = unsigned var doubleword in
-  let width = unsigned const doubleword 32 in
+  let mask = unsigned var cpu.gpr_width in
+  let w32 = unsigned const cpu.gpr_width 32 in
   let carry_ones = unsigned var bit in
   let s = unsigned var bit in
   let shift = unsigned var byte in
   RTL.[
     mask := zero;
     shift := last rb 6;
-    when_ (nth bit rb 58 = zero) [
+    when_ (last rb 6 < w32) [
       mask := (lnot mask) lsl shift;
     ];
     s := low word rs <$ zero;
@@ -88,7 +93,11 @@ let sraw cpu ops =
     if_ (s = zero) [
       ra := low word rs lsr shift;
     ] [
-      mask := mask lsr (width + shift);
+      if_ (width ra = w32) [
+        mask := mask lsr shift;
+      ] [
+        mask := mask lsr (w32 + shift);
+      ];
       ra := (low word rs lsr shift) lor (lnot mask);
     ]
   ]

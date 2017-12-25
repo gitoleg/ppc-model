@@ -67,37 +67,14 @@ let srawi arch sh x ?(carry=false) ctxt =
       Word.ones left_bits_num
     else
       Word.zero left_bits_num in
-  let right_bits_num = width - left_bits_num - 1 in
-  let y = Word.((extract_exn ~hi:right_bits_num  x) lsr shw) in
+  let right_bits_num = width - left_bits_num in
+  let y =  Word.extract_exn ~hi:(right_bits_num - 1) Word.(x lsr shw) in
   let expected = Word.concat left_bits y in
-  printf "y is %s\n" (Word.to_string expected);
-
-  let left_bits = 32 + sh in
-  let left =
-    if Word.(equal (extract_exn ~hi:31 ~lo:31 x) b1) then
-      Word.ones left_bits
-    else
-      Word.zero left_bits in
-  let right_bits = 31 - sh in
-  let y = Word.((extract_exn ~hi:31 x) lsr shw) in
-  let right = Word.extract_exn ~hi:right_bits y in
-  let expected = Word.concat left right in
-  let expected = match arch with
-    | `ppc -> Word.extract_exn ~hi:31 expected
-    | _ -> expected in
   let ca_expected = if carry then Word.b1 else Word.b0 in
   let ctxt = eval init bytes arch in
   let value = lookup_var ctxt r10 in
   let ca_val = lookup_var ctxt ca in
   let ca32_val = lookup_var ctxt ca32 in
-
-  let () = match value with
-    | None -> ()
-    | Some value ->
-      printf "expected %s, got %s\n"
-        (Word.to_string expected) (Word.to_string value) in
-
-
   assert_bool "srawi failed: result" (is_equal_words expected value);
   assert_bool "srawi failed: ca" (is_equal_words ca_expected ca_val);
   assert_bool "srawi failed: ca32" (is_equal_words ca_expected ca32_val)
@@ -115,18 +92,22 @@ let sraw arch sh x ?(carry=false) ctxt =
       r9 := int x;
       r11 := int shw;
     ] in
-  let y = Word.(x lsr shw) in
-  let sign_bits = min (32 + sh) 64 in
-  let val_bits = max 0 (32 - sh) in
-  let s = Word.extract_exn ~hi:31 ~lo:31 x in
-  let left =
-    if Word.equal s Word.b1 then Word.ones sign_bits
-    else Word.zero sign_bits in
-  let expected =
-    if val_bits = 0 then left
+  let left_bits_num = match arch with
+    | `ppc -> sh
+    | _ -> 32 + sh in
+  let left_bits_num = min left_bits_num width in
+  let left_bits =
+    if Word.(equal (extract_exn ~hi:31 ~lo:31 x) b1) then
+      Word.ones left_bits_num
     else
-      let right = Word.extract_exn ~hi:(val_bits - 1) y in
-      Word.concat left right in
+      Word.zero left_bits_num in
+  let right_bits_num = width - left_bits_num in
+  let expected =
+    if right_bits_num = 0 then left_bits
+    else
+      let right_bits =
+        Word.extract_exn ~hi:(right_bits_num - 1) Word.(x lsr shw) in
+      Word.concat left_bits right_bits in
   let ca_expected = if carry then Word.b1 else Word.b0 in
   let ctxt = eval init bytes arch in
   let value = lookup_var ctxt r10 in
@@ -234,43 +215,43 @@ let srad sh x ?(carry=false) ctxt =
   assert_bool "srad failed: result" (is_equal_words expected value)
 
 let suite = "shift" >::: [
-    (* "slw 4"          >:: slw `ppc 4; *)
-    (* "slw 0"          >:: slw `ppc 0; *)
-    (* "slw zero res"   >:: slw `ppc 42; *)
+    "slw 4"          >:: slw `ppc 4;
+    "slw 0"          >:: slw `ppc 0;
+    "slw zero res"   >:: slw `ppc 42;
 
-    (* "srw 4"          >:: srw `ppc 4; *)
-    (* "srw 0"          >:: srw `ppc 0; *)
-    (* "srw zero res"   >:: srw `ppc 42; *)
+    "srw 4"          >:: srw `ppc 4;
+    "srw 0"          >:: srw `ppc 0;
+    "srw zero res"   >:: srw `ppc 42;
 
     "srawi 4, pos,not ca" >:: srawi `ppc 4 0xFFFFFFFF_0ABBCCDDL;
     "srawi 4, pos,not ca" >:: srawi `ppc 4 0xFFFFFFFF_0ABBCCD0L;
     "srawi 4, neg,not ca" >:: srawi `ppc 4 0x00000000_8ABBCCD0L;
     "srawi 4, neg,ca"     >:: srawi `ppc 4 0x00000000_8ABBCCDDL ~carry:true;
 
-    (* "sraw 4,  pos, not ca"  >:: sraw `ppc 4  0xFFFFFFFF_0ABBCCDDL; *)
-    (* "sraw 32, pos, not ca"  >:: sraw `ppc 32 0xFFFFFFFF_0ABBCCDDL; *)
-    (* "sraw 4,  neg, not ca"  >:: sraw `ppc 4  0xFFFFFFFF_8ABBCCD0L; *)
-    (* "sraw 42, neg, ca"      >:: sraw `ppc 42 0x00000000_80000000L ~carry:true; *)
-    (* "sraw 4,  neg, ca"      >:: sraw `ppc 4  0xFFFFFFFF_8ABBCCDAL ~carry:true; *)
+    "sraw 4,  pos, not ca"  >:: sraw `ppc 4  0xFFFFFFFF_0ABBCCDDL;
+    "sraw 32, pos, not ca"  >:: sraw `ppc 32 0xFFFFFFFF_0ABBCCDDL;
+    "sraw 4,  neg, not ca"  >:: sraw `ppc 4  0xFFFFFFFF_8ABBCCD0L;
+    "sraw 42, neg, ca"      >:: sraw `ppc 42 0x00000000_80000000L ~carry:true;
+    "sraw 4,  neg, ca"      >:: sraw `ppc 4  0xFFFFFFFF_8ABBCCDAL ~carry:true;
 
-    (* "slw64 4"          >:: slw `ppc64 4; *)
-    (* "slw64 0"          >:: slw `ppc64 0; *)
-    (* "slw64 zero res"   >:: slw `ppc64 42; *)
+    "slw64 4"          >:: slw `ppc64 4;
+    "slw64 0"          >:: slw `ppc64 0;
+    "slw64 zero res"   >:: slw `ppc64 42;
 
-    (* "srw64 4"          >:: srw `ppc64 4; *)
-    (* "srw64 0"          >:: srw `ppc64 0; *)
-    (* "srw64 zero res"   >:: srw `ppc64 42; *)
+    "srw64 4"          >:: srw `ppc64 4;
+    "srw64 0"          >:: srw `ppc64 0;
+    "srw64 zero res"   >:: srw `ppc64 42;
 
-    (* "srawi64 4, pos,not ca" >:: srawi `ppc64 4 0xFFFFFFFF_0ABBCCDDL; *)
-    (* "srawi64 4, pos,not ca" >:: srawi `ppc64 4 0xFFFFFFFF_0ABBCCD0L; *)
-    (* "srawi64 4, neg,not ca" >:: srawi `ppc64 4 0x00000000_8ABBCCD0L; *)
-    (* "srawi64 4, neg,ca"     >:: srawi `ppc64 4 0x00000000_8ABBCCDDL ~carry:true; *)
+    "srawi64 4, pos,not ca" >:: srawi `ppc64 4 0xFFFFFFFF_0ABBCCDDL;
+    "srawi64 4, pos,not ca" >:: srawi `ppc64 4 0xFFFFFFFF_0ABBCCD0L;
+    "srawi64 4, neg,not ca" >:: srawi `ppc64 4 0x00000000_8ABBCCD0L;
+    "srawi64 4, neg,ca"     >:: srawi `ppc64 4 0x00000000_8ABBCCDDL ~carry:true;
 
-    (* "sraw64 4,  pos, not ca"  >:: sraw `ppc64 4  0xFFFFFFFF_0ABBCCDDL; *)
-    (* "sraw64 32, pos, not ca"  >:: sraw `ppc64 32 0xFFFFFFFF_0ABBCCDDL; *)
-    (* "sraw64 4,  neg, not ca"  >:: sraw `ppc64 4  0xFFFFFFFF_8ABBCCD0L; *)
-    (* "sraw64 42, neg, ca"      >:: sraw `ppc64 42 0x00000000_80000000L ~carry:true; *)
-    (* "sraw64 4,  neg, ca"      >:: sraw `ppc64 4  0xFFFFFFFF_8ABBCCDAL ~carry:true; *)
+    "sraw64 4,  pos, not ca"  >:: sraw `ppc64 4  0xFFFFFFFF_0ABBCCDDL;
+    "sraw64 32, pos, not ca"  >:: sraw `ppc64 32 0xFFFFFFFF_0ABBCCDDL;
+    "sraw64 4,  neg, not ca"  >:: sraw `ppc64 4  0xFFFFFFFF_8ABBCCD0L;
+    "sraw64 42, neg, ca"      >:: sraw `ppc64 42 0x00000000_80000000L ~carry:true;
+    "sraw64 4,  neg, ca"      >:: sraw `ppc64 4  0xFFFFFFFF_8ABBCCDAL ~carry:true;
 
     (* "sld64 0"   >:: sld 0  0xABCDEF42_0ABBCCDDL; *)
     (* "sld64 4"   >:: sld 4  0xABCDEF42_0ABBCCDDL; *)

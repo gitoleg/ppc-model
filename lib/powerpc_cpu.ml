@@ -75,7 +75,9 @@ let make_cpu addr_size endian memory =
     let size = size_of_width width in
     store mem addr data endian size in
   let addr = Exp.of_word @@ Memory.min_addr memory in
-  let jmp e = jmp e in
+  let jmp e = match addr_size with
+    | `r32 -> jmp (low word e)
+    | `r64 -> jmp e in
   let find name regs n =
     try
       Int.Map.find_exn regs n
