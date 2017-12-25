@@ -243,7 +243,6 @@ module Make_ppc(S : Spec) : PowerPC = struct
   include Bitwidth
   let gpr_bitwidth = S.gpr_bitwidth
 
-  (** TODO: what with X registers in 32-bit mode?  *)
   module Hardware_vars = struct
     include Vars
     let gpr = make_regs (Type.imm gpr_bitwidth) "R" ~alias:"X" range32
