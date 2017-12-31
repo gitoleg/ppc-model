@@ -289,13 +289,13 @@ module Translate = struct
           || in_bounds vars_lo hi lo
           || in_bounds vars_hi hi lo in
         if var_in_bounds then
-            let lo_var = max lo vars_lo  - vars_lo in
-            let hi_var = min (rhs_width + lo - 1) vars_hi - vars_lo in
-            let bits_to_assign = hi_var - lo_var + 1 in
-            let hi_exp = assigned + bits_to_assign - 1 in
-            let lo_exp = assigned in
-            let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) @ es in
-            assign es (assigned + bits_to_assign) (vars_lo + width) vars
+          let lo_var = max lo vars_lo  - vars_lo in
+          let hi_var = min (rhs_width + lo - 1) vars_hi - vars_lo in
+          let bits_to_assign = hi_var - lo_var + 1 in
+          let hi_exp = assigned + bits_to_assign - 1 in
+          let lo_exp = assigned in
+          let es = partial_assign v (hi_var, lo_var) rhs (hi_exp,lo_exp) @ es in
+          assign es (assigned + bits_to_assign) (vars_lo + width) vars
         else assign es assigned (vars_lo + width) vars in
     assign [] 0 0 vars
 
@@ -371,40 +371,83 @@ module Translate = struct
     vis#run bil false
 end
 
-
-(** TODO: Check again, e.g. with cntlzw  *)
 module Normalize = struct
   open Bap.Std
 
-  let stack bil =
+  let jmp_exists bil =
+    let finder = object
+      inherit [bool] Stmt.visitor
+      method! enter_jmp _ _ = true
+    end in
+    finder#run bil false
+
+  let remove_if bil =
     let open Bil in
-    List.fold bil ~init:[] ~f:(fun stack -> function
-        | Move (v, ((Int _) as e)) -> (v, e) :: stack
-        | Move (v, _) ->
-          List.filter ~f:(fun (w,_) -> Var.(base v <> base w)) stack
-        | _ -> stack)
+    let product xs ys = match xs,ys with
+      | xs, [] -> xs
+      | [], ys -> ys
+      | xs,ys ->
+        List.fold xs ~init:[] ~f:(fun acc x ->
+            List.fold ys ~init:acc ~f:(fun acc y -> (y @ x) :: acc)) in
+    let rec loop acc n = function
+      | [] -> acc, n
+      | If (e, ts, es)  :: bil ->
+        let ts,n = loop [] n ts in
+        let es,n = loop [] n es in
+        let acc1 = product acc ts in
+        let acc2 = product acc es in
+        loop (acc1 @ acc2) n bil
+      | x :: bil ->
+        match acc with
+        | [] -> loop [[n,x] ] (succ n) bil
+        | _ ->
+        let acc = List.map acc ~f:(fun xs -> (n, x) :: xs) in
+        loop acc (succ n) bil in
+    let vars,_ = loop [] 0 bil in
+    List.map ~f:List.rev vars
 
-  class subst_vars stack = object
-    inherit Stmt.mapper
+  let replace_jmp line addr bil =
+    let open Bil in
+    let rec loop acc n = function
+      | [] -> List.rev acc,n
+      | Jmp _ :: bil when Int.equal n line ->
+        let acc = (Jmp (Int addr)) :: acc in
+        loop acc (succ n) bil
+      | If (e, ts, es) :: bil ->
+        let ts,n = loop [] n ts in
+        let es,n = loop [] n es in
+        let acc = (If (e, ts,es)) :: acc in
+        loop acc n bil
+      | x :: bil -> loop (x :: acc) (succ n) bil in
+    let bil, _ = loop [] 0 bil in
+    bil
 
-    method! map_var v =
-      match List.find stack ~f:(fun (w,_) -> Var.(base v = base w)) with
-      | None -> Bil.var v
-      | Some (_,e) -> e
-  end
-
-  let rec norm bil =
-    let s = new subst_vars (stack bil) in
-    List.map bil ~f:(function
-        | Bil.If (e, ts, es) ->
-          Bil.If (s#map_exp e, norm ts, norm es)
-        | Bil.Move (v, e) -> Bil.move v (s#map_exp e)
-        | Bil.Jmp e -> Bil.Jmp (s#map_exp e)
-        | x -> x)
+  let norm_jmps bil =
+    if not (jmp_exists bil) then bil
+    else
+      let get_bil lines = List.map lines ~f:snd in
+      let jmp_line lines =
+        List.find_map_exn lines ~f:(fun (n, s) ->
+            match s with
+            | Bil.Jmp _ -> Some n
+            | _ -> None) in
+      let en = List.filter (remove_if bil) ~f:(fun lines ->
+          jmp_exists (get_bil lines)) in
+      let xs = List.filter_map en ~f:(fun lines ->
+          let n = jmp_line lines in
+          let bil = get_bil lines in
+          let c = Stmt.eval bil (new Bili.context) in
+          match c#pc with
+          | Bil.Imm a -> Some (n, a)
+          | _ -> None) in
+      match xs with
+      | [] -> bil
+      | (n,x) :: xs  when List.for_all xs
+            ~f:(fun (m,y) -> m = n && Word.equal x y) ->
+        replace_jmp n x bil
+      | _ -> bil
 end
 
 let bil_of_t rtl =
-  let bil = Translate.to_bil rtl in
-  let bil =
-    Stmt.simpl @@ Bil.fold_consts (Stmt.normalize bil) in
-  bil  (* Normalize.norm bil *)
+  Normalize.norm_jmps @@
+  Translate.to_bil rtl
