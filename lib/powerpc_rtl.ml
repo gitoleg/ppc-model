@@ -431,21 +431,28 @@ module Normalize = struct
             match s with
             | Bil.Jmp _ -> Some n
             | _ -> None) in
-      let en = List.filter (remove_if bil) ~f:(fun lines ->
+      let bils = List.filter (remove_if bil) ~f:(fun lines ->
           jmp_exists (get_bil lines)) in
-      let xs = List.filter_map en ~f:(fun lines ->
+      let jmps = List.filter_map bils ~f:(fun lines ->
           let n = jmp_line lines in
           let bil = get_bil lines in
           let c = Stmt.eval bil (new Bili.context) in
           match c#pc with
           | Bil.Imm a -> Some (n, a)
           | _ -> None) in
-      match xs with
+      match jmps with
       | [] -> bil
-      | (n,x) :: xs  when List.for_all xs
-            ~f:(fun (m,y) -> m = n && Word.equal x y) ->
-        replace_jmp n x bil
-      | _ -> bil
+      | (n,x) :: [] -> replace_jmp n x bil
+      | jmps ->
+        let jmps = List.sort jmps
+            ~cmp:(fun (n,_) (m,_) -> Int.compare n m) in
+        let jmps = List.group jmps ~break:(fun (n,_) (m,_) -> n<>m) in
+        List.fold jmps ~init:bil ~f:(fun bil -> function
+            | [] -> bil
+            | (line, jmp) :: jmps  when List.for_all jmps
+                  ~f:(fun (m,j) -> m = line && Word.equal jmp j) ->
+              replace_jmp line jmp bil
+            | _ -> bil)
 end
 
 let bil_of_t rtl =
