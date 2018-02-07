@@ -15,7 +15,7 @@ let b cpu ops =
   let tm = signed var word in
   let sh = unsigned const byte 2 in
   RTL.[
-    tm := last (im lsl sh) 26;
+    tm := last (im << sh) 26;
     cpu.jmp (cpu.pc + tm)
   ]
 
@@ -24,7 +24,7 @@ let ba cpu ops =
   let tm = signed var word in
   let sh = unsigned const byte 2 in
   RTL.[
-    tm := last (im lsl sh) 26;
+    tm := last (im << sh) 26;
     cpu.jmp tm
   ]
 
@@ -34,7 +34,7 @@ let bl cpu ops =
   let sh = unsigned const byte 2 in
   let ad = unsigned const byte 4 in
   RTL.[
-    tm := last (im lsl sh) 26;
+    tm := last (im << sh) 26;
     cpu.jmp (cpu.pc + tm);
     cpu.lr := cpu.pc + ad;
   ]
@@ -45,7 +45,7 @@ let bla cpu ops =
   let sh = unsigned const byte 2 in
   let ad = unsigned const byte 4 in
   RTL.[
-    tm := last (im lsl sh) 26;
+    tm := last (im << sh) 26;
     cpu.jmp tm;
     cpu.lr := cpu.pc + ad;
   ]
@@ -74,7 +74,7 @@ let bc cpu ops =
     ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
-      tm := bd lsl sh;
+      tm := bd << sh;
       cpu.jmp (cpu.pc + tm);
     ]
   ]
@@ -96,7 +96,7 @@ let bca cpu ops =
     ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
-      tm := bd lsl sh;
+      tm := bd << sh;
       cpu.jmp tm;
     ]
   ]
@@ -112,7 +112,7 @@ let bdz cpu ops =
   RTL.[
     cpu.ctr := cpu.ctr - one;
     when_ (low cpu.word_width cpu.ctr = zero) [
-      tm := bd lsl sh;
+      tm := bd << sh;
       cpu.jmp (cpu.pc + tm)
     ]
   ]
@@ -125,7 +125,7 @@ let bdnz cpu ops =
   RTL.[
     cpu.ctr := cpu.ctr - one;
     when_ (low cpu.word_width cpu.ctr <> zero) [
-      tm := bd lsl sh;
+      tm := bd << sh;
       cpu.jmp (cpu.pc + tm)
     ]
   ]
@@ -150,7 +150,7 @@ let bclr cpu ops =
     ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
-      cpu.jmp (cpu.lr lsl sh);
+      cpu.jmp (cpu.lr << sh);
     ];
   ]
 
@@ -164,13 +164,13 @@ let bclrl = bclr ^ update_link_register
 let blr cpu ops =
   let sh = unsigned const byte 2 in
   RTL.[
-    cpu.jmp (cpu.lr lsl sh)
+    cpu.jmp (cpu.lr << sh)
   ]
 
 let blrl cpu ops =
   let sh = unsigned const byte 2 in
   RTL.[
-    cpu.jmp (cpu.lr lsl sh);
+    cpu.jmp (cpu.lr << sh);
     cpu.lr := cpu.pc + unsigned const byte 4
   ]
 
@@ -180,7 +180,7 @@ let bdnzlr cpu ops =
   RTL.[
     cpu.ctr := cpu.ctr - one;
     when_ (cpu.ctr <> zero) [
-      cpu.jmp (cpu.lr lsl sh);
+      cpu.jmp (cpu.lr << sh);
     ];
   ]
 
@@ -240,7 +240,7 @@ let bctar cpu ops =
     ctr_ok := nth bit x 2 lor ((cpu.ctr <> zero) lxor (nth bit x 3));
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
-      cpu.jmp (cpu.tar lsl sh);
+      cpu.jmp (cpu.tar << sh);
     ]
   ]
 

@@ -32,7 +32,7 @@ let andis_dot cpu ops =
   let im = unsigned imm ops.(2) in
   let sh = unsigned const byte 16 in
   RTL.[
-    ra := rs land (im lsl sh);
+    ra := rs land (im << sh);
     nth bit cpu.cr 0 := low cpu.word_width ra <$ zero;
     nth bit cpu.cr 1 := low cpu.word_width ra >$ zero;
     nth bit cpu.cr 2 := low cpu.word_width ra = zero;
@@ -82,7 +82,7 @@ let oris cpu ops =
   let rs = unsigned cpu.reg ops.(1) in
   let im = unsigned imm ops.(2) in
   let sh = unsigned const byte 16 in
-  RTL.[ ra := rs lor (im lsl sh); ]
+  RTL.[ ra := rs lor (im << sh); ]
 
 (** Fixed-point OR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -125,7 +125,7 @@ let xoris cpu ops =
   let rs = unsigned cpu.reg ops.(1) in
   let im = unsigned imm ops.(2) in
   let sh = unsigned const byte 16 in
-  RTL.[ ra := rs lxor (im lsl sh); ]
+  RTL.[ ra := rs lxor (im << sh); ]
 
 (** Fixed-point XOR
     Pages 92-98 of IBM Power ISATM Version 3.0 B
@@ -308,9 +308,9 @@ let cmpb cpu ops =
     ind := zero;
     tmp := zero;
     foreach byte_i rs [
-      byte_j := nth byte (rb lsl (ind * sh)) 0;
+      byte_j := nth byte (rb << (ind * sh)) 0;
       when_ (byte_i = byte_j) [
-        tmp := tmp lor (xb lsl ((max - ind) * sh));
+        tmp := tmp lor (xb << ((max - ind) * sh));
       ];
       ind := ind + one;
     ];
@@ -342,7 +342,7 @@ let popcntw cpu ops =
           cnt := cnt + one;
         ];
       ];
-      res := res lor (cnt lsl (ind * x));
+      res := res lor (cnt << (ind * x));
       ind := ind - one;
     ];
     ra := high cpu.word_width res;
@@ -382,11 +382,11 @@ let bpermd cpu ops =
     ind := max;
     foreach bit_index rs [
       if_ (bit_index < max_ind) [
-        x := msb (rb lsl bit_index);
+        x := msb (rb << bit_index);
       ] [
         x := zero;
       ];
-      tmp := tmp lor (x lsl ind);
+      tmp := tmp lor (x << ind);
       ind := ind - one;
     ];
     ra := tmp;

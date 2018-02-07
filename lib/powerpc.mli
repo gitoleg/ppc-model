@@ -449,11 +449,11 @@ module Std : sig
     (** [x >=$ y] - signed greater than or equal *)
     val ( >=$ )  : exp -> exp -> exp
 
-    (** [x lsl y] - logical shift left *)
-    val ( lsl )  : exp -> exp -> exp
+    (** [x << y] - logical shift left *)
+    val ( << )  : exp -> exp -> exp
 
-    (** [x lsr y] - logical shift right *)
-    val ( lsr )  : exp -> exp -> exp
+    (** [x >> y] - logical shift right *)
+    val ( >> )  : exp -> exp -> exp
 
     (** [x lor y] - logical or *)
     val ( lor )  : exp -> exp -> exp

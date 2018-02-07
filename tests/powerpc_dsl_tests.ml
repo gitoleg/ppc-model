@@ -376,7 +376,7 @@ let cr_shift ctxt =
   let sh = Exp.of_word (Word.of_int64 2L) in
   let rtl = RTL.[
       cr := ones;
-      cr := cr lsl sh;
+      cr := cr << sh;
     ] in
   let ctxt = eval_rtl rtl in
   let range = List.range 0 32 in
@@ -539,7 +539,7 @@ let circ_shift_32 ctxt =
     RTL.[
       x := e;
       y := nth word x 1;
-      z := nth doubleword ((y ^ y ^ y) lsl sh) 0;
+      z := nth doubleword ((y ^ y ^ y) << sh) 0;
     ] in
   let expected = Word.of_int64 0xEFF4242E_EFF4242EL in
   let ctxt = eval_rtl rtl in

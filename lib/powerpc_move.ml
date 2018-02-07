@@ -61,7 +61,7 @@ let mtcrf cpu ops =
     ind := zero;
     fxm := fx;
     foreach halfbyte_i mask [
-      bit_i := msb (fxm lsl ind);
+      bit_i := msb (fxm << ind);
       if_ (bit_i = one) [
         halfbyte_i := ones;
       ] [

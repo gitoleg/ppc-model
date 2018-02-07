@@ -62,13 +62,13 @@ let addis cpu ops =
   let ra = signed cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
   let sh = unsigned const word 16 in
-  RTL.[ rt := ra + (im lsl sh); ]
+  RTL.[ rt := ra + (im << sh); ]
 
 let lis cpu ops =
   let rt = signed cpu.reg ops.(0) in
   let im = signed imm ops.(1) in
   let sh = unsigned const word 16 in
-  RTL.[ rt := im lsl sh; ]
+  RTL.[ rt := im << sh; ]
 
 (** Fixed-Point Arithmetic Instructions - Add
     Page 69 of IBM Power ISATM Version 3.0 B

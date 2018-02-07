@@ -223,8 +223,8 @@ module Infix = struct
   let ( >=$ ) = sgte
   let ( = )   = eq
   let ( <> )   = neq
-  let ( lsl )  = lshift
-  let ( lsr )  = rshift
+  let ( << )  = lshift
+  let ( >> )  = rshift
   let ( lor )  = bit_or
   let ( land ) = bit_and
   let ( lxor ) = bit_xor
