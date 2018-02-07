@@ -11,7 +11,6 @@ module type Model = sig
   val fpri : t Int.Map.t
   val vr : t String.Map.t
   val vri : t Int.Map.t
-  val xer : t
   val ctr : t
   val lr : t
   val tar : t
@@ -35,14 +34,15 @@ module type Model_exp = sig
 end
 
 module type PowerPC = sig
-  module Hardware_vars : Model with type t := var
-  module Hardware : Model_exp
+  module E : Model_exp
+  include Model with type t := var
+
   val mem : var
+  val flags : Var.Set.t
   val gpr_bitwidth : int
   val fpr_bitwidth : int
   val vr_bitwidth  : int
   val cr_bitwidth  : int
-  val xer_bitwidth : int
   val lr_bitwidth  : int
   val ctr_bitwidth : int
   val tar_bitwidth : int
@@ -77,7 +77,6 @@ module Bitwidth = struct
   let fpr_bitwidth = 64
   let vr_bitwidth  = 128
   let cr_bitwidth  = 32
-  let xer_bitwidth = 64
   let lr_bitwidth  = 64
   let ctr_bitwidth = 64
   let tar_bitwidth = 64
@@ -102,9 +101,6 @@ module Vars = struct
 
   (** target register  *)
   let tar = Var.create "TAR" (Type.imm tar_bitwidth)
-
-  (** fixed point exception register  *)
-  let xer = Var.create "XER" (Type.imm xer_bitwidth)
 
   (** fixed precision flags  *)
   let so = flag "SO" (** summary overflow *)
@@ -191,7 +187,6 @@ module Vars = struct
   let cri_fields =
     List.fold fields ~init:Int.Map.empty ~f:(fun fs (_, index, fd) ->
         Int.Map.add fs index fd)
-
 end
 
 let of_vars vars =
@@ -207,7 +202,6 @@ module Exps = struct
   let fpr = of_vars fpr
   let vri = of_vars_i vri
   let vr = of_vars vr
-  let xer = Exp.of_var xer
   let ctr = Exp.of_var ctr
   let lr  = Exp.of_var lr
   let tar = Exp.of_var tar
@@ -243,20 +237,25 @@ module Make_ppc(S : Spec) : PowerPC = struct
   include Bitwidth
   let gpr_bitwidth = S.gpr_bitwidth
 
-  module Hardware_vars = struct
-    include Vars
-    let gpr = make_regs (Type.imm gpr_bitwidth) "R" ~alias:"X" range32
-    let gpri = make_regs_i (Type.imm gpr_bitwidth) "R" range32
-  end
 
-  module Hardware = struct
-    open Hardware_vars
+  include Vars
+  let gpr = make_regs (Type.imm gpr_bitwidth) "R" ~alias:"X" range32
+  let gpri = make_regs_i (Type.imm gpr_bitwidth) "R" range32
+
+  module E = struct
     include Exps
     let gpri = of_vars_i gpri
     let gpr = of_vars gpr
   end
 
   let mem = Var.create "mem" (Type.mem S.addr_size `r8)
+
+  let flags = Var.Set.of_list [
+      so; ca; ca32; ov; ov32;
+      Int.Map.find_exn cri 0;
+      Int.Map.find_exn cri 1;
+      Int.Map.find_exn cri 2;
+    ]
 
 end
 
@@ -275,7 +274,6 @@ module PowerPC_64 = Make_ppc(Spec64)
 
 module Make_cpu(P : PowerPC) : CPU = struct
   open P
-  open Hardware_vars
 
   let mem = P.mem
 

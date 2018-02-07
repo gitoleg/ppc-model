@@ -58,10 +58,9 @@ let mtcrf arch ctxt =
   let init = Bil.[
       r1 := int x;
     ] in
-  let init_rtl = RTL.[ Hardware.cr := zero] in
+  let init_rtl = RTL.[ E.cr := zero] in
   let init = init @ bil_of_t init_rtl in
   let ctxt = eval init bytes arch in
-  let crs = Model.Hardware_vars.cri in
   let range = List.range 0 32 in
   let r1_bits = Word.enum_bits (Word.extract_exn ~hi:31 x) BigEndian in
   let r1_bits = Seq.to_array r1_bits in
@@ -70,7 +69,7 @@ let mtcrf arch ctxt =
           j*4 <= i && i < (j + 1) * 4) then
         let expected =
           if r1_bits.(i) then Word.b1 else Word.b0 in
-        let cr_bit = Int.Map.find_exn crs i in
+        let cr_bit = Int.Map.find_exn cri i in
         let value = lookup_var ctxt cr_bit in
         let err = sprintf "mtcrf assign to bit %d failed\n" i in
         assert_bool err (is_equal_words expected value))
@@ -83,7 +82,7 @@ let mfcr arch ctxt =
   let x = Word.of_int64 ~width:32 0x12345678L in
   let xw = Exp.of_word x in
   let init_rtl = RTL.[
-      Hardware.cr := xw;
+      E.cr := xw;
     ] in
   let init = bil_of_t init_rtl in
   let expected = Word.extract_exn ~hi:(width - 1) x in

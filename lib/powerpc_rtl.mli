@@ -1,8 +1,6 @@
 open Core_kernel.Std
 open Bap.Std
 
-type bil_exp = exp
-
 type t [@@deriving bin_io, compare, sexp]
 type rtl = t [@@deriving bin_io, compare, sexp]
 type exp [@@deriving bin_io, compare, sexp]
@@ -20,8 +18,6 @@ module Exp : sig
   val signed : exp -> exp
   val unsigned : exp -> exp
 
-  val bil_exp : exp -> bil_exp
-
   val width : exp -> int
 
   val concat : exp -> exp -> exp
@@ -31,7 +27,12 @@ end
 val store : var -> exp -> exp -> endian -> size -> t
 val if_ : exp -> t list -> t list -> t
 val jmp : exp -> t
+
+(** [foreach ~inverse step e code] - repeats [code] for each
+    [step] of [e]. if [inverse] is set to true then starts from
+    head (most significant bits) of [e] *)
 val foreach : inverse:bool -> exp -> exp -> t list -> t
+
 val message : string ->t
 
 module Infix : sig
@@ -40,10 +41,10 @@ module Infix : sig
   val ( - )  : exp -> exp -> exp
   val ( * )  : exp -> exp -> exp
   val ( / )  : exp -> exp -> exp
-  val ( /$)  : exp -> exp -> exp
+  val ( /$ ) : exp -> exp -> exp
   val ( ^ )  : exp -> exp -> exp
-  val ( % ) : exp -> exp -> exp
-  val ( %$) : exp -> exp -> exp
+  val ( % )  : exp -> exp -> exp
+  val ( %$ ) : exp -> exp -> exp
   val ( < )  : exp -> exp -> exp
   val ( > )  : exp -> exp -> exp
   val ( <= )  : exp -> exp -> exp

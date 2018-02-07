@@ -1,4 +1,4 @@
-open Powerpc
+open Powerpc.Std
 
 (** Extended mnemonics:
 
@@ -17,9 +17,9 @@ let andi_dot cpu ops =
   let im = unsigned imm ops.(2) in
   RTL.[
     ra := rs land im;
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero
+    nth bit cpu.cr 0 := low cpu.word_width ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.word_width ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.word_width ra = zero
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -33,9 +33,9 @@ let andis_dot cpu ops =
   let sh = unsigned const byte 16 in
   RTL.[
     ra := rs land (im lsl sh);
-    nth bit cpu.cr 0 := low cpu.addr_size ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.addr_size ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.addr_size ra = zero;
+    nth bit cpu.cr 0 := low cpu.word_width ra <$ zero;
+    nth bit cpu.cr 1 := low cpu.word_width ra >$ zero;
+    nth bit cpu.cr 2 := low cpu.word_width ra = zero;
   ]
 
 (** Fixed-point AND
@@ -314,7 +314,7 @@ let cmpb cpu ops =
       ];
       ind := ind + one;
     ];
-    ra := high cpu.addr_size tmp;
+    ra := high cpu.word_width tmp;
   ]
 
 (** Fixed-point Population Count Bytes/Words/Doubleword
@@ -345,7 +345,7 @@ let popcntw cpu ops =
       res := res lor (cnt lsl (ind * x));
       ind := ind - one;
     ];
-    ra := high cpu.addr_size res;
+    ra := high cpu.word_width res;
   ]
 
 let popcntd cpu ops =
@@ -393,44 +393,44 @@ let bpermd cpu ops =
 ]
 
 let () =
-  "ANDIo"   >> andi_dot;
-  "ANDISo"  >> andis_dot;
-  "AND"     >> and_;
+  "ANDIo"   >| andi_dot;
+  "ANDISo"  >| andis_dot;
+  "AND"     >| and_;
   "ANDo"    >. and_;
-  "ANDC"    >> andc;
+  "ANDC"    >| andc;
   "ANDCo"   >. andc;
-  "ORI"     >> ori;
-  "NOP"     >> nop;
-  "ORIS"    >> oris;
-  "OR"      >> or_;
+  "ORI"     >| ori;
+  "NOP"     >| nop;
+  "ORIS"    >| oris;
+  "OR"      >| or_;
   "ORo"     >. or_;
-  "ORC"     >> orc;
+  "ORC"     >| orc;
   "ORCo"    >. orc;
-  "XORI"    >> xori;
-  "XORIS"   >> xoris;
-  "XOR"     >> xor;
+  "XORI"    >| xori;
+  "XORIS"   >| xoris;
+  "XOR"     >| xor;
   "XORo"    >. xor;
-  "NAND"    >> nand;
+  "NAND"    >| nand;
   "NANDo"   >. nand;
-  "NOR"     >> nor;
+  "NOR"     >| nor;
   "NORo"    >. nor;
-  "EQV"     >> eqv;
+  "EQV"     >| eqv;
   "EQVo"    >. eqv;
-  "EXTSB"   >> extsb;
+  "EXTSB"   >| extsb;
   "EXTSBo"  >. extsb;
-  "EXTSH"   >> extsh;
+  "EXTSH"   >| extsh;
   "EXTSHo"  >. extsh;
-  "EXTSW"   >> extsw;
+  "EXTSW"   >| extsw;
   "EXTSWo"  >. extsw;
-  "CNTLZW"  >> cntlzw;
+  "CNTLZW"  >| cntlzw;
   "CNTLZWo" >. cntlzw;
-  "CNTLZD"  >> cntlzd;
+  "CNTLZD"  >| cntlzd;
   "CNTLZDo" >. cntlzd;
-  "CNTTZW"  >> cnttzw;
+  "CNTTZW"  >| cnttzw;
   "CNTTZWo" >. cnttzw;
-  "CNTTZD"  >> cnttzd;
+  "CNTTZD"  >| cnttzd;
   "CNTTZDo" >. cnttzd;
-  "CMPB"    >> cmpb;
-  "POPCNTW" >> popcntw;
-  "POPCNTD" >> popcntd;
-  "BPERMD"  >> bpermd;
+  "CMPB"    >| cmpb;
+  "POPCNTW" >| popcntw;
+  "POPCNTD" >| popcntd;
+  "BPERMD"  >| bpermd;

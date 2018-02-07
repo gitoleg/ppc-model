@@ -1,4 +1,4 @@
-open Powerpc
+open Powerpc.Std
 
 (** Fix-point Shift Left Word
     Page 107 of IBM Power ISATM Version 3.0 B
@@ -45,9 +45,9 @@ let srawi cpu ops =
   let ra = unsigned cpu.reg ops.(0) in
   let rs = unsigned cpu.reg ops.(1) in
   let sh = unsigned imm ops.(2) in
-  let mask = unsigned var cpu.gpr_width in
+  let mask = unsigned var cpu.word_width in
   let carry_ones = unsigned var bit in
-  let ones = unsigned const cpu.gpr_width (-1) in
+  let ones = unsigned const cpu.word_width (-1) in
   let w32 = unsigned const byte 32 in
   RTL.[
     mask := ones;
@@ -75,8 +75,8 @@ let sraw cpu ops =
   let ra = unsigned cpu.reg ops.(0) in
   let rs = unsigned cpu.reg ops.(1) in
   let rb = unsigned cpu.reg ops.(2) in
-  let mask = unsigned var cpu.gpr_width in
-  let w32 = unsigned const cpu.gpr_width 32 in
+  let mask = unsigned var cpu.word_width in
+  let w32 = unsigned const cpu.word_width 32 in
   let carry_ones = unsigned var bit in
   let s = unsigned var bit in
   let shift = unsigned var byte in
@@ -185,14 +185,14 @@ let srad cpu ops =
   ]
 
 let () =
-  "SLW"    >> slw;
-  "SRW"    >> srw;
-  "SRAWI"  >> srawi;
-  "SRAW"   >> sraw;
-  "SLD"    >> sld;
-  "SRD"    >> srd;
-  "SRADI"  >> sradi;
-  "SRAD"   >> srad;
+  "SLW"    >| slw;
+  "SRW"    >| srw;
+  "SRAWI"  >| srawi;
+  "SRAW"   >| sraw;
+  "SLD"    >| sld;
+  "SRD"    >| srd;
+  "SRADI"  >| sradi;
+  "SRAD"   >| srad;
   "SLWo"   >. slw;
   "SRWo"   >. srw;
   "SRAWIo" >. srawi;

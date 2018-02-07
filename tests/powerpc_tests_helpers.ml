@@ -8,10 +8,10 @@ open Powerpc
 
 open Powerpc_model
 
-module H32 = PowerPC_32.Hardware_vars
-module H64 = PowerPC_64.Hardware_vars
+module P32 = PowerPC_32
+module P64 = PowerPC_64
 
-module Any_ppc = H32
+module Any_ppc = P32
 
 let cr_bit n =
   try
@@ -69,8 +69,8 @@ let lookup_var c var = match c#lookup var with
 let find_gpr arch name =
   try
     match arch with
-    | `ppc -> String.Map.find_exn H32.gpr name
-    | _ -> String.Map.find_exn H64.gpr name
+    | `ppc -> String.Map.find_exn P32.gpr name
+    | _ -> String.Map.find_exn P64.gpr name
   with _ ->
     sprintf "gpr %s not" name |> failwith
 

@@ -17,9 +17,6 @@ module type Model = sig
   val vr : t String.Map.t
   val vri : t Int.Map.t
 
-  (** xer register *)
-  val xer : t
-
   (** count register  *)
   val ctr : t
 
@@ -54,14 +51,15 @@ module type Model_exp = sig
 end
 
 module type PowerPC = sig
-  module Hardware_vars : Model with type t := var
-  module Hardware : Model_exp
+  module E : Model_exp
+  include Model with type t := var
+
   val mem : var
+  val flags : Var.Set.t
   val gpr_bitwidth : int
   val fpr_bitwidth : int
   val vr_bitwidth  : int
   val cr_bitwidth  : int
-  val xer_bitwidth : int
   val lr_bitwidth  : int
   val ctr_bitwidth : int
   val tar_bitwidth : int

@@ -1,5 +1,5 @@
 
-open Powerpc
+open Powerpc.Std
 
 (** Fixed-Point Arithmetic Instructions - Negate
     Page 72 of IBM Power ISATM Version 3.0 B
@@ -32,7 +32,7 @@ let subfic cpu ops =
   let si = unsigned imm ops.(2) in
   RTL.[
     rt := (lnot ra) + si + one;
-    cpu.ca   := low cpu.addr_size si < low cpu.addr_size ra;
+    cpu.ca   := low cpu.word_width si < low cpu.word_width ra;
     cpu.ca32 := low word si < low word ra;
   ]
 
@@ -47,7 +47,7 @@ let subfc cpu ops =
   let rb = signed cpu.reg ops.(2) in
   RTL.[
     rt := (lnot ra) + rb + one;
-    cpu.ca   := low cpu.addr_size rb < low cpu.addr_size ra;
+    cpu.ca   := low cpu.word_width rb < low cpu.word_width ra;
     cpu.ca32 := low word rb < low word ra;
   ]
 
@@ -63,7 +63,7 @@ let subfe cpu ops =
   RTL.[
     rt := (lnot ra) + rb + cpu.ca;
     cpu.ca32 := low word rb < low word (ra + one - cpu.ca);
-    cpu.ca   := low cpu.addr_size rb < low cpu.addr_size (ra + one - cpu.ca);
+    cpu.ca   := low cpu.word_width rb < low cpu.word_width (ra + one - cpu.ca);
   ]
 
 (** Fixed-Point Arithmetic Instructions - Substract From Minus One Extended
@@ -372,49 +372,49 @@ let modud cpu ops =
   ]
 
 let () =
-  "NEG"     >> neg;
+  "NEG"     >| neg;
   "NEGo"    >. neg;
-  "SUBF"    >> subf;
+  "SUBF"    >| subf;
   "SUBFo"   >. subf;
-  "SUBFIC"  >> subfic;
-  "SUBFC"   >> subfc;
+  "SUBFIC"  >| subfic;
+  "SUBFC"   >| subfc;
   "SUBFCo"  >. subfc;
-  "SUBFE"   >> subfe;
+  "SUBFE"   >| subfe;
   "SUBFEo"  >. subfe;
-  "SUBFME"  >> subfme;
+  "SUBFME"  >| subfme;
   "SUBFMEo" >. subfme;
-  "SUBFZE"  >> subfze;
+  "SUBFZE"  >| subfze;
   "SUBFZEo" >. subfze;
-  "MULLI"   >> mulli;
-  "MULHW"   >> mulhw;
+  "MULLI"   >| mulli;
+  "MULHW"   >| mulhw;
   "MULHWo"  >. mulhw;
-  "MULHWU"  >> mulhwu;
+  "MULHWU"  >| mulhwu;
   "MULHWUo" >. mulhwu;
-  "MULLW"   >> mullw;
+  "MULLW"   >| mullw;
   "MULLWo"  >. mullw;
-  "DIVW"    >> divw;
+  "DIVW"    >| divw;
   "DIVWo"   >. divw;
-  "DIVWU"   >> divwu;
+  "DIVWU"   >| divwu;
   "DIVWUo"  >. divwu;
-  "DIVWE"   >> divwe;
+  "DIVWE"   >| divwe;
   "DIVWEo"  >. divwe;
-  "DIVWEU"  >> divweu;
+  "DIVWEU"  >| divweu;
   "DIVWEUo" >. divweu;
-  "MODSW"   >> modsw;
-  "MODUW"   >> moduw;
-  "MULLD"   >> mulld;
+  "MODSW"   >| modsw;
+  "MODUW"   >| moduw;
+  "MULLD"   >| mulld;
   "MULLDo"  >. mulld;
-  "MULHD"   >> mulhd;
+  "MULHD"   >| mulhd;
   "MULHDo"  >. mulhd;
-  "MULHDU"  >> mulhdu;
+  "MULHDU"  >| mulhdu;
   "MULHDUo" >. mulhdu;
-  "DIVD"    >> divd;
+  "DIVD"    >| divd;
   "DIVDo"   >. divd;
-  "DIVDU"   >> divdu;
+  "DIVDU"   >| divdu;
   "DIVDUo"  >. divdu;
-  "DIVDE"   >> divde;
+  "DIVDE"   >| divde;
   "DIVDEo"  >. divde;
-  "DIVDEU"  >> divdeu;
+  "DIVDEU"  >| divdeu;
   "DIVDEUo" >. divdeu;
-  "MODSD"   >> modsd;
-  "MODUD"   >> modud;
+  "MODSD"   >| modsd;
+  "MODUD"   >| modud;

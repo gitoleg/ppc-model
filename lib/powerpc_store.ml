@@ -1,4 +1,4 @@
-open Powerpc
+open Powerpc.Std
 
 (** Fixed-point Store Byte/Halfword/Word
     Pages 54-56 of IBM Power ISATM Version 3.0 B
@@ -167,7 +167,7 @@ let sthbrx cpu ops =
   let rs = unsigned cpu.reg ops.(0) in
   let ra = signed cpu.reg ops.(1) in
   let rb = signed cpu.reg ops.(2) in
-  let ea = unsigned var cpu.addr_size in
+  let ea = unsigned var cpu.word_width in
   let x = unsigned var halfword in
   let y = unsigned var doubleword in
   RTL.[
@@ -185,7 +185,7 @@ let stwbrx cpu ops =
   let rs = unsigned cpu.reg ops.(0) in
   let ra = signed cpu.reg ops.(1) in
   let rb = signed cpu.reg ops.(2) in
-  let ea = unsigned var cpu.addr_size in
+  let ea = unsigned var cpu.word_width in
   let x = unsigned var word in
   let y = unsigned var doubleword in
   RTL.[
@@ -214,22 +214,22 @@ let stdbrx cpu ops =
   ]
 
 let () =
-  "STB"    >> stb;
-  "STH"    >> sth;
-  "STW"    >> stw;
-  "STBX"   >> stbx;
-  "STHX"   >> sthx;
-  "STWX"   >> stwx;
-  "STDX"   >> stdx;
-  "STBU"   >> stbu;
-  "STHU"   >> sthu;
-  "STWU"   >> stwu;
-  "STBUX"  >> stbux;
-  "STHUX"  >> sthux;
-  "STWUX"  >> stwux;
-  "STDUX"  >> stdux;
-  "STD"    >> std;
-  "STDU"   >> stdu;
-  "STHBRX" >> sthbrx;
-  "STWBRX" >> stwbrx;
-  "STDBRX" >> stdbrx;
+  "STB"    >| stb;
+  "STH"    >| sth;
+  "STW"    >| stw;
+  "STBX"   >| stbx;
+  "STHX"   >| sthx;
+  "STWX"   >| stwx;
+  "STDX"   >| stdx;
+  "STBU"   >| stbu;
+  "STHU"   >| sthu;
+  "STWU"   >| stwu;
+  "STBUX"  >| stbux;
+  "STHUX"  >| sthux;
+  "STWUX"  >| stwux;
+  "STDUX"  >| stdux;
+  "STD"    >| std;
+  "STDU"   >| stdu;
+  "STHBRX" >| sthbrx;
+  "STWBRX" >| stwbrx;
+  "STDBRX" >| stdbrx;

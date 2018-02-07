@@ -1,4 +1,4 @@
-open Powerpc
+open Powerpc.Std
 
 (** Fix-point Compare Immediate
     Page 85 of IBM Power ISATM Version 3.0 B
@@ -109,11 +109,11 @@ let cmpld cpu ops =
   ]
 
 let () =
-  "CMPWI"  >> cmpwi;
-  "CMPDI"  >> cmpdi;
-  "CMPW"   >> cmpw;
-  "CMPD"   >> cmpd;
-  "CMPLWI" >> cmplwi;
-  "CMPLDI" >> cmpldi;
-  "CMPLW"  >> cmplw;
-  "CMPLD"  >> cmpld;
+  "CMPWI"  >| cmpwi;
+  "CMPDI"  >| cmpdi;
+  "CMPW"   >| cmpw;
+  "CMPD"   >| cmpd;
+  "CMPLWI" >| cmplwi;
+  "CMPLDI" >| cmpldi;
+  "CMPLW"  >| cmplw;
+  "CMPLD"  >| cmpld;

@@ -1,4 +1,4 @@
-open Powerpc
+open Powerpc.Std
 
 (** Fixed-point Load Byte/Halfword/Word and Zero
     Pages 48-54 of IBM Power ISATM Version 3.0 B
@@ -292,29 +292,29 @@ let ldbrx cpu ops =
   ]
 
 let () =
-  "LBZ"   >> lbz;
-  "LHZ"   >> lhz;
-  "LWZ"   >> lwz;
-  "LBZX"  >> lbzx;
-  "LHZX"  >> lhzx;
-  "LWZX"  >> lwzx;
-  "LBZU"  >> lbzu;
-  "LHZU"  >> lhzu;
-  "LWZU"  >> lwzu;
-  "LBZUX" >> lbzux;
-  "LHZUX" >> lhzux;
-  "LWZUX" >> lwzux;
-  "LHA"   >> lha;
-  "LWA"   >> lwa;
-  "LHAX"  >> lhax;
-  "LWAX"  >> lwax;
-  "LHAU"  >> lhau;
-  "LHAUX" >> lhaux;
-  "LWAUX" >> lwaux;
-  "LD"    >> ld;
-  "LDX"   >> ldx;
-  "LDU"   >> ldu;
-  "LDUX"  >> ldux;
-  "LHBRX" >> lhbrx;
-  "LWBRX" >> lwbrx;
-  "LDBRX" >> ldbrx;
+  "LBZ"   >| lbz;
+  "LHZ"   >| lhz;
+  "LWZ"   >| lwz;
+  "LBZX"  >| lbzx;
+  "LHZX"  >| lhzx;
+  "LWZX"  >| lwzx;
+  "LBZU"  >| lbzu;
+  "LHZU"  >| lhzu;
+  "LWZU"  >| lwzu;
+  "LBZUX" >| lbzux;
+  "LHZUX" >| lhzux;
+  "LWZUX" >| lwzux;
+  "LHA"   >| lha;
+  "LWA"   >| lwa;
+  "LHAX"  >| lhax;
+  "LWAX"  >| lwax;
+  "LHAU"  >| lhau;
+  "LHAUX" >| lhaux;
+  "LWAUX" >| lwaux;
+  "LD"    >| ld;
+  "LDX"   >| ldx;
+  "LDU"   >| ldu;
+  "LDUX"  >| ldux;
+  "LHBRX" >| lhbrx;
+  "LWBRX" >| lwbrx;
+  "LDBRX" >| ldbrx;

@@ -15,11 +15,10 @@ module RTL = struct
 end
 
 open Dsl
-open Powerpc_model
-module Ppc_vars = PowerPC_32.Hardware_vars
-module Ppc = PowerPC_32.Hardware
-open Ppc
 
+module P = Model.PowerPC_32
+
+open P.E
 
 let eval_rtl rtl =
   let bil = bil_of_t rtl in
@@ -32,14 +31,6 @@ let width_of_string str expected ctxt =
       expected width in
   assert_bool err (expected = width)
 
-let signed_of_string ctxt =
-  let x = signed of_string "0b11" in
-  let y = Exp.bil_exp x in
-  let expected = Word.of_int ~width:2 (-1) in
-  match y with
-  | Bil.Int w ->
-    assert_bool "signed_of_string: not equal" (Word.equal expected w)
-  | _ -> assert_bool "signed_of_string: unexpected outcome" false
 
 let dsl_extract ctxt =
   let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
@@ -358,7 +349,7 @@ let cr_assign ctxt =
   List.iter range ~f:(fun i ->
       let expected = if i >= 16 && i <= 23 then
           Word.b1 else Word.b0 in
-      let cr_bit = Int.Map.find_exn Ppc_vars.cri i in
+      let cr_bit = Int.Map.find_exn P.cri i in
       let value = lookup_var ctxt cr_bit in
       let err = sprintf "cr assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))
@@ -375,7 +366,7 @@ let cr_field_assign ctxt =
   List.iter range ~f:(fun i ->
       let expected = if i >= 8 && i <= 11 then
           Word.b1 else Word.b0 in
-      let cr_bit = Int.Map.find_exn Ppc_vars.cri i in
+      let cr_bit = Int.Map.find_exn P.cri i in
       let value = lookup_var ctxt cr_bit in
       let err = sprintf "cr field assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))
@@ -392,7 +383,7 @@ let cr_shift ctxt =
   List.iter range ~f:(fun i ->
       let expected = if i >= 0 && i <= 29 then
           Word.b1 else Word.b0 in
-      let cr_bit = Int.Map.find_exn Ppc_vars.cri i in
+      let cr_bit = Int.Map.find_exn P.cri i in
       let value = lookup_var ctxt cr_bit in
       let err = sprintf "cr assign to bit %d failed\n" i in
       assert_bool err (is_equal_words expected value))
@@ -413,15 +404,16 @@ let foreach ctxt =
   let ind_j = Exp.of_var ind_j' in
   let byte_i = Exp.of_var byte_i' in
   let byte_j = Exp.of_var byte_j' in
+  let foreach' = RTL.foreach ~inverse:true in
   let rtl =
     RTL.[
       v1 := x1;
       v2 := x2;
       cnt := zero;
       ind_i := zero;
-      Dsl.foreach byte_i v1 [
+      foreach' byte_i v1 [
         ind_j := zero;
-        Dsl.foreach byte_j v2 [
+        foreach' byte_j v2 [
           when_ (ind_j = ind_i) [
             when_ (byte_i = byte_j) [
               cnt := cnt + one;
@@ -454,17 +446,18 @@ let foreach_with_assign ctxt =
   let ind_i = unsigned var byte in
   let ind_j = unsigned var byte in
   let ind_k = unsigned var byte in
+  let foreach' = RTL.foreach ~inverse:true in
   let rtl =
     RTL.[
       v1 := x;
       v2 := y;
       v3 := x;
       ind_i := zero;
-      Dsl.foreach byte_i v1 [
+      foreach' byte_i v1 [
         ind_j := zero;
-        Dsl.foreach byte_j v2 [
+        foreach' byte_j v2 [
           ind_k := zero;
-          Dsl.foreach byte_k v3 [
+          foreach' byte_k v3 [
             when_ ((ind_i = ind_k) land (ind_k = ind_j)) [
               if_ (byte_j = byte_i) [
                 byte_k := z;
@@ -518,8 +511,9 @@ let foreach_test_inverse inverse ctxt =
   let expected_4 = Word.of_int ~width:8 0xAA in
   let ctxt = eval_rtl rtl in
   let check var expected =
+    let name = Var.name var in
     let value = lookup_var ctxt var in
-    assert_bool (sprintf "foreach inverse=%b failed" inverse)
+    assert_bool (sprintf "foreach inverse=%b failed for %s" inverse name)
       (is_equal_words expected value) in
   if inverse then
     let () = check var1' expected_4 in
@@ -563,7 +557,6 @@ let suite = "Dsl" >::: [
     "exp of string 0x3FA"                    >:: width_of_string "0x3FA" 12;
     "exp of string 0x03FA"                   >:: width_of_string "0x03FA" 16;
     "exp of big string"                      >:: width_of_string "0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF" 112;
-    "signed of string"                       >:: signed_of_string;
     "extract"                                >:: dsl_extract;
     "extract signed"                         >:: dsl_extract_signed;
     "extract unsigned"                       >:: dsl_extract_unsigned;

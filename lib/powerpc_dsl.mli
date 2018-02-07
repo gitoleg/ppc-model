@@ -17,8 +17,8 @@ val int_of_bitwidth : bitwidth -> int
 
 val imm : (op -> exp) ec
 val var : (bitwidth -> exp) ec
-val const : (bitwidth -> int -> exp) ec
 val reg : (reg -> exp) -> (op -> exp) ec
+val const : (bitwidth -> int -> exp) ec
 val of_string : (string -> exp) ec
 
 val signed : 'a ec -> 'a
@@ -58,9 +58,6 @@ val msb : exp -> exp
 
 (** [lsb e] - extracts the least significant bit from [e] *)
 val lsb : exp -> exp
-
-(** [foreach step e rtl] - repeat [rtl] for each [step] of [e] *)
-val foreach : exp -> exp -> rtl list -> rtl
 
 (** [when_ cond rtl] = if_ cond rtl [] *)
 val when_ : exp -> rtl list -> rtl

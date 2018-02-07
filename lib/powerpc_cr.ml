@@ -1,4 +1,4 @@
-open Powerpc
+open Powerpc.Std
 
 (** Conditional Cpu.Register Instructions - And
     Pages 40-41 of IBM Power ISATM Version 3.0 B
@@ -108,12 +108,12 @@ let mcrf cpu ops =
   ]
 
 let () =
-  "CRAND"  >> crand;
-  "CRNAND" >> crnand;
-  "CROR"   >> cror;
-  "CRXOR"  >> crxor;
-  "CRNOR"  >> crnor;
-  "CREQV"  >> creqv;
-  "CRANDC" >> crandc;
-  "CRORC"  >> crorc;
-  "MCRF"   >> mcrf;
+  "CRAND"  >| crand;
+  "CRNAND" >| crnand;
+  "CROR"   >| cror;
+  "CRXOR"  >| crxor;
+  "CRNOR"  >| crnor;
+  "CREQV"  >| creqv;
+  "CRANDC" >| crandc;
+  "CRORC"  >| crorc;
+  "MCRF"   >| mcrf;

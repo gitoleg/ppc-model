@@ -1,7 +1,7 @@
-open Powerpc
+open Powerpc.Std
 
 let update_link_register cpu ops =
-  RTL.[cpu.lr := cpu.addr + unsigned const byte 4]
+  RTL.[cpu.lr := cpu.pc + unsigned const byte 4]
 
 (** Branch Instructions, Branch
     Page 37 of IBM Power ISATM Version 3.0 B
@@ -12,43 +12,42 @@ let update_link_register cpu ops =
     4b ff fe f3  bla 67108592 *)
 let b cpu ops =
   let im = signed imm ops.(0) in
-  (* let sh = unsigned const byte 2 in *)
   let tm = signed var word in
-  let sh = unsigned of_string "0b00" in
+  let sh = unsigned const byte 2 in
   RTL.[
-    tm := last (im ^ sh) 26;
-    cpu.jmp (cpu.addr + tm)
+    tm := last (im lsl sh) 26;
+    cpu.jmp (cpu.pc + tm)
   ]
 
 let ba cpu ops =
-  let im = unsigned imm ops.(0) in
+  let im = signed imm ops.(0) in
+  let tm = signed var word in
   let sh = unsigned const byte 2 in
-  let tm = signed var cpu.addr_size in
   RTL.[
     tm := last (im lsl sh) 26;
-    cpu.jmp tm;
+    cpu.jmp tm
   ]
 
 let bl cpu ops =
-  let im = unsigned imm ops.(0) in
+  let im = signed imm ops.(0) in
+  let tm = signed var word in
   let sh = unsigned const byte 2 in
   let ad = unsigned const byte 4 in
-  let tm = signed var word in
   RTL.[
     tm := last (im lsl sh) 26;
-    cpu.jmp (cpu.addr + tm);
-    cpu.lr := cpu.addr + ad;
+    cpu.jmp (cpu.pc + tm);
+    cpu.lr := cpu.pc + ad;
   ]
 
 let bla cpu ops =
-  let im = unsigned imm ops.(0) in
+  let im = signed imm ops.(0) in
+  let tm = signed var word in
   let sh = unsigned const byte 2 in
   let ad = unsigned const byte 4 in
-  let tm = signed var cpu.addr_size in
   RTL.[
     tm := last (im lsl sh) 26;
     cpu.jmp tm;
-    cpu.lr := cpu.addr + ad;
+    cpu.lr := cpu.pc + ad;
   ]
 
 (** Branch Instructions, Branch Conditional
@@ -76,7 +75,7 @@ let bc cpu ops =
     cond_ok := nth bit x 0 lor (bi lxor (lnot (nth bit x 1)));
     when_ (ctr_ok land cond_ok) [
       tm := bd lsl sh;
-      cpu.jmp (cpu.addr + tm);
+      cpu.jmp (cpu.pc + tm);
     ]
   ]
 
@@ -88,7 +87,7 @@ let bca cpu ops =
   let ctr_ok = unsigned var bit in
   let cond_ok = unsigned var bit in
   let x = unsigned var (bitwidth 5) in
-  let tm = signed var cpu.addr_size in
+  let tm = signed var cpu.word_width in
   RTL.[
     x := last bo 5;
     when_ (nth bit x 2 = zero) [
@@ -102,19 +101,19 @@ let bca cpu ops =
     ]
   ]
 
-let bcl = concat bc update_link_register
-let bcla = concat bca update_link_register
+let bcl = bc ^ update_link_register
+let bcla = bca ^ update_link_register
 
 (** bdz  target = bc 18,0, target *)
 let bdz cpu ops =
   let bd = unsigned imm ops.(0) in
   let sh = unsigned const byte 2 in
-  let tm = signed var cpu.addr_size in
+  let tm = signed var cpu.word_width in
   RTL.[
     cpu.ctr := cpu.ctr - one;
-    when_ (low cpu.addr_size cpu.ctr = zero) [
+    when_ (low cpu.word_width cpu.ctr = zero) [
       tm := bd lsl sh;
-      cpu.jmp (cpu.addr + tm)
+      cpu.jmp (cpu.pc + tm)
     ]
   ]
 
@@ -122,12 +121,12 @@ let bdz cpu ops =
 let bdnz cpu ops =
   let bd = unsigned imm ops.(0) in
   let sh = unsigned const byte 2 in
-  let tm = signed var cpu.addr_size in
+  let tm = signed var cpu.word_width in
   RTL.[
     cpu.ctr := cpu.ctr - one;
-    when_ (low cpu.addr_size cpu.ctr <> zero) [
+    when_ (low cpu.word_width cpu.ctr <> zero) [
       tm := bd lsl sh;
-      cpu.jmp (cpu.addr + tm)
+      cpu.jmp (cpu.pc + tm)
     ]
   ]
 
@@ -155,7 +154,7 @@ let bclr cpu ops =
     ];
   ]
 
-let bclrl = concat bclr update_link_register
+let bclrl = bclr ^ update_link_register
 
 (** Branch Instructions extended mnemonic, branch to LR unconditionally.
     Page 792 of IBM Power ISATM Version 3.0 B
@@ -172,7 +171,7 @@ let blrl cpu ops =
   let sh = unsigned const byte 2 in
   RTL.[
     cpu.jmp (cpu.lr lsl sh);
-    cpu.lr := cpu.addr + unsigned const byte 4
+    cpu.lr := cpu.pc + unsigned const byte 4
   ]
 
 (** bdnzlr = bclr 16,0,0  *)
@@ -193,18 +192,19 @@ let bdnzlr cpu ops =
 let bcctr cpu ops =
   let bo = unsigned imm ops.(0) in
   let bi = unsigned cpu.reg ops.(1) in
-  let sh = unsigned const byte 2 in
   let cond_ok = unsigned var bit in
   let x = unsigned var (bitwidth 5) in
   RTL.[
     x := last bo 5;
     cond_ok := (nth bit x 0 = one) lor ( bi lxor (lnot (nth bit x 1)));
     when_ (cond_ok) [
-      cpu.jmp (cpu.ctr lsl sh);
+      nth bit cpu.ctr 62 := zero;
+      nth bit cpu.ctr 63 := zero;
+      cpu.jmp cpu.ctr;
     ];
   ]
 
-let bcctrl = concat bcctr update_link_register
+let bcctrl = bcctr ^ update_link_register
 
 (** Branch Instructions extended mnemonic, branch to CTR unconditionally.
     Page 792 of IBM Power ISATM Version 3.0 B
@@ -212,12 +212,13 @@ let bcctrl = concat bcctr update_link_register
     4e 80 04 20   bctr
     4e 80 04 21   bctrl *)
 let bctr cpu ops =
-  let sh = unsigned const byte 2 in
   RTL.[
-    cpu.jmp (cpu.ctr lsl sh)
+    nth bit cpu.ctr 62 := zero;
+    nth bit cpu.ctr 63 := zero;
+    cpu.jmp cpu.ctr;
   ]
 
-let bctrl = concat bctr update_link_register
+let bctrl = bctr ^ update_link_register
 
 (** Branch Instructions, Branch Conditional to Target Cpu.Register
     Page 39 of IBM Power ISATM Version 3.0 B
@@ -243,34 +244,34 @@ let bctar cpu ops =
     ]
   ]
 
-let bctarl = concat bctar update_link_register
+let bctarl = bctar ^ update_link_register
 
 let () =
-  "B"       >> b;
-  "BA"      >> ba;
-  "BL"      >> bl;
-  "BLA"     >> bla;
-  "gBC"     >> bc;
-  "gBCA"    >> bca;
-  "gBCL"    >> bcl;
-  "gBCLA"   >> bcla;
-  "BDZ"     >> bdz;
-  "BDNZ"    >> bdnz;
-  "BCC"     >> bc;
-  "BCCL"    >> bcl;
-  "BCCLA"   >> bcla;
-  "gBCLR"   >> bclr;
-  "gBCLRL"  >> bclrl;
-  "gBCCTR"  >> bcctr;
-  "gBCCTRL" >> bcctrl;
-  "BDNZLR"  >> bdnzlr;
-  "gBCTAR"  >> bctar;
-  "gBCTARL" >> bctarl;
-  "BLR"     >> blr;
-  "BLRL"    >> blrl;
-  "BCTR"    >> bctr;
-  "BCTRL"   >> bctrl;
-  "BCCLR"   >> bclr;
-  "BCCLRL"  >> bclrl;
-  "BCCCTR"  >> bcctr;
-  "BCCCTRL" >> bcctrl;
+  "B"       >| b;
+  "BA"      >| ba;
+  "BL"      >| bl;
+  "BLA"     >| bla;
+  "gBC"     >| bc;
+  "gBCA"    >| bca;
+  "gBCL"    >| bcl;
+  "gBCLA"   >| bcla;
+  "BDZ"     >| bdz;
+  "BDNZ"    >| bdnz;
+  "BCC"     >| bc;
+  "BCCL"    >| bcl;
+  "BCCLA"   >| bcla;
+  "gBCLR"   >| bclr;
+  "gBCLRL"  >| bclrl;
+  "gBCCTR"  >| bcctr;
+  "gBCCTRL" >| bcctrl;
+  "BDNZLR"  >| bdnzlr;
+  "gBCTAR"  >| bctar;
+  "gBCTARL" >| bctarl;
+  "BLR"     >| blr;
+  "BLRL"    >| blrl;
+  "BCTR"    >| bctr;
+  "BCTRL"   >| bctrl;
+  "BCCLR"   >| bclr;
+  "BCCLRL"  >| bclrl;
+  "BCCCTR"  >| bcctr;
+  "BCCCTRL" >| bcctrl;

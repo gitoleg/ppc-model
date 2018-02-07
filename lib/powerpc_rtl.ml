@@ -1,8 +1,7 @@
 open Core_kernel.Std
 open Bap.Std
-open Powerpc_utils
 
-type bil_exp = exp
+open Powerpc_utils
 
 type sign = Signed | Unsigned [@@deriving bin_io, compare, sexp]
 
@@ -304,9 +303,7 @@ module Translate = struct
       2) var1 ^ var2 ... varN := exp
       3) [var1;var2; ...] := exp  - equivalent to 2)
       4) extract hi lo var := exp - change only certain bits of var
-      5) extract hi lo (var1 ^ var2 ... varN) := exp
-
-      and only first kind of assignment is sign sensitive *)
+      5) extract hi lo (var1 ^ var2 ... varN) := exp *)
   let rec move lhs rhs =
     match Exp.body lhs with
     | Vars (v, []) ->
@@ -325,73 +322,66 @@ module Translate = struct
 
   let jmp exp = Bil.[ jmp (bil_exp exp.body)]
 
-  class move_finder var = object(self)
-    inherit [bool] Stmt.visitor
-    method! enter_move v _ x = Var.equal var v || x
-  end
+  class move_finder var =
+    object inherit [unit] Stmt.finder
+      method! enter_move v _ r =
+        if Var.equal var v then r.return (Some ())
+        else r
+    end
 
   let rec stmt_to_bil = function
     | Move (x,y) -> move x y
-    | Store (mem, addr, data, endian, size) ->
-      let size' = Size.in_bits size in
-      let width = Exp.width data in
-      let data =
-        if size' = width then data
-        else
-          Exp.extract (size' - 1) 0 data in
-      store mem addr data endian size
     | Jmp a -> jmp a
-    | If (cond, then_, else_) ->
-      let then_ = to_bil then_ in
-      let else_ = to_bil else_ in
-      if_ cond then_ else_
+    | If (cond, then_, else_) -> if_ cond (to_bil then_) (to_bil else_)
     | Message m -> [Bil.special m]
+    | Store (mem, addr, data, endian, size) ->
+      let bits = Size.in_bits size in
+      let data =
+        if bits = Exp.width data then data
+        else Exp.extract (bits - 1) 0 data in
+      store mem addr data endian size
     | Foreach (inverse,step_e, e, code) ->
-      let step_var = var_of_exp step_e in
       let iters = Exp.width e / Exp.width step_e in
-      let step = Exp.width step_e in
-      let has_assignments = has_assignments step_var code in
+      let stepw = Exp.width step_e in
+      let has_assignments = has_assignments (var_of_exp step_e) code in
       to_bil @@ List.concat
         (List.init iters
            ~f:(fun i ->
                let i = if inverse then iters - i - 1 else i in
-               let hi = (i + 1) * step - 1 in
-               let lo = i * step in
+               let hi = (i + 1) * stepw - 1 in
+               let lo = i * stepw in
                if has_assignments then
                  let last = Infix.(Exp.extract hi lo e := step_e) in
                  Infix.(step_e := Exp.extract hi lo e) :: code @ [last]
                else
                  Infix.(step_e := Exp.extract hi lo e) :: code))
-  and
-    to_bil (ts : t list)  =
+  and to_bil ts =
     List.concat (List.map ~f:stmt_to_bil ts)
   and has_assignments var rtl =
     let bil = to_bil rtl in
-    let vis = new move_finder var in
-    vis#run bil false
+    Option.is_some ((new move_finder var)#find bil)
 end
 
 module Normalize = struct
   open Bap.Std
 
   let jmp_exists bil =
-    let finder = object
-      inherit [bool] Stmt.visitor
-      method! enter_jmp _ _ = true
-    end in
-    finder#run bil false
+    (object inherit [unit] Stmt.finder
+      method! enter_jmp _ r = r.return (Some ())
+    end)#find bil |> Option.is_some
 
   let remove_if bil =
     let open Bil in
     let product xs ys = match xs,ys with
-      | xs, [] -> xs
-      | [], ys -> ys
-      | xs,ys ->
-        List.fold xs ~init:[] ~f:(fun acc x ->
-            List.fold ys ~init:acc ~f:(fun acc y -> (y @ x) :: acc)) in
+      | x, [] | [], x -> x
+      | xs, ys ->
+        List.fold xs ~init:[]
+          ~f:(fun acc x ->
+              List.fold ys ~init:acc
+                ~f:(fun acc y -> (y @ x) :: acc)) in
     let rec loop acc n = function
       | [] -> acc, n
-      | If (e, ts, es)  :: bil ->
+      | If (e, ts, es) :: bil ->
         let ts,n = loop [] n ts in
         let es,n = loop [] n es in
         let acc1 = product acc ts in
@@ -431,25 +421,26 @@ module Normalize = struct
             match s with
             | Bil.Jmp _ -> Some n
             | _ -> None) in
-      let bils = List.filter (remove_if bil) ~f:(fun lines ->
-          jmp_exists (get_bil lines)) in
-      let jmps = List.filter_map bils ~f:(fun lines ->
-          let n = jmp_line lines in
-          let bil = get_bil lines in
-          let c = Stmt.eval bil (new Bili.context) in
-          match c#pc with
-          | Bil.Imm a -> Some (n, a)
-          | _ -> None) in
+      let jmps =
+        remove_if bil |>
+        List.filter ~f:(fun lines ->
+            jmp_exists (get_bil lines)) |>
+        List.filter_map ~f:(fun lines ->
+            let n = jmp_line lines in
+            let c = Stmt.eval (get_bil lines) (new Bili.context) in
+            match c#pc with
+            | Bil.Imm a -> Some (n, a)
+            | _ -> None) in
       match jmps with
       | [] -> bil
       | (n,x) :: [] -> replace_jmp n x bil
       | jmps ->
         let jmps = List.sort jmps
             ~cmp:(fun (n,_) (m,_) -> Int.compare n m) in
-        let jmps = List.group jmps ~break:(fun (n,_) (m,_) -> n<>m) in
+        let jmps = List.group jmps ~break:(fun (n,_) (m,_) -> n <> m) in
         List.fold jmps ~init:bil ~f:(fun bil -> function
             | [] -> bil
-            | (line, jmp) :: jmps  when List.for_all jmps
+            | (line, jmp) :: jmps when List.for_all jmps
                   ~f:(fun (m,j) -> m = line && Word.equal jmp j) ->
               replace_jmp line jmp bil
             | _ -> bil)
