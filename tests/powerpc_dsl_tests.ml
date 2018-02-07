@@ -25,6 +25,22 @@ let eval_rtl rtl =
   let bil = bil_of_t rtl in
   Stmt.eval bil (new Bili.context)
 
+let width_of_string str expected ctxt =
+  let x = unsigned of_string str in
+  let width = Exp.width x in
+  let err = sprintf "Dsl.of_string failed, expected width %d <> %d\n"
+      expected width in
+  assert_bool err (expected = width)
+
+let signed_of_string ctxt =
+  let x = signed of_string "0b11" in
+  let y = Exp.bil_exp x in
+  let expected = Word.of_int ~width:2 (-1) in
+  match y with
+  | Bil.Int w ->
+    assert_bool "signed_of_string: not equal" (Word.equal expected w)
+  | _ -> assert_bool "signed_of_string: unexpected outcome" false
+
 let dsl_extract ctxt =
   let v = Exp.of_word @@ Word.of_int ~width:32 0xAABBCCDD in
   let x = unsigned var word in
@@ -403,9 +419,9 @@ let foreach ctxt =
       v2 := x2;
       cnt := zero;
       ind_i := zero;
-      foreach byte_i v1 [
+      Dsl.foreach byte_i v1 [
         ind_j := zero;
-        foreach byte_j v2 [
+        Dsl.foreach byte_j v2 [
           when_ (ind_j = ind_i) [
             when_ (byte_i = byte_j) [
               cnt := cnt + one;
@@ -444,11 +460,11 @@ let foreach_with_assign ctxt =
       v2 := y;
       v3 := x;
       ind_i := zero;
-      foreach byte_i v1 [
+      Dsl.foreach byte_i v1 [
         ind_j := zero;
-        foreach byte_j v2 [
+        Dsl.foreach byte_j v2 [
           ind_k := zero;
-          foreach byte_k v3 [
+          Dsl.foreach byte_k v3 [
             when_ ((ind_i = ind_k) land (ind_k = ind_j)) [
               if_ (byte_j = byte_i) [
                 byte_k := z;
@@ -467,6 +483,54 @@ let foreach_with_assign ctxt =
   let ctxt = eval_rtl rtl in
   let value = lookup_var ctxt v3' in
   assert_bool "foreach with assign failed" (is_equal_words expected value)
+
+let foreach_test_inverse inverse ctxt =
+  let x = Exp.of_word @@ Word.of_int64 ~width:32 0xAA_BB_CC_DDL in
+  let v = unsigned var word in
+  let ind = unsigned var byte in
+  let ind2 = unsigned const byte 2 in
+  let ind3 = unsigned const byte 3 in
+  let var1' = Var.create "tmp1" (Type.Imm 8) in
+  let var2' = Var.create "tmp2" (Type.Imm 8) in
+  let var3' = Var.create "tmp3" (Type.Imm 8) in
+  let var4' = Var.create "tmp4" (Type.Imm 8) in
+  let var1 = Exp.of_var var1' in
+  let var2 = Exp.of_var var2' in
+  let var3 = Exp.of_var var3' in
+  let var4 = Exp.of_var var4' in
+  let byte_i = unsigned var byte in
+  let foreach' = RTL.foreach ~inverse in
+  let rtl =
+    RTL.[
+      v := x;
+      ind := zero;
+      foreach' byte_i v [
+        when_ (ind = zero) [ var1 := byte_i];
+        when_ (ind = one)  [ var2 := byte_i];
+        when_ (ind = ind2) [ var3 := byte_i];
+        when_ (ind = ind3) [ var4 := byte_i];
+        ind := ind + one;
+      ];
+    ] in
+  let expected_1 = Word.of_int ~width:8 0xDD in
+  let expected_2 = Word.of_int ~width:8 0xCC in
+  let expected_3 = Word.of_int ~width:8 0xBB in
+  let expected_4 = Word.of_int ~width:8 0xAA in
+  let ctxt = eval_rtl rtl in
+  let check var expected =
+    let value = lookup_var ctxt var in
+    assert_bool (sprintf "foreach inverse=%b failed" inverse)
+      (is_equal_words expected value) in
+  if inverse then
+    let () = check var1' expected_4 in
+    let () = check var2' expected_3 in
+    let () = check var3' expected_2 in
+    check var4' expected_1
+  else
+    let () = check var1' expected_1 in
+    let () = check var2' expected_2 in
+    let () = check var3' expected_3 in
+    check var4' expected_4
 
 (** check that rotate insns could be implemented like this  *)
 let circ_shift_32 ctxt =
@@ -489,6 +553,17 @@ let circ_shift_32 ctxt =
   assert_bool "circ_shift failed" (is_equal_words expected value)
 
 let suite = "Dsl" >::: [
+    "exp of string 1"                        >:: width_of_string "1" 1;
+    "exp of string 42"                       >:: width_of_string "42" 6;
+    "exp of string 0b00"                     >:: width_of_string "0b00" 2;
+    "exp of string 0b101"                    >:: width_of_string "0b101" 3;
+    "exp of string 0b0101"                   >:: width_of_string "0b0101" 4;
+    "exp of string 0o474"                    >:: width_of_string "0o474" 9;
+    "exp of string 0o0474"                   >:: width_of_string "0o0474" 12;
+    "exp of string 0x3FA"                    >:: width_of_string "0x3FA" 12;
+    "exp of string 0x03FA"                   >:: width_of_string "0x03FA" 16;
+    "exp of big string"                      >:: width_of_string "0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF" 112;
+    "signed of string"                       >:: signed_of_string;
     "extract"                                >:: dsl_extract;
     "extract signed"                         >:: dsl_extract_signed;
     "extract unsigned"                       >:: dsl_extract_unsigned;
@@ -515,5 +590,7 @@ let suite = "Dsl" >::: [
     "cr_shift"                               >:: cr_shift;
     "foreach"                                >:: foreach;
     "foreach with assign"                    >:: foreach_with_assign;
+    "foreach with inverse"                   >:: foreach_test_inverse true;
+    "foreach without inverse"                >:: foreach_test_inverse false;
     "circ shift"                             >:: circ_shift_32;
   ]

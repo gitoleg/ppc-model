@@ -53,11 +53,11 @@
 
     Any expression in RTL has a notion of bitwidth. All operations
     over expressions of different width will cause a casting to the
-    more biggest bitwidth.
+    more bigger bitwidth.
 
     Note, that any expression that tends to take part of other
-    expression is always unsigned. The same is true for any
-    expression that is a concatenation of expressions.
+    expression is always unsigned. The same is true for
+    a concatenation of expressions.
     But it's still possible to use them as signed expressions, e.g.
     assign them to signed expression or use signed comparison.
 
@@ -298,15 +298,25 @@ val signed : 'a ec -> 'a
 (** [unsigned ec] - returns an unsigned expression from given [ec] *)
 val unsigned : 'a ec -> 'a
 
-(** imm constructor - constructs an immediate from operand *)
+(** [imm] - constructs an immediate from operand *)
 val imm : (op -> exp) ec
 
-(** var constructor - constructs a variable of bitwidth *)
+(** [var] - constructs a variable of bitwidth *)
 val var : (bitwidth -> exp) ec
 
-(** const constructor - constructs a constant of [bitwidth] and integer *)
+(** [const] - constructs an expression of [bitwidth] of integer *)
 val const : (bitwidth -> int -> exp) ec
 
+(** [of_string] - constructs an expression from string.
+    String must be either in a decimal, binary, octal or hexadecimal format.
+    Width of an expression defined as following:
+    - decimal: width = number of significant bits
+    - octal: width = number of significant bits closest to
+      multiple of 3 from above
+    - hexadecimal: width = number of significant bits closest to
+      multiple of 4 from above
+    - binary: number of listed bits, i.e. length of string *)
+val of_string : (string -> exp) ec
 
 (** Set of operators. Briefly it contains next operators:
     - assignment

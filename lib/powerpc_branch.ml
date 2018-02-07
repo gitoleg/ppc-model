@@ -11,11 +11,12 @@ let update_link_register cpu ops =
     4b ff fe f1  bl .+67108592
     4b ff fe f3  bla 67108592 *)
 let b cpu ops =
-  let im = unsigned imm ops.(0) in
-  let sh = unsigned const byte 2 in
+  let im = signed imm ops.(0) in
+  (* let sh = unsigned const byte 2 in *)
   let tm = signed var word in
+  let sh = unsigned of_string "0b00" in
   RTL.[
-    tm := last (im lsl sh) 26;
+    tm := last (im ^ sh) 26;
     cpu.jmp (cpu.addr + tm)
   ]
 

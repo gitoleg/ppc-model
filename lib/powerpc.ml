@@ -2,16 +2,20 @@ open Core_kernel.Std
 open Bap.Std
 
 module Model = Powerpc_model
+module DSL = Powerpc_dsl
 open Powerpc_rtl
 
 include Powerpc_utils
 include Powerpc_cpu
-include Powerpc_dsl
 
 module RTL = struct
   include Powerpc_rtl
   include Infix
+
+  let foreach = DSL.foreach
 end
+
+include DSL
 
 type rtl = RTL.rtl [@@deriving bin_io, compare, sexp]
 type exp = RTL.exp [@@deriving bin_io, compare, sexp]

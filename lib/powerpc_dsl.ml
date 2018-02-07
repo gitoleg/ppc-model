@@ -37,24 +37,36 @@ let imm signed op =
 let signed f = f true
 let unsigned f = f false
 
-let var signed width =
-  let e = Exp.tmp (int_of_bitwidth width) in
+let apply_signess signed e =
   if signed then Exp.signed e
   else Exp.unsigned e
 
+let var signed width =
+  Exp.tmp (int_of_bitwidth width) |>
+  apply_signess signed
+
 let reg find signed op = match op with
   | Op.Imm _ | Op.Fmm _ -> ppc_fail "reg operand expected"
-  | Op.Reg x ->
-    let e = find x in
-    if signed then Exp.signed e
-    else Exp.unsigned e
+  | Op.Reg x -> apply_signess signed (find x)
 
 let const signed width value =
   let width = int_of_bitwidth width in
   let x = Word.of_int ~width value in
-  let e = Exp.of_word x in
-  if signed then Exp.signed e
-  else Exp.unsigned e
+  apply_signess signed (Exp.of_word x)
+
+let of_string signed s =
+  let s = String.filter ~f:(fun c -> c <> '_') s in
+  let chop (prefix, len) =
+    match String.chop_prefix ~prefix s with
+    | None -> None
+    | Some data -> Some (len,data) in
+  let width,data =
+    match List.find_map ~f:chop ["0x",4; "0o",3; "0b",1;] with
+    | Some (len, data) -> String.length data * len, data
+    | None -> Z.numbits (Z.of_string s), s in
+  let suf = if signed then "s" else "u" in
+  let w = Word.of_string (sprintf "%s:%d%s" s width suf) in
+  apply_signess signed (Exp.of_word w)
 
 let zero = Exp.of_word Word.b0
 let one  = Exp.of_word Word.b1
@@ -100,7 +112,7 @@ let extract e left right =
 let when_ cond then_ = if_ cond then_ []
 let ifnot cond else_ = if_ cond [] else_
 
-let foreach = foreach
+let foreach = foreach ~inverse:true
 
 type clause = [
   | `Case of (exp * rtl list)

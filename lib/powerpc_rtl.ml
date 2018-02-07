@@ -31,7 +31,7 @@ type t =
   | Jmp of exp
   | Store of var * exp * exp * endian * size
   | If of exp * t list * t list
-  | Foreach of exp * exp * t list
+  | Foreach of bool * exp * exp * t list
   | Message of string
 [@@deriving bin_io, compare, sexp]
 
@@ -41,7 +41,7 @@ let store mem addr x endian size = Store (mem, addr, x, endian, size)
 let jmp addr = Jmp addr
 let move x y = Move (x,y)
 let if_ cond then_ else_ = If (cond, then_, else_)
-let foreach step exp code = Foreach (step,exp,code)
+let foreach ~inverse step exp code = Foreach (inverse,step,exp,code)
 let message m = Message m
 
 let rec bil_exp = function
@@ -346,7 +346,7 @@ module Translate = struct
       let else_ = to_bil else_ in
       if_ cond then_ else_
     | Message m -> [Bil.special m]
-    | Foreach (step_e, e, code) ->
+    | Foreach (inverse,step_e, e, code) ->
       let step_var = var_of_exp step_e in
       let iters = Exp.width e / Exp.width step_e in
       let step = Exp.width step_e in
@@ -354,7 +354,7 @@ module Translate = struct
       to_bil @@ List.concat
         (List.init iters
            ~f:(fun i ->
-               let i = iters - i - 1 in
+               let i = if inverse then iters - i - 1 else i in
                let hi = (i + 1) * step - 1 in
                let lo = i * step in
                if has_assignments then

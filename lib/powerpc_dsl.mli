@@ -19,6 +19,7 @@ val imm : (op -> exp) ec
 val var : (bitwidth -> exp) ec
 val const : (bitwidth -> int -> exp) ec
 val reg : (reg -> exp) -> (op -> exp) ec
+val of_string : (string -> exp) ec
 
 val signed : 'a ec -> 'a
 val unsigned : 'a ec -> 'a
