@@ -546,6 +546,37 @@ let circ_shift_32 ctxt =
   let value = lookup_var ctxt z' in
   assert_bool "circ_shift failed" (is_equal_words expected value)
 
+let lshift_signed ctxt =
+  let w = Word.of_int64 ~width:32 0xEEFF4242L in
+  let e = Exp.signed (Exp.of_word w) in
+  let z' = Var.create "res" (Type.Imm 64) in
+  let z = Exp.of_var z' |> Exp.signed in
+  let sh = unsigned const byte 2 in
+  let rtl = RTL.[
+      z := e << sh;
+    ] in
+  let expected =
+    let b = Word.of_int64 ~width:32 0xFFFFFFFFL in
+    let sh = Word.of_int ~width:32 2 in
+    Word.(concat b (w lsl sh)) in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "lshift failed" (is_equal_words expected value)
+
+let rshift_signed ctxt =
+  let w = Word.of_int64 ~width:32 0xEEFF4242L in
+  let e = Exp.signed (Exp.of_word w) in
+  let z' = Var.create "res" (Type.Imm 32) in
+  let z = Exp.of_var z' |> Exp.signed in
+  let sh = unsigned const byte 8 in
+  let rtl = RTL.[
+      z := e >> sh;
+    ] in
+  let expected = Word.of_int64 ~width:32 0xFFEEFF42L in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "rshift failed" (is_equal_words expected value)
+
 let suite = "Dsl" >::: [
     "exp of string 1"                        >:: width_of_string "1" 1;
     "exp of string 42"                       >:: width_of_string "42" 6;
@@ -569,9 +600,9 @@ let suite = "Dsl" >::: [
     "last"                                   >:: last;
     "msb"                                    >:: msb;
     "lsb"                                    >:: lsb;
-    "plain :="                               >:: plain_assign;
-    "concated vars := exp"                   >:: concat_assign;
-    "extract (concat [v1; v2; ...]) := exp"  >:: complex_assign;
+    "plain :="                                >:: plain_assign;
+    "concated vars := exp"                    >:: concat_assign;
+    "extract (concat [v1; v2; ...]) := exp"   >:: complex_assign;
     "nth bit with assign"                    >:: nth_bit_with_assign;
     "nth byte with assign"                   >:: nth_byte_with_assign;
     "nth halfword with assign"               >:: nth_hw_with_assign;
@@ -586,4 +617,6 @@ let suite = "Dsl" >::: [
     "foreach with inverse"                   >:: foreach_test_inverse true;
     "foreach without inverse"                >:: foreach_test_inverse false;
     "circ shift"                             >:: circ_shift_32;
+    "lshift signed"                          >:: lshift_signed;
+    "rshift signed"                          >:: rshift_signed;
   ]

@@ -91,20 +91,22 @@ module Exp = struct
 
   let unop op x = { x with body = Unop (op, x.body)}
 
-  let unsigned_binop op lhs rhs =
-    let sign = Unsigned in
+  let binop_with_signedness sign op lhs rhs =
     let width = max lhs.width rhs.width in
     let lhs = cast lhs width sign in
     let rhs = cast rhs width sign in
     let body = Binop(op, lhs.body, rhs.body) in
     {sign; width; body;}
 
+  let unsigned_binop op lhs rhs =
+    binop_with_signedness Unsigned op lhs rhs
+
+  let signed_binop op lhs rhs =
+    binop_with_signedness Signed op lhs rhs
+
   let binop_with_cast op lhs rhs =
     let sign = derive_sign lhs.sign rhs.sign in
-    let width = max lhs.width rhs.width in
-    let lhs = cast lhs width sign in
-    let rhs = cast rhs width sign in
-    { sign; width; body = Binop (op, lhs.body, rhs.body); }
+    binop_with_signedness sign op lhs rhs
 
   let concat lhs rhs =
     let width = lhs.width + rhs.width in
@@ -131,8 +133,13 @@ module Exp = struct
   let slte x y = bit_result (binop_with_cast Bil.sle x y)
   let sgte x y = bit_result (binop_with_cast Bil.sle y x)
 
-  let lshift  = unsigned_binop Bil.lshift
-  let rshift  = unsigned_binop Bil.rshift
+  let lshift = binop_with_cast Bil.lshift
+  let rshift x y =
+    let op =
+      if x.sign = Signed then Bil.arshift
+      else Bil.rshift in
+    binop_with_cast op x y
+
   let bit_and = unsigned_binop Bil.bit_and
   let bit_xor = unsigned_binop Bil.bit_xor
   let bit_or  = unsigned_binop Bil.bit_or
