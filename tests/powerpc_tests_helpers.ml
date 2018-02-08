@@ -166,7 +166,9 @@ let string_of_bytes bytes =
 let arch_width a = Arch.addr_size a |> Size.in_bits
 
 type form = [
+  | `B
   | `D
+  | `I
   | `M
   | `MD
   | `MDS
@@ -183,12 +185,28 @@ let make_insn ?name ?(arch=`ppc) form fields =
   let word ~width n = Word.of_int ~width n in
   let bytes =
     match form, fields with
+    | `B, [opcode; bo; bi; bd; aa; lk] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 bo;
+        word ~width:5 bi;
+        word ~width:14 bd;
+        word ~width:1 aa;
+        word ~width:1 lk;
+      ]
     | `D, [opcode; rt; ra; d] ->
       make_bytes [
         word ~width:6 opcode;
         word ~width:5 rt;
         word ~width:5 ra;
         word ~width:16 d;
+      ]
+    | `I, [opcode; imm; aa; lk]  ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:24 imm;
+        word ~width:1 aa;
+        word ~width:1 lk;
       ]
     | `M, [opcode; rs; ra; sh; mb; me; rc] ->
       make_bytes [
@@ -267,6 +285,16 @@ let make_insn ?name ?(arch=`ppc) form fields =
         word ~width:5 bb;
         word ~width:10 opt_opcode;
         word ~width:1 x;
+      ]
+    | `XL, [opcode; bo; bi; empty; bh; opt_opcode; lk;] ->
+      make_bytes [
+        word ~width:6 opcode;
+        word ~width:5 bo;
+        word ~width:5 bi;
+        word ~width:3 empty;
+        word ~width:2 bh;
+        word ~width:10 opt_opcode;
+        word ~width:1 lk;
       ]
     | `XFX, [opcode; rs; x; data; y; opt_opcode; z] ->
       make_bytes [

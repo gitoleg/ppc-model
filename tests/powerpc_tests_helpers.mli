@@ -63,7 +63,9 @@ val arch_width : arch -> int
 
 (** PowerPC instruction forms  *)
 type form = [
+  | `B
   | `D
+  | `I
   | `M
   | `MD
   | `MDS

@@ -27,24 +27,6 @@ let int_of_imm = function
     | Some x -> x
     | None -> ppc_fail "failed to convert imm operand to int"
 
-(* type 'a new_ec = { *)
-(*   signed  : 'a; *)
-(*   default : 'a; *)
-(* } *)
-
-(* let new_imm ?(signed=false) op = *)
-(*   let w = Word.of_int ~width:32 (int_of_imm op) in *)
-(*   Exp.(unsigned @@ of_word w) *)
-
-(* let new_signed f = f ?signed:(Some true) *)
-
-(* let () = *)
-(*   let op : Op.t = failwith "stub op" in *)
-(*   let _x1 : exp = new_signed new_imm op in *)
-(*   let _x2 : exp = new_imm op in *)
-(*   () *)
-
-
 let imm signed op =
   let w = Word.of_int ~width:32 (int_of_imm op) in
   if signed then Exp.(signed @@ of_word w)
