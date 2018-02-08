@@ -19,21 +19,23 @@ Library powerpc_lifter
   FindLibName:    powerpc_lifter
   Modules:        Powerpc,
                   Powerpc_add,
-                  Powerpc_arith,
                   Powerpc_branch,
                   Powerpc_compare,
                   Powerpc_cpu,
                   Powerpc_cr,
                   Powerpc_dsl,
+                  Powerpc_div,
                   Powerpc_load,
                   Powerpc_logical,
                   Powerpc_model,
                   Powerpc_move,
+                  Powerpc_mul,
                   Powerpc_rtl,
                   Powerpc_rotate,
                   Powerpc_types,
                   Powerpc_shift,
                   Powerpc_store,
+                  Powerpc_sub,
                   Powerpc_utils
   CompiledObject: best
   Install:        true
