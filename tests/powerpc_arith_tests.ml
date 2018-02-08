@@ -5,8 +5,6 @@ open OUnit2
 open Powerpc
 open Powerpc_tests_helpers
 
-(** TODO: add ca flags testing  *)
-
 let extend ?(upto=64) x = Word.extract_exn ~hi:(upto - 1) x
 let low ?(len=32) x = Word.extract_exn ~hi:(len - 1) x
 

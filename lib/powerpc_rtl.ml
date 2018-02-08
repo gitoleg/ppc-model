@@ -123,10 +123,6 @@ module Exp = struct
   let plus  = binop_with_cast Bil.plus
   let minus = binop_with_cast Bil.minus
   let times = binop_with_cast Bil.times
-  let divide  = binop_with_cast Bil.divide
-  let sdivide = binop_with_cast Bil.sdivide
-  let modulo  = binop_with_cast Bil.modulo
-  let smodulo = binop_with_cast Bil.smodulo
 
   let lt x y  =
     let op = derive_op x y Bil.lt Bil.slt in
@@ -143,6 +139,14 @@ module Exp = struct
   let ge x y  =
     let op = derive_op x y Bil.le Bil.sle in
     bit_result (binop_with_cast op y x)
+
+  let divide x y  =
+    let op = derive_op x y Bil.divide Bil.sdivide in
+    binop_with_cast op x y
+
+  let modulo x y =
+    let op = derive_op x y Bil.modulo Bil.smodulo in
+    binop_with_cast op x y
 
   let eq x y  = bit_result (binop_with_cast Bil.eq x y)
   let neq x y = bit_result (binop_with_cast Bil.neq x y)
@@ -230,10 +234,10 @@ module Infix = struct
   let ( - )  = minus
   let ( * )  = times
   let ( / )  = divide
-  let ( /$)  = sdivide
+  (* let ( /$)  = sdivide *)
   let ( ^ )  = concat
   let ( % )  = modulo
-  let ( %$)  = smodulo
+  (* let ( %$)  = smodulo *)
   let ( < )  = lt
   let ( > )  = gt
   let ( <= )  = le

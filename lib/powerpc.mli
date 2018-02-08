@@ -388,7 +388,6 @@ module Std : sig
   (** Set of operators. Briefly it contains next operators:
       - assignment
       - math operators: +, -, *, \, %, <, >, <= , >= , =, <>
-      - math signed operators: \$, %$, <$, >$, <=$, >=$
       - logical operators: lsl, lsr, lnot, land, lor, lxor  *)
   module RTL : sig
 
@@ -407,17 +406,11 @@ module Std : sig
     (** [x / y] - division *)
     val ( / ) : exp -> exp -> exp
 
-    (** [x /$ y] - signed division *)
-    val ( /$ ) : exp -> exp -> exp
-
     (** [x ^ y] - concatenation *)
     val ( ^ ) : exp -> exp -> exp
 
     (** [x % y] - modulo*)
     val ( % ) : exp -> exp -> exp
-
-    (** [x %$ y] - signed modulo *)
-    val ( %$ ) : exp -> exp -> exp
 
     (** [x < y] - less than*)
     val ( < ) : exp -> exp -> exp

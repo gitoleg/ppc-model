@@ -94,7 +94,7 @@ let addic cpu ops =
   let rt = unsigned cpu.reg ops.(0) in
   let ra = unsigned cpu.reg ops.(1) in
   let im = signed imm ops.(2) in
-  let tm = unsigned var doubleword in
+  let tm = unsigned var cpu.word_width in
   RTL.[
     tm := ra;
     rt := ra + im;
@@ -111,7 +111,7 @@ let addc cpu ops =
   let rt = unsigned cpu.reg ops.(0) in
   let ra = unsigned cpu.reg ops.(1) in
   let rb = unsigned cpu.reg ops.(2) in
-  let tm = unsigned var doubleword in
+  let tm = unsigned var cpu.word_width in
   RTL.[
     tm := ra;
     rt := ra + rb;
@@ -128,7 +128,7 @@ let adde cpu ops =
   let rt = unsigned cpu.reg ops.(0) in
   let ra = unsigned cpu.reg ops.(1) in
   let rb = unsigned cpu.reg ops.(2) in
-  let tm = unsigned var doubleword in
+  let tm = unsigned var cpu.word_width in
   RTL.[
     tm := ra;
     rt := ra + rb + cpu.ca;
@@ -144,7 +144,7 @@ let adde cpu ops =
 let addme cpu ops =
   let rt = unsigned cpu.reg ops.(0) in
   let ra = unsigned cpu.reg ops.(1) in
-  let tm = unsigned var doubleword in
+  let tm = unsigned var cpu.word_width in
   RTL.[
     tm := ra;
     rt := ra + cpu.ca - one;
@@ -160,7 +160,7 @@ let addme cpu ops =
 let addze cpu ops =
   let rt = unsigned cpu.reg ops.(0) in
   let ra = unsigned cpu.reg ops.(1) in
-  let tm = unsigned var doubleword in
+  let tm = unsigned var cpu.word_width in
   RTL.[
     tm := ra;
     rt := ra + cpu.ca;
