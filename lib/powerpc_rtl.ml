@@ -209,9 +209,13 @@ module Exp = struct
     else
       {sign=Unsigned; width; body = Extract (hi,lo,e.body)}
 
+  (* if target width is the same as original expression width, we
+     return unsigned original, dependless what sign it had,
+     because there is an invariant that extract always returns
+     unsigned expression. *)
   let extract hi lo e =
     let width = hi - lo + 1 in
-    if width = e.width then e
+    if width = e.width then { e with sign=Unsigned; }
     else
       match e.body with
       | Vars (v,vars) when vars <> [] ->
@@ -234,10 +238,8 @@ module Infix = struct
   let ( - )  = minus
   let ( * )  = times
   let ( / )  = divide
-  (* let ( /$)  = sdivide *)
   let ( ^ )  = concat
   let ( % )  = modulo
-  (* let ( %$)  = smodulo *)
   let ( < )  = lt
   let ( > )  = gt
   let ( <= )  = le
