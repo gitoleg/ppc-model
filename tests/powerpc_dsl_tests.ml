@@ -577,6 +577,62 @@ let rshift_signed ctxt =
   let value = lookup_var ctxt z' in
   assert_bool "rshift failed" (is_equal_words expected value)
 
+let lt signed expected ctxt =
+  let w = Word.of_int64 ~width:32 0xEEFF4242L in
+  let w =
+    if signed then Exp.signed (Exp.of_word w)
+    else Exp.of_word w in
+  let z' = Var.create "res" (Type.Imm 1) in
+  let z = Exp.of_var z' |> Exp.unsigned in
+  let rtl = RTL.[
+      z := w < zero;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "lt failed" (is_equal_words expected value)
+
+let lte signed expected ctxt =
+  let w = Word.of_int64 ~width:32 0xEEFF4242L in
+  let w =
+    if signed then Exp.signed (Exp.of_word w)
+    else Exp.of_word w in
+  let z' = Var.create "res" (Type.Imm 1) in
+  let z = Exp.of_var z' in
+  let rtl = RTL.[
+      z := w < zero;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "lte failed" (is_equal_words expected value)
+
+let gt signed expected ctxt =
+  let w = Word.of_int64 ~width:32 0xEEFF4242L in
+  let w =
+    if signed then Exp.signed (Exp.of_word w)
+    else Exp.of_word w in
+  let z' = Var.create "res" (Type.Imm 1) in
+  let z = Exp.of_var z' in
+  let rtl = RTL.[
+      z := w > zero;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "gt failed" (is_equal_words expected value)
+
+let gte signed expected ctxt =
+  let w = Word.of_int64 ~width:32 0xEEFF4242L in
+  let w =
+    if signed then Exp.signed (Exp.of_word w)
+    else Exp.of_word w in
+  let z' = Var.create "res" (Type.Imm 1) in
+  let z = Exp.of_var z' in
+  let rtl = RTL.[
+      z := w >= zero;
+    ] in
+  let ctxt = eval_rtl rtl in
+  let value = lookup_var ctxt z' in
+  assert_bool "gte failed" (is_equal_words expected value)
+
 let suite = "Dsl" >::: [
     "exp of string 1"                        >:: width_of_string "1" 1;
     "exp of string 42"                       >:: width_of_string "42" 6;
@@ -600,9 +656,9 @@ let suite = "Dsl" >::: [
     "last"                                   >:: last;
     "msb"                                    >:: msb;
     "lsb"                                    >:: lsb;
-    "plain :="                                >:: plain_assign;
-    "concated vars := exp"                    >:: concat_assign;
-    "extract (concat [v1; v2; ...]) := exp"   >:: complex_assign;
+    "plain :="                               >:: plain_assign;
+    "concated vars := exp"                   >:: concat_assign;
+    "extract (concat [v1; v2; ...]) := exp"  >:: complex_assign;
     "nth bit with assign"                    >:: nth_bit_with_assign;
     "nth byte with assign"                   >:: nth_byte_with_assign;
     "nth halfword with assign"               >:: nth_hw_with_assign;
@@ -619,4 +675,12 @@ let suite = "Dsl" >::: [
     "circ shift"                             >:: circ_shift_32;
     "lshift signed"                          >:: lshift_signed;
     "rshift signed"                          >:: rshift_signed;
+    "lt singed"                              >:: lt true Word.b1;
+    "lt unsinged"                            >:: lt false Word.b0;
+    "lte singed"                             >:: lte true Word.b1;
+    "lte unsinged"                           >:: lte false Word.b0;
+    "gt singed"                              >:: gt true Word.b0;
+    "gt unsinged"                            >:: gt false Word.b1;
+    "gte singed"                             >:: gte true Word.b0;
+    "gte unsinged"                           >:: gte false Word.b1;
   ]

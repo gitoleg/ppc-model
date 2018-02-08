@@ -437,18 +437,6 @@ module Std : sig
     (** [x <> y] - not equal *)
     val ( <> ) : exp -> exp -> exp
 
-    (** [x <$ y] - signed less than *)
-    val ( <$ ) : exp -> exp -> exp
-
-    (** [x >$ y] - signed greater than *)
-    val ( >$ ) : exp -> exp -> exp
-
-    (** [x <=$ y] - signed less than or equal *)
-    val ( <=$ )  : exp -> exp -> exp
-
-    (** [x >=$ y] - signed greater than or equal *)
-    val ( >=$ )  : exp -> exp -> exp
-
     (** [x << y] - logical shift left *)
     val ( << )  : exp -> exp -> exp
 

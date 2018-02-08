@@ -36,8 +36,8 @@ module Std = struct
     fc cpu ops @
     RTL.[
       x := low cpu.word_width res;
-      nth bit cpu.cr 0 := x <$ zero;
-      nth bit cpu.cr 1 := x >$ zero;
+      nth bit cpu.cr 0 := x < zero;
+      nth bit cpu.cr 1 := x > zero;
       nth bit cpu.cr 2 := x = zero;
     ]
 

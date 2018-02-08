@@ -51,10 +51,6 @@ module Infix : sig
   val ( >= )  : exp -> exp -> exp
   val ( = )  : exp -> exp -> exp
   val ( <> )  : exp -> exp -> exp
-  val ( <$ ) : exp -> exp -> exp
-  val ( >$ ) : exp -> exp -> exp
-  val ( <=$ )  : exp -> exp -> exp
-  val ( >=$ )  : exp -> exp -> exp
   val ( << )  : exp -> exp -> exp
   val ( >> )  : exp -> exp -> exp
   val ( lor )  : exp -> exp -> exp

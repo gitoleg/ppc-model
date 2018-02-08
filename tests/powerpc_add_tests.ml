@@ -340,16 +340,16 @@ let suite = "add" >::: [
     "addme.32"  >:: addme_dot `ppc;
     "addze.32"  >:: addze_dot `ppc;
 
-    "addi32"    >:: addi `ppc64;
-    "addi32_0"  >:: addi_zero_op `ppc64;
-    "addis32"   >:: addis `ppc64;
-    "addis32_0" >:: addis_zero_op `ppc64;
-    "add32"     >:: add `ppc64;
-    "addic32"   >:: addic `ppc64;
-    "addc32"    >:: addc `ppc64;
-    "adde32"    >:: adde `ppc64;
-    "addme32"   >:: addme `ppc64;
-    "addze32"   >:: addze `ppc64;
+    "addi64"    >:: addi `ppc64;
+    "addi64_0"  >:: addi_zero_op `ppc64;
+    "addis64"   >:: addis `ppc64;
+    "addis64_0" >:: addis_zero_op `ppc64;
+    "add64"     >:: add `ppc64;
+    "addic64"   >:: addic `ppc64;
+    "addc64"    >:: addc `ppc64;
+    "adde64"    >:: adde `ppc64;
+    "addme64"   >:: addme `ppc64;
+    "addze64"   >:: addze `ppc64;
     "add.64"    >:: add_dot `ppc64;
     "addic.64"  >:: addic_dot `ppc64;
     "addc.64"   >:: addc_dot `ppc64;

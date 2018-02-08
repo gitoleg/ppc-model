@@ -49,12 +49,14 @@ let srawi cpu ops =
   let carry_ones = unsigned var bit in
   let ones = unsigned const cpu.word_width (-1) in
   let w32 = unsigned const byte 32 in
+  let tm = signed var word in
   RTL.[
     mask := ones;
     carry_ones := ((lnot (mask << sh)) land rs) <> zero;
-    cpu.ca := carry_ones land (low word rs <$ zero);
+    tm := low word rs;
+    cpu.ca := carry_ones land (tm < zero);
     cpu.ca32 := cpu.ca;
-    if_ (low word rs >=$ zero) [
+    if_ (tm >= zero) [
       ra := low word rs >> sh;
     ] [
       if_ (width ra = w32) [
@@ -80,13 +82,15 @@ let sraw cpu ops =
   let carry_ones = unsigned var bit in
   let s = unsigned var bit in
   let shift = unsigned var byte in
+  let tm = signed var word in
   RTL.[
     mask := zero;
     shift := last rb 6;
     when_ (last rb 6 < w32) [
       mask := (lnot mask) << shift;
     ];
-    s := low word rs <$ zero;
+    tm := low word rs;
+    s := tm < zero;
     carry_ones := ((lnot mask) land rs) <> zero;
     cpu.ca   := carry_ones land s;
     cpu.ca32 := cpu.ca;
@@ -139,13 +143,15 @@ let sradi cpu ops =
   let sh = unsigned imm ops.(2) in
   let mask = unsigned var doubleword in
   let carry_ones = unsigned var bit in
+  let tm = signed var cpu.word_width in
   RTL.[
     mask := zero;
     mask := lnot mask;
     carry_ones := ((lnot (mask << sh)) land rs) <> zero;
-    cpu.ca   := carry_ones land (rs <$ zero);
+    tm := rs;
+    cpu.ca   := carry_ones land (tm < zero);
     cpu.ca32 := cpu.ca;
-    if_ (rs >=$ zero) [
+    if_ (tm >= zero) [
       ra := rs >> sh;
     ] [
       mask := mask >> sh;
@@ -166,13 +172,15 @@ let srad cpu ops =
   let carry_ones = unsigned var bit in
   let s = unsigned var bit in
   let shift = unsigned var byte in
+  let tm = signed var cpu.word_width in
   RTL.[
     mask := zero;
     shift := last rb 7;
     when_ (nth bit rb 57 = zero) [
       mask := (lnot mask) << shift;
     ];
-    s := rs <$ zero;
+    tm := rs;
+    s := tm < zero;
     carry_ones := ((lnot mask) land rs) <> zero;
     cpu.ca   := carry_ones land s;
     cpu.ca32 := cpu.ca;

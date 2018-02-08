@@ -15,11 +15,13 @@ let andi_dot cpu ops =
   let ra = unsigned cpu.reg ops.(0) in
   let rs = unsigned cpu.reg ops.(1) in
   let im = unsigned imm ops.(2) in
+  let tm = signed var cpu.word_width in
   RTL.[
     ra := rs land im;
-    nth bit cpu.cr 0 := low cpu.word_width ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.word_width ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.word_width ra = zero
+    tm := low cpu.word_width ra;
+    nth bit cpu.cr 0 := tm < zero;
+    nth bit cpu.cr 1 := tm > zero;
+    nth bit cpu.cr 2 := tm = zero
   ]
 
 (** Fixed-point AND Immediate Shifted
@@ -31,11 +33,13 @@ let andis_dot cpu ops =
   let rs = unsigned cpu.reg ops.(1) in
   let im = unsigned imm ops.(2) in
   let sh = unsigned const byte 16 in
+  let tm = signed var cpu.word_width in
   RTL.[
     ra := rs land (im << sh);
-    nth bit cpu.cr 0 := low cpu.word_width ra <$ zero;
-    nth bit cpu.cr 1 := low cpu.word_width ra >$ zero;
-    nth bit cpu.cr 2 := low cpu.word_width ra = zero;
+    tm := low cpu.word_width ra;
+    nth bit cpu.cr 0 := tm < zero;
+    nth bit cpu.cr 1 := tm > zero;
+    nth bit cpu.cr 2 := tm = zero;
   ]
 
 (** Fixed-point AND

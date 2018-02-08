@@ -115,6 +115,11 @@ module Exp = struct
 
   let bit_result x = cast_width x 1
 
+  let derive_op x y op_u op_s =
+    match derive_sign x.sign y.sign with
+    | Signed -> op_s
+    | Unsigned -> op_u
+
   let plus  = binop_with_cast Bil.plus
   let minus = binop_with_cast Bil.minus
   let times = binop_with_cast Bil.times
@@ -122,16 +127,25 @@ module Exp = struct
   let sdivide = binop_with_cast Bil.sdivide
   let modulo  = binop_with_cast Bil.modulo
   let smodulo = binop_with_cast Bil.smodulo
-  let lt x y  = bit_result (binop_with_cast Bil.lt x y)
-  let gt x y  = bit_result (binop_with_cast Bil.lt y x)
+
+  let lt x y  =
+    let op = derive_op x y Bil.lt Bil.slt in
+    bit_result (binop_with_cast op x y)
+
+  let gt x y  =
+    let op = derive_op x y Bil.lt Bil.slt in
+    bit_result (binop_with_cast op y x)
+
+  let le x y  =
+    let op = derive_op x y Bil.le Bil.sle in
+    bit_result (binop_with_cast op x y)
+
+  let ge x y  =
+    let op = derive_op x y Bil.le Bil.sle in
+    bit_result (binop_with_cast op y x)
+
   let eq x y  = bit_result (binop_with_cast Bil.eq x y)
-  let le x y  = bit_result (binop_with_cast Bil.le x y)
-  let ge x y  = bit_result (binop_with_cast Bil.le y x)
   let neq x y = bit_result (binop_with_cast Bil.neq x y)
-  let slt x y = bit_result (binop_with_cast Bil.slt x y)
-  let sgt x y = bit_result (binop_with_cast Bil.slt y x)
-  let slte x y = bit_result (binop_with_cast Bil.sle x y)
-  let sgte x y = bit_result (binop_with_cast Bil.sle y x)
 
   let lshift = binop_with_cast Bil.lshift
   let rshift x y =
@@ -224,10 +238,6 @@ module Infix = struct
   let ( > )  = gt
   let ( <= )  = le
   let ( >= )  = ge
-  let ( <$ ) = slt
-  let ( >$ ) = sgt
-  let ( <=$ ) = slte
-  let ( >=$ ) = sgte
   let ( = )   = eq
   let ( <> )   = neq
   let ( << )  = lshift
