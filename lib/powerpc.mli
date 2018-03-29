@@ -150,7 +150,7 @@
 
     {[
       let x = signed const halfword 0xFAAA in
-      let y = signed var bit in
+      let y = unsigned var bit in
       RTL.[
         y := x < zero;
       ]
@@ -526,6 +526,10 @@ module Std : sig
   (** [one] is a one bit length expression set to one *)
   val one  : exp
 
+  (** [ones bitwidth] - returns an expression of [bitwidth]
+      with all bits set to one *)
+  val ones : bitwidth -> exp
+
   (** [extract e lx rx] extracts portion of [e] starting
       at bit [lx] and ending at bit [rx], all bounds
       are inclusive. Bits indexes start from the most
@@ -662,15 +666,16 @@ module Std : sig
     module E : Model_exp
     include Model with type t := var
 
-    val mem : var
-    val flags : Var.Set.t
     val gpr_bitwidth : int
     val fpr_bitwidth : int
-    val vr_bitwidth  : int
-    val cr_bitwidth  : int
     val lr_bitwidth  : int
     val ctr_bitwidth : int
     val tar_bitwidth : int
+    val cr_bitwidth  : int
+    val vr_bitwidth  : int
+
+    val mem : var
+    val flags : Var.Set.t
   end
 
   module PowerPC_32 : PowerPC
