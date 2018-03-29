@@ -21,6 +21,8 @@ module Std = struct
     let foreach = foreach ~inverse:true
   end
 
+  module Exp = Exp
+
   type rtl = RTL.rtl [@@deriving bin_io, compare, sexp]
   type exp = RTL.exp [@@deriving bin_io, compare, sexp]
   type lift = cpu -> op array -> rtl list

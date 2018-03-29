@@ -615,6 +615,11 @@ module Std : sig
       is used for storing of a result. *)
   val (>.) : string -> lift -> unit
 
+  module Exp : sig
+    val of_word : word -> exp
+  end
+
+
   module type Model = sig
     type t
     (** all general purpose registers *)
@@ -650,6 +655,7 @@ module Std : sig
     val ov : t   (** overflow flag           *)
     val ca32 : t (** carry out of 32 bits    *)
     val ov32 : t (** overflow of 32 bits     *)
+
   end
 
   module type Model_exp = sig

@@ -2,16 +2,22 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc
+open Powerpc.Std
 
 val nf : var
 val pf : var
 val zf : var
 val ca : var
 val ca32 : var
-val lr  : var
-val ctr : var
-val tar : var
+val lr  : arch -> var
+val ctr : arch -> var
+val tar : arch -> var
+val cri : var Int.Map.t
+
+module E : sig
+  val cr : exp
+  val cri : exp Int.Map.t
+end
 
 (** [cr_bit n] - returns a condition register bit [n] *)
 val cr_bit : int -> var

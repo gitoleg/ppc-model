@@ -2,19 +2,8 @@ open Core_kernel.Std
 open Bap.Std
 open OUnit2
 
-open Powerpc_rtl
-
-module RTL = struct
-  include Powerpc_rtl
-  include Infix
-end
-
-module Dsl = Powerpc_dsl
-open Dsl
-
+open Powerpc.Std
 open Powerpc_tests_helpers
-module Model = Powerpc_model.PowerPC_32
-open Model
 
 let mtspr arch ctxt =
   let name = "MTSPR" in
@@ -28,16 +17,18 @@ let mtspr arch ctxt =
       r1 := int data;
     ] in
   let expected = match arch with
-    | `ppc -> Word.extract_exn ~hi:63 data
+    | `ppc -> Word.extract_exn ~hi:31 data
     | _ -> data in
-  check_gpr init bytes ctr expected arch ctxt
+  check_gpr init bytes (ctr arch) expected arch ctxt
 
 let mfspr arch ctxt =
   let name = "MFSPR" in
   let anybit = 0 in
   let bytes = make_insn ~name `XFX [31; 1; 8; 339; anybit] in
   let r1 = find_gpr arch "R1" in
-  let x = Word.of_int64 0xABCDEFAB_12345678L in
+  let width = arch_width arch in
+  let x = Word.of_int64 ~width 0xABCDEFAB_12345678L in
+  let lr = lr arch in
   let init = Bil.[
       lr := int x;
     ] in
@@ -59,7 +50,7 @@ let mtcrf arch ctxt =
       r1 := int x;
     ] in
   let init_rtl = RTL.[ E.cr := zero] in
-  let init = init @ bil_of_t init_rtl in
+  let init = init @ bil_of_rtl init_rtl in
   let ctxt = eval init bytes arch in
   let range = List.range 0 32 in
   let r1_bits = Word.enum_bits (Word.extract_exn ~hi:31 x) BigEndian in
@@ -84,7 +75,7 @@ let mfcr arch ctxt =
   let init_rtl = RTL.[
       E.cr := xw;
     ] in
-  let init = bil_of_t init_rtl in
+  let init = bil_of_rtl init_rtl in
   let expected = Word.extract_exn ~hi:(width - 1) x in
   check_gpr init bytes r1 expected arch ctxt
 

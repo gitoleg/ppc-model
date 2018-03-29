@@ -36,22 +36,6 @@ let word_of_int arch x =
   let width = Arch.addr_size arch |> Size.in_bits in
   Word.of_int ~width x
 
-let lr = function
-  | `ppc -> PowerPC_32.lr
-  | `ppc64 -> PowerPC_64.lr
-  | _ -> failwith "powerpc arch is the only expected"
-
-let ctr = function
-  | `ppc -> PowerPC_32.ctr
-  | `ppc64 -> PowerPC_64.ctr
-  | _ -> failwith "powerpc arch is the only expected"
-
-let tar = function
-  | `ppc -> PowerPC_32.tar
-  | `ppc64 -> PowerPC_64.tar
-  | _ -> failwith "powerpc arch is the only expected"
-
-
 let branch name aa lk arch offs (ctxt : test_ctxt)=
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let addr = addr_of_arch arch in

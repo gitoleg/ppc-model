@@ -4,30 +4,49 @@ open OUnit2
 
 module Dis = Disasm_expert.Basic
 
-open Powerpc
-
-open Powerpc_model
+open Powerpc.Std
 
 module P32 = PowerPC_32
 module P64 = PowerPC_64
 
 module Any_ppc = P32
 
+let raise_arch () =
+  failwith "powerpc arch is the only expected"
+
 let cr_bit n =
-  try
-    Int.Map.find_exn Any_ppc.cri n
-  with _ ->
-    sprintf "requested CR bit %d not found" n |>
-    failwith
+  Int.Map.find_exn Any_ppc.cri n
 
 let nf = cr_bit 0
 let pf = cr_bit 1
 let zf = cr_bit 2
 let ca = Any_ppc.ca
 let ca32 = Any_ppc.ca32
-let lr = Any_ppc.lr
-let ctr = Any_ppc.ctr
-let tar = Any_ppc.tar
+
+let lr = function
+  | `ppc -> PowerPC_32.lr
+  | `ppc64 -> PowerPC_64.lr
+  | _ -> raise_arch ()
+
+let ctr = function
+  | `ppc -> PowerPC_32.ctr
+  | `ppc64 -> PowerPC_64.ctr
+  | _ -> raise_arch ()
+
+let tar = function
+  | `ppc -> PowerPC_32.tar
+  | `ppc64 -> PowerPC_64.tar
+  | _ -> raise_arch ()
+
+let cri = Any_ppc.cri
+
+module E = struct
+
+  let cr = Any_ppc.E.cr
+
+  let cri = Any_ppc.E.cri
+end
+
 
 let create_dis arch =
   Dis.create ~backend:"llvm" (Arch.to_string arch) |>
