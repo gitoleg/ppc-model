@@ -6,10 +6,6 @@ open Powerpc
 open Powerpc_model
 open Powerpc_tests_helpers
 
-
-let lr_bitwidth = 64
-let ctr_bitwidth = 64
-
 let typecheck bytes arch ctxt =
   let bil = get_bil arch bytes in
   assert_bool "typecheck failed" (Result.is_ok bil)
@@ -40,9 +36,26 @@ let word_of_int arch x =
   let width = Arch.addr_size arch |> Size.in_bits in
   Word.of_int ~width x
 
+let lr = function
+  | `ppc -> PowerPC_32.lr
+  | `ppc64 -> PowerPC_64.lr
+  | _ -> failwith "powerpc arch is the only expected"
+
+let ctr = function
+  | `ppc -> PowerPC_32.ctr
+  | `ppc64 -> PowerPC_64.ctr
+  | _ -> failwith "powerpc arch is the only expected"
+
+let tar = function
+  | `ppc -> PowerPC_32.tar
+  | `ppc64 -> PowerPC_64.tar
+  | _ -> failwith "powerpc arch is the only expected"
+
+
 let branch name aa lk arch offs (ctxt : test_ctxt)=
-  let bytes = make_insn ~name ~arch `I [18; offs; aa; lk] in
+  let bits = Size.in_bits @@ Arch.addr_size arch in
   let addr = addr_of_arch arch in
+  let bytes = make_insn ~name ~arch `I [18; offs; aa; lk] in
   let imm =
     Word.(word_of_int arch offs lsl word_of_int arch 2) in
   let expected =
@@ -52,9 +65,9 @@ let branch name aa lk arch offs (ctxt : test_ctxt)=
   check_pc name c expected;
   if lk = 1 then
     let next = Word.(word_of_int arch 4 + addr) in
-    let next = extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
+    let next = extract ~hi:(bits - 1) ~lo:0 next in
     let err = sprintf "%s failed, LR is wrong!" name in
-    assert_bool err @@ is_equal_words next (lookup_var c lr)
+    assert_bool err @@ is_equal_words next (lookup_var c (lr arch))
 
 let b  = branch "B" 0 0
 let ba = branch "BA" 1 0
@@ -69,12 +82,14 @@ type bo = {
   expect_jump : bool;
 }
 
-let make_bo ?ctr_before ?ctr_after ?cond_reg0 ?(expect_jump = false) bo_field =
+let make_bo ?ctr_before ?ctr_after ?cond_reg0 ?(expect_jump = false)
+    bo_field arch =
+  let bits = Size.in_bits @@ Arch.addr_size arch in
   let ctr_before = match ctr_before with
-    | None -> Word.zero ctr_bitwidth
-    | Some x -> Word.of_int ~width:ctr_bitwidth x in
+    | None -> Word.zero bits
+    | Some x -> Word.of_int ~width:bits x in
   let ctr_after =
-    Option.map ~f:(fun x -> Word.of_int ~width:ctr_bitwidth x) ctr_after in
+    Option.map ~f:(fun x -> Word.of_int ~width:bits x) ctr_after in
   let cond_reg0 = match cond_reg0 with
     | None -> Word.b0
     | Some x -> Word.of_bool (x = 1) in
@@ -109,10 +124,12 @@ let cond_ok = make_bo  ~cond_reg0:0 ~expect_jump:true 0b00010
 let cond_not = make_bo ~cond_reg0:0 0b01010
 
 let bcx name aa lk arch imm case (ctxt : test_ctxt) =
+  let case = case arch in
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let bytes = make_insn ~name ~arch `B
       [16; case.bo_field; 0; imm; aa; lk] in
   let cr0 = cr_bit 0 in
+  let ctr = ctr arch in
   let init = Bil.[
       cr0 := int case.cond_reg0;
       ctr := int case.ctr_before;
@@ -129,11 +146,13 @@ let bcx name aa lk arch imm case (ctxt : test_ctxt) =
   let () = match case.ctr_after with
     | None -> ()
     | Some x ->
-      assert_bool (sprintf "%s failed" name) @@ is_equal_words x (lookup_var c ctr) in
+      assert_bool (sprintf "%s failed" name)
+      @@ is_equal_words x (lookup_var c ctr) in
   if lk = 1 then
     let next = Word.(of_int ~width:bits 4 + addr) in
-    let next = extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
-    assert_bool (sprintf "%s failed to check LR value" name) @@ is_equal_words next (lookup_var c lr)
+    let next = extract ~hi:(bits - 1) ~lo:0 next in
+    assert_bool (sprintf "%s failed to check LR value" name)
+    @@ is_equal_words next (lookup_var c (lr arch))
 
 let bc = bcx "gBC" 0 0
 let bca = bcx "gBCA" 1 0
@@ -141,17 +160,20 @@ let bcl = bcx "gBCL" 0 1
 let bcla = bcx "gBCLA" 1 1
 
 let bcXrX name opt_opcode lk reg arch case (ctxt : test_ctxt) =
+  let case = case arch in
+  let reg = reg arch in
   let bits = Size.in_bits @@ Arch.addr_size arch in
   let cr_num = 31 in
   let bytes = make_insn ~name ~arch `XL
       [19; case.bo_field; cr_num; 0; 0; opt_opcode; lk ] in
   let cr0 = cr_bit cr_num in
   let addr = addr_of_arch arch in
+  let ctr = ctr arch in
   let init = Bil.[
       cr0 := int case.cond_reg0;
       ctr := int case.ctr_before;
     ] in
-  let init = init @ Bil.[reg := cast unsigned 64 (int addr)] in
+  let init = init @ Bil.[reg := cast unsigned bits (int addr)] in
   let c = eval ~addr init bytes arch in
   if case.expect_jump then
     let expected_addr =
@@ -166,8 +188,9 @@ let bcXrX name opt_opcode lk reg arch case (ctxt : test_ctxt) =
       assert_bool (sprintf "%s ctr check failed" name) @@ is_equal_words x (lookup_var c ctr) in
   if lk = 1 then
     let next = Word.(of_int ~width:bits 4 + addr) in
-    let next = extract ~hi:(lr_bitwidth - 1) ~lo:0 next in
-    assert_bool (sprintf "%s failed to check LR value" name) @@ is_equal_words next (lookup_var c lr)
+    let next = extract ~hi:(bits - 1) ~lo:0 next in
+    assert_bool (sprintf "%s failed to check LR value" name)
+    @@ is_equal_words next (lookup_var c (lr arch))
 
 let bclr = bcXrX "gBCLR" 16 0 lr
 let bclrl = bcXrX "gBCLRL" 16 1 lr
@@ -188,8 +211,9 @@ let bdnz ~jmp arch (ctxt : test_ctxt) =
   let fin = Word.of_int ~width:2 0 in
   let bytes = make_bytes [opcode; bo; bi; bd; fin] in
   let ctr_val =
-    if jmp then Word.of_int ~width:ctr_bitwidth 42
-    else Word.one ctr_bitwidth in
+    if jmp then Word.of_int ~width:bits 42
+    else Word.one bits in
+  let ctr = ctr arch in
   let init =  Bil.[ctr := int ctr_val] in
   let addr = addr_of_arch arch in
   let c = eval ~addr init bytes arch in
@@ -213,19 +237,22 @@ let bdnzlr ~jmp arch  (ctxt : test_ctxt) =
   let fin = Word.of_int ~width:1 0 in
   let bytes = make_bytes [opcode; bo; bi; no_matter; bh; opt_opcode; fin] in
   let ctr_val =
-    if jmp then Word.of_int ~width:ctr_bitwidth 42
-    else Word.one ctr_bitwidth in
+    if jmp then Word.of_int ~width:bits 42
+    else Word.one bits in
   let addr = addr_of_arch arch in
+  let ctr = ctr arch in
+  let lr = lr arch in
   let init =  Bil.[
       ctr := int ctr_val;
-      lr := cast unsigned 64 (int addr);
+      lr := cast unsigned bits (int addr);
     ] in
   let c = eval ~addr init bytes arch in
   if jmp then
-    let expected = Word.(addr lsl Word.of_int ~width:bits 2) in
+    let mask = Word.(ones bits lsl of_int ~width:bits 2) in
+    let expected = Word.(addr land mask) in
     check_pc "bdnzlr" c expected
   else
-    check_jmp_absence "bdzf" c;
+    check_jmp_absence "bdnzlr" c;
   let x = Word.pred ctr_val in
   assert_bool "bdnzlr cnt check failed" @@ is_equal_words x (lookup_var c ctr)
 
@@ -342,8 +369,6 @@ let suite  = "branch" >::: [
     "bcctrl32 jmp_anyway"         >:: bcctrl `ppc jmp_anyway;
     "bcctrl32 cond_ok"            >:: bcctrl `ppc cond_ok;
     "bcctrl32 cond_not"           >:: bcctrl `ppc cond_not;
-
-
 
 
     "b64 +"                         >:: b `ppc64 pos;

@@ -12,6 +12,22 @@ let () =
     Printf.eprintf "failed to load plugin from %s: %s"
       path (Error.to_string_hum er)
 
+let () =
+  Powerpc_add.init ();
+  Powerpc_branch.init ();
+  Powerpc_compare.init ();
+  Powerpc_cr.init ();
+  Powerpc_div.init ();
+  Powerpc_load.init ();
+  Powerpc_logical.init ();
+  Powerpc_move.init ();
+  Powerpc_mul.init ();
+  Powerpc_rotate.init ();
+  Powerpc_shift.init ();
+  Powerpc_store.init ();
+  Powerpc_sub.init ()
+
+
 let escape_0x =
   String.substr_replace_all ~pattern:"0x" ~with_:"\\x"
 
